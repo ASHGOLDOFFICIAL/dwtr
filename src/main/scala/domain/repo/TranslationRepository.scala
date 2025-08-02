@@ -1,5 +1,5 @@
 package org.aulune
-package domain.service
+package domain.repo
 
 import domain.model.{Translation, TranslationId}
 

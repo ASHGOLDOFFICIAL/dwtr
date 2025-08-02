@@ -3,7 +3,8 @@ package infrastructure.service
 
 import api.dto.AudioPlayRequest
 import domain.model.*
-import domain.service.{AudioPlayRepository, AudioPlayService, UuidGen}
+import domain.repo.AudioPlayRepository
+import domain.service.{AudioPlayService, UuidGen}
 
 import cats.effect.{Async, Ref}
 import cats.syntax.all.*

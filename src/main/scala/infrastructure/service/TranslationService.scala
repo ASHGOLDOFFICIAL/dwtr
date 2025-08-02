@@ -3,7 +3,8 @@ package infrastructure.service
 
 import api.dto.TranslationRequest
 import domain.model.{MediaResourceID, MediumType, Translation, TranslationId}
-import domain.service.{TranslationRepository, TranslationService}
+import domain.repo.TranslationRepository
+import domain.service.TranslationService
 
 import cats.effect.{Async, Ref}
 import cats.syntax.all.*

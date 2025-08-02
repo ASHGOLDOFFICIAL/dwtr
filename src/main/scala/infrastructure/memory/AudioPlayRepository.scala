@@ -2,7 +2,7 @@ package org.aulune
 package infrastructure.memory
 
 import domain.model.*
-import domain.service.AudioPlayRepository
+import domain.repo.AudioPlayRepository
 
 import cats.Applicative
 import cats.effect.*

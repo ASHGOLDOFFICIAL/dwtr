@@ -2,7 +2,7 @@ package org.aulune
 package infrastructure.memory
 
 import domain.model.{EntityIdentity, Translation, TranslationId}
-import domain.service.TranslationRepository
+import domain.repo.TranslationRepository
 
 import cats.Applicative
 import cats.effect.*

@@ -2,7 +2,7 @@ package org.aulune
 package infrastructure.memory
 
 import domain.model.{EntityIdentity, RepositoryError}
-import domain.service.GenericRepository
+import domain.repo.GenericRepository
 
 import cats.Applicative
 import cats.effect.Ref
