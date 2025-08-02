@@ -1,7 +1,7 @@
 package org.aulune
 package infrastructure.memory
 
-import domain.model.{EntityIdentity, Translation, TranslationId}
+import domain.model.*
 import domain.repo.TranslationRepository
 
 import cats.Applicative
@@ -14,13 +14,14 @@ object TranslationRepository:
       new TranslationRepositoryInterpreter[F](mapRef)
     }
 
-  private type TranslationMap = Map[TranslationId, Translation]
+  private type TranslationMap =
+    Map[TranslationIdentity, Translation]
 
-  given EntityIdentity[Translation, TranslationId] =
-    (elem: Translation) => elem.id
+  given EntityIdentity[Translation, TranslationIdentity] =
+    (elem: Translation) => (elem.originalType, elem.originalId, elem.id)
 
   private class TranslationRepositoryInterpreter[F[_]: Applicative](
       mapRef: Ref[F, TranslationMap]
-  ) extends GenericRepositoryImpl[F, Translation, TranslationId](mapRef)
+  ) extends GenericRepositoryImpl[F, Translation, TranslationIdentity](mapRef)
       with TranslationRepository[F]
 end TranslationRepository

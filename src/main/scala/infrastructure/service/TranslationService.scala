@@ -2,7 +2,7 @@ package org.aulune
 package infrastructure.service
 
 import api.dto.TranslationRequest
-import domain.model.{MediaResourceID, MediumType, Translation, TranslationId}
+import domain.model.*
 import domain.repo.TranslationRepository
 import domain.service.TranslationService
 
@@ -22,22 +22,49 @@ private class TranslationServiceInterpreter[F[_]: Async](
     repo: TranslationRepository[F],
     idGenRef: Ref[F, Long]
 ) extends TranslationService[F]:
-  
+
+  private def toTranslationError(err: RepositoryError): TranslationError =
+    err match {
+      case RepositoryError.AlreadyExists       => TranslationError.AlreadyExists
+      case RepositoryError.NotFound            => TranslationError.NotFound
+      case RepositoryError.StorageFailure(msg) =>
+        TranslationError.InternalError(msg)
+    }
+
   override def create(
       tc: TranslationRequest,
       originalType: MediumType,
       originalId: MediaResourceID
-  ): F[Either[String, TranslationId]] =
+  ): F[Either[TranslationError, Translation]] =
     for {
-      id <- idGenRef.modify(prev => (prev + 1, TranslationId(prev)))
-      translation = tc.toDomain(id, originalType, originalId)
-      added <- repo.persist(translation)
-    } yield Right(id)
+      trId <- idGenRef.modify(prev => (prev + 1, TranslationId(prev)))
+      id          = (originalType, originalId, trId)
+      translation = tc.toDomain(id)
+      result <- repo.persist(translation)
+    } yield result.leftMap(toTranslationError).as(translation)
 
-  override def getBy(id: TranslationId): F[Option[Translation]] =
+  override def getBy(id: TranslationIdentity): F[Option[Translation]] =
     repo.get(id)
 
-  override def getAll(offset: Int, limit: Int): F[List[Translation]] =
+  override def getAll(
+      originalType: MediumType,
+      originalId: MediaResourceID,
+      offset: Int,
+      limit: Int
+  ): F[List[Translation]] =
     repo.list(offset, limit)
-    
+
+  override def update(
+      id: TranslationIdentity,
+      tc: TranslationRequest
+  ): F[Either[TranslationError, Translation]] = {
+    val updated = tc.toDomain(id)
+    repo.update(updated).map(_.leftMap(toTranslationError).as(updated))
+  }
+
+  override def delete(
+      id: TranslationIdentity
+  ): F[Either[TranslationError, Unit]] =
+    repo.delete(id).map(_.leftMap(toTranslationError))
+
 end TranslationServiceInterpreter

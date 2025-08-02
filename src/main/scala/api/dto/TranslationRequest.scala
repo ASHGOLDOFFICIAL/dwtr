@@ -9,16 +9,12 @@ case class TranslationRequest(
     title: String,
     links: List[URI]
 ):
-  def toDomain(
-      id: TranslationId,
-      originalType: MediumType,
-      originalId: MediaResourceID
-  ): Translation =
+  def toDomain(id: TranslationIdentity): Translation =
     Translation(
-      id = id,
+      id = id._3,
       title = TranslationTitle(title),
-      originalType = originalType,
-      originalId = originalId,
+      originalType = id._1,
+      originalId = id._2,
       links = links
     )
 end TranslationRequest

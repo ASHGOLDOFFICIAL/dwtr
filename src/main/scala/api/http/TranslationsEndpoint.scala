@@ -38,7 +38,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .name("GetTranslation")
       .summary("Returns a translation with given ID for given parent.")
       .serverLogic { case (mediaId, translationId) =>
-        service.getBy(TranslationId(translationId)).map {
+        service.getBy((mediumType, mediaId, TranslationId(translationId))).map {
           case Some(t) => Right(TranslationResponse.fromDomain(t))
           case None    => Left(StatusCode.NotFound)
         }
@@ -53,7 +53,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .summary("Returns the list of translation for given parent.")
       .serverLogic { case (mediaId, offset, limit) =>
         service
-          .getAll(offset, limit)
+          .getAll(mediumType, mediaId, offset, limit)
           .map(l => Right(l.map(TranslationResponse.fromDomain)))
       }
 

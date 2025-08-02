@@ -1,7 +1,7 @@
 package org.aulune
 package domain.repo
 
-import domain.model.{Translation, TranslationId}
+import domain.model.*
 
 trait TranslationRepository[F[_]]
-    extends GenericRepository[F, Translation, TranslationId]
+    extends GenericRepository[F, Translation, TranslationIdentity]

@@ -13,3 +13,6 @@ case class Translation(
     originalId: MediaResourceID,
     links: List[URI]
 )
+
+type TranslationIdentity =
+  (MediumType, MediaResourceID, TranslationId)
