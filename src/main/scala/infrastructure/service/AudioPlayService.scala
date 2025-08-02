@@ -6,7 +6,7 @@ import domain.model.*
 import domain.repo.AudioPlayRepository
 import domain.service.{AudioPlayService, UuidGen}
 
-import cats.effect.{Async, Ref}
+import cats.effect.Async
 import cats.syntax.all.*
 
 object AudioPlayService:
@@ -20,11 +20,12 @@ private class AudioPlayServiceInterpreter[F[_]: Async](
 ) extends AudioPlayService[F]:
 
   private def toAudioPlayError(err: RepositoryError): AudioPlayError =
-    err match
+    err match {
       case RepositoryError.AlreadyExists       => AudioPlayError.AlreadyExists
       case RepositoryError.NotFound            => AudioPlayError.NotFound
       case RepositoryError.StorageFailure(msg) =>
         AudioPlayError.InternalError(msg)
+    }
 
   override def create(
       ac: AudioPlayRequest
@@ -48,9 +49,10 @@ private class AudioPlayServiceInterpreter[F[_]: Async](
   override def update(
       id: MediaResourceID,
       ac: AudioPlayRequest
-  ): F[Either[AudioPlayError, AudioPlay]] =
+  ): F[Either[AudioPlayError, AudioPlay]] = {
     val updated = ac.toDomain(id)
     repo.update(updated).map(_.leftMap(toAudioPlayError).as(updated))
+  }
 
   override def delete(id: MediaResourceID): F[Either[AudioPlayError, Unit]] =
     repo.delete(id).map(_.leftMap(toAudioPlayError))
