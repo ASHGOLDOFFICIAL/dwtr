@@ -5,10 +5,14 @@ import api.codecs.TranslationCodecs.given
 import api.dto.{TranslationRequest, TranslationResponse}
 import api.http.AuthOnlyEndpoints.*
 import api.schemes.TranslationSchemes.given
-import domain.model.{MediaResourceID, MediumType, TranslationError, TranslationId}
+import domain.model.{
+  MediaResourceID,
+  MediumType,
+  TranslationError,
+  TranslationId
+}
 import domain.service.{AuthService, TranslationService}
 
-import cats.Functor
 import cats.effect.Async
 import cats.syntax.all.*
 import io.circe.generic.auto.*
@@ -20,15 +24,18 @@ import sttp.tapir.server.ServerEndpoint
 
 import java.net.URI
 
-class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
+private class TranslationsEndpoint[F[_]: AuthService: Async](
     mediumType: MediumType,
-    rootPath: EndpointInput[MediaResourceID]
-)(
+    rootPath: EndpointInput[MediaResourceID],
+    tagPrefix: String
+)(using
     service: TranslationService[F]
 ):
-  private val translationId  = path[TranslationId]("translation_id")
+  private val translationId = path[TranslationId]("translation_id")
+    .description("ID of the translation")
   private val collectionPath = rootPath / "translations"
   private val elementPath    = collectionPath / translationId
+  private val tag            = tagPrefix + " Translations"
 
   private def toErrorResponse(err: TranslationError): (StatusCode, String) =
     err match {
@@ -47,6 +54,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .errorOut(statusCode)
       .name("GetTranslation")
       .summary("Returns a translation with given ID for given parent.")
+      .tag(tag)
       .serverLogic { case (mediaId, translationId) =>
         service.getBy((mediumType, mediaId, translationId)).map {
           case Some(t) => Right(TranslationResponse.fromDomain(t))
@@ -61,6 +69,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .out(jsonBody[List[TranslationResponse]])
       .name("ListTranslations")
       .summary("Returns the list of translation for given parent.")
+      .tag(tag)
       .serverLogic { case (mediaId, offset, limit) =>
         service
           .getAll(mediumType, mediaId, offset, limit)
@@ -74,6 +83,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .out(statusCode(StatusCode.Created).and(jsonBody[TranslationResponse]))
       .name("CreateTranslation")
       .summary("Creates a new translation for parent resource and returns it.")
+      .tag(tag)
       .serverLogic { _ => (mediaId, tc) =>
         service.create(tc, mediumType, mediaId).map {
           _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
@@ -87,6 +97,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .out(statusCode(StatusCode.Ok).and(jsonBody[TranslationResponse]))
       .name("UpdateTranslation")
       .summary("Updates translation resource with given ID.")
+      .tag(tag)
       .serverLogic { _ => (mediaId, translationId, tc) =>
         service.update((mediumType, mediaId, translationId), tc).map {
           _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
@@ -99,6 +110,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .out(statusCode(StatusCode.NoContent))
       .name("DeleteTranslation")
       .summary("Deletes translation resource with given ID.")
+      .tag(tag)
       .serverLogic { _ => (mediaId, translationId) =>
         service
           .delete((mediumType, mediaId, translationId))
@@ -112,4 +124,13 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
     updateEndpoint,
     deleteEndpoint
   )
+end TranslationsEndpoint
+
+object TranslationsEndpoint:
+  def build[F[_]: AuthService: TranslationService: Async](
+      mediumType: MediumType,
+      mountPath: EndpointInput[MediaResourceID],
+      tagPrefix: String
+  ): TranslationsEndpoint[F] =
+    new TranslationsEndpoint[F](mediumType, mountPath, tagPrefix)
 end TranslationsEndpoint

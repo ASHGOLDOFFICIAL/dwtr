@@ -27,11 +27,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     .description("ID of the audio play")
   private val collectionPath = AudioPlayResponse.collectionIdentifier
   private val elementPath    = collectionPath / audioPlayId
-
-  private val translationsEndpoints =
-    new TranslationsEndpoint(MediumType.AudioPlay, elementPath)(
-      summon[TranslationService[F]]
-    ).endpoints
+  private val tag            = "Audio Plays"
 
   private def toErrorResponse(err: AudioPlayError): (StatusCode, String) =
     err match {
@@ -50,6 +46,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .errorOut(statusCode)
       .name("GetAudioPlay")
       .summary("Returns an audio play with given ID.")
+      .tag(tag)
       .serverLogic { id =>
         audioService.getBy(id).map {
           case Some(value) => Right(AudioPlayResponse.fromDomain(value))
@@ -71,6 +68,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .out(statusCode(StatusCode.Ok).and(jsonBody[List[AudioPlayResponse]]))
       .name("ListAudioPlays")
       .summary("Returns the list of audio play resources.")
+      .tag(tag)
       .serverLogic { case (offset, limit, seriesIdOption) =>
         audioService
           .getAll(
@@ -88,6 +86,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResponse]))
       .name("CreateAudioPlay")
       .summary("Creates a new audio play and returns the created resource.")
+      .tag(tag)
       .serverLogic { _ => ac =>
         audioService.create(ac).map {
           _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
@@ -101,6 +100,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]))
       .name("UpdateAudioPlay")
       .summary("Updates audio play resource with given ID.")
+      .tag(tag)
       .serverLogic { _ => (id, ac) =>
         audioService.update(id, ac).map {
           _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
@@ -113,6 +113,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .out(statusCode(StatusCode.NoContent))
       .name("DeleteAudioPlay")
       .summary("Deletes audio play resource with given ID.")
+      .tag(tag)
       .serverLogic { _ => id =>
         audioService.delete(id).map(_.leftMap(toErrorResponse))
       }
@@ -123,6 +124,8 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     postEndpoint,
     updateEndpoint,
     deleteEndpoint
-  ) ++ translationsEndpoints
+  ) ++ TranslationsEndpoint
+    .build(MediumType.AudioPlay, elementPath, tag)
+    .endpoints
 
 end AudioPlaysEndpoint
