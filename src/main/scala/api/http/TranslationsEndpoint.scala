@@ -5,7 +5,7 @@ import api.codecs.TranslationCodecs.given
 import api.dto.{TranslationRequest, TranslationResponse}
 import api.http.AuthOnlyEndpoints.*
 import api.schemes.TranslationSchemes.given
-import domain.model.{MediaResourceID, MediumType, TranslationId}
+import domain.model.{MediaResourceID, MediumType, TranslationError, TranslationId}
 import domain.service.{AuthService, TranslationService}
 
 import cats.Functor
@@ -26,9 +26,19 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
 )(
     service: TranslationService[F]
 ):
-  private val translationId  = path[Long]("translation_id")
+  private val translationId  = path[TranslationId]("translation_id")
   private val collectionPath = rootPath / "translations"
   private val elementPath    = collectionPath / translationId
+
+  private def toErrorResponse(err: TranslationError): (StatusCode, String) =
+    err match {
+      case TranslationError.AlreadyExists =>
+        (StatusCode.Conflict, "Already exists")
+      case TranslationError.NotFound => (StatusCode.NotFound, "Not found")
+      case TranslationError.InternalError(reason) =>
+        (StatusCode.InternalServerError, reason)
+      case _ => (StatusCode.InternalServerError, "Unexpected error")
+    }
 
   private val getEndpoint =
     endpoint.get
@@ -38,7 +48,7 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
       .name("GetTranslation")
       .summary("Returns a translation with given ID for given parent.")
       .serverLogic { case (mediaId, translationId) =>
-        service.getBy((mediumType, mediaId, TranslationId(translationId))).map {
+        service.getBy((mediumType, mediaId, translationId)).map {
           case Some(t) => Right(TranslationResponse.fromDomain(t))
           case None    => Left(StatusCode.NotFound)
         }
@@ -61,16 +71,45 @@ class TranslationsEndpoint[F[_]: AuthService: Async: Functor](
     AuthOnlyEndpoints.adminOnly.post
       .in(collectionPath)
       .in(jsonBody[TranslationRequest].description("Translation to create"))
-      .out(statusCode(StatusCode.Created))
+      .out(statusCode(StatusCode.Created).and(jsonBody[TranslationResponse]))
       .name("CreateTranslation")
       .summary("Creates a new translation for parent resource and returns it.")
       .serverLogic { _ => (mediaId, tc) =>
-        service.create(tc, mediumType, mediaId).map(_ => Right(()))
+        service.create(tc, mediumType, mediaId).map {
+          _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
+        }
+      }
+
+  private val updateEndpoint =
+    AuthOnlyEndpoints.adminOnly.put
+      .in(elementPath)
+      .in(jsonBody[TranslationRequest].description("New state"))
+      .out(statusCode(StatusCode.Ok).and(jsonBody[TranslationResponse]))
+      .name("UpdateTranslation")
+      .summary("Updates translation resource with given ID.")
+      .serverLogic { _ => (mediaId, translationId, tc) =>
+        service.update((mediumType, mediaId, translationId), tc).map {
+          _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
+        }
+      }
+
+  private val deleteEndpoint =
+    AuthOnlyEndpoints.adminOnly.delete
+      .in(elementPath)
+      .out(statusCode(StatusCode.NoContent))
+      .name("DeleteTranslation")
+      .summary("Deletes translation resource with given ID.")
+      .serverLogic { _ => (mediaId, translationId) =>
+        service
+          .delete((mediumType, mediaId, translationId))
+          .map(_.leftMap(toErrorResponse))
       }
 
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     listEndpoint,
-    postEndpoint
+    postEndpoint,
+    updateEndpoint,
+    deleteEndpoint
   )
 end TranslationsEndpoint
