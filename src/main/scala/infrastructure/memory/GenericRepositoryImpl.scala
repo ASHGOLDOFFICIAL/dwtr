@@ -10,7 +10,7 @@ import cats.syntax.all.*
 
 class GenericRepositoryImpl[F[_]: Applicative, E, ID](
     mapRef: Ref[F, Map[ID, E]]
-)(using identity: EntityIdentity[E, ID])
+)(using EntityIdentity[E, ID])
     extends GenericRepository[F, E, ID]:
 
   extension (elem: E)
