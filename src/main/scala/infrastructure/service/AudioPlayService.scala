@@ -1,7 +1,6 @@
 package org.aulune
 package infrastructure.service
 
-import api.dto.AudioPlayRequest
 import domain.model.*
 import domain.repo.AudioPlayRepository
 import domain.service.{AudioPlayService, UuidGen}

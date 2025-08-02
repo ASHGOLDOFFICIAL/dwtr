@@ -1,7 +1,6 @@
 package org.aulune
 package infrastructure.service
 
-import api.dto.TranslationRequest
 import domain.model.*
 import domain.repo.TranslationRepository
 import domain.service.TranslationService

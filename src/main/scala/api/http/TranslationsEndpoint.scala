@@ -2,15 +2,10 @@ package org.aulune
 package api.http
 
 import api.codecs.TranslationCodecs.given
-import api.dto.{TranslationRequest, TranslationResponse}
+import api.dto.TranslationResponse
 import api.http.AuthOnlyEndpoints.*
 import api.schemes.TranslationSchemes.given
-import domain.model.{
-  MediaResourceID,
-  MediumType,
-  TranslationError,
-  TranslationId
-}
+import domain.model.*
 import domain.service.{AuthService, TranslationService}
 
 import cats.effect.Async

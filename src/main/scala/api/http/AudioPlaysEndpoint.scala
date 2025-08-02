@@ -1,13 +1,8 @@
 package org.aulune
 package api.http
 
-import api.dto.{AudioPlayRequest, AudioPlayResponse}
-import domain.model.{
-  AudioPlayError,
-  AudioPlaySeriesId,
-  MediaResourceID,
-  MediumType
-}
+import api.dto.AudioPlayResponse
+import domain.model.*
 import domain.service.{AudioPlayService, AuthService, TranslationService}
 
 import cats.Functor

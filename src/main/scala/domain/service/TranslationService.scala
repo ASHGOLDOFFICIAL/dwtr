@@ -1,7 +1,6 @@
 package org.aulune
 package domain.service
 
-import api.dto.TranslationRequest
 import domain.model.*
 
 trait TranslationService[F[_]]:

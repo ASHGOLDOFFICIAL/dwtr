@@ -1,7 +1,5 @@
 package org.aulune
-package api.dto
-
-import domain.model.*
+package domain.model
 
 case class AudioPlayRequest(
     title: String,

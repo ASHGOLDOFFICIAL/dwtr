@@ -1,7 +1,6 @@
 package org.aulune
 package domain.service
 
-import api.dto.AudioPlayRequest
 import domain.model.*
 
 trait AudioPlayService[F[_]]:

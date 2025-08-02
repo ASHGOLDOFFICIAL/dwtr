@@ -1,5 +1,5 @@
 package org.aulune
-package api.dto
+package domain.model
 
 import domain.model.*
 
