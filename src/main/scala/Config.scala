@@ -8,8 +8,6 @@ import pureconfig.error.ExceptionThrown
 
 
 case class Config(
-    trustworthiness: Config.Trustworthiness,
-    kafka: Config.Kafka,
     sqlite: Config.Sqlite,
     app: Config.App,
 ) derives ConfigReader
@@ -22,14 +20,11 @@ object Config:
       host: Host,
       port: Port,
       key: String,
+      pagination: Pagination
   )
 
-  case class Trustworthiness(auth: Trustworthiness.Auth, uri: Uri)
-
-  object Trustworthiness:
-    case class Auth(user: String, password: String)
-
-  case class Kafka(host: String, port: Int, topic: String, group: String)
+  case class Pagination(max: Int, default: Int)
+  
   case class Sqlite(uri: String, user: String, password: String)
 
   given ConfigReader[Uri] = ConfigReader.fromString { str =>
