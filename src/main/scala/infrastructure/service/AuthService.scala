@@ -1,10 +1,11 @@
 package org.aulune
 package infrastructure.service
 
-import domain.model.auth.{AuthError, AuthToken, PermissionLevel, User}
+import domain.model.auth.*
 import domain.service.AuthService
 
 import cats.MonadThrow
+import cats.data.Validated
 import cats.effect.Clock
 import cats.syntax.all.*
 import io.circe.parser.decode
@@ -13,7 +14,9 @@ import pdi.jwt.algorithms.JwtHmacAlgorithm
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim, JwtOptions}
 
 import java.time.Instant
+import java.util.UUID
 import scala.concurrent.duration.*
+import scala.util.Try
 
 object AuthService:
   def build[F[_]: MonadThrow: Clock](key: String): F[AuthService[F]] =
@@ -32,20 +35,14 @@ private class AuthServiceInterpreter[F[_]: MonadThrow: Clock](
     expiration = false
   )
 
-  private type AuthResult[A] = Either[AuthError, A]
-
   override def authenticate(token: AuthToken): F[AuthResult[User]] =
-    (for {
+    for {
       claim <- MonadThrow[F]
         .fromTry(
           JwtCirce.decode(token.value, secretKey, Seq(algo), options = options)
         )
       validation <- validateExpiration(claim)
-      result     <- validation match {
-        case Right(_) => decodeClaim(claim).pure[F]
-        case Left(e) => e.asLeft[User].pure[F]
-      }
-    } yield result).handleError(_ => AuthError.InvalidToken.asLeft[User])
+    } yield validation.andThen(_ => decodeClaim(claim))
 
   private def validateExpiration(claim: JwtClaim): F[AuthResult[Unit]] =
     claim.expiration match {
@@ -53,22 +50,22 @@ private class AuthServiceInterpreter[F[_]: MonadThrow: Clock](
         Clock[F].realTimeInstant.map(
           validateExpiration(_, Instant.ofEpochSecond(expSeconds))
         )
-      case None => AuthError.InvalidToken.asLeft.pure[F]
+      case None => AuthError.InvalidToken.invalid.pure[F]
     }
 
   private def validateExpiration(
       now: Instant,
       expiration: Instant
   ): AuthResult[Unit] =
-    if expiration.isBefore(now) then AuthError.ExpiredToken.asLeft
+    if expiration.isBefore(now) then AuthError.ExpiredToken.invalid
     else if expiration.isAfter(maxAllowed(now)) then
-      AuthError.InvalidToken.asLeft
-    else ().asRight
+      AuthError.InvalidToken.invalid
+    else ().valid
 
-  private def decodeClaim(claim: JwtClaim): Either[AuthError, User] =
-    decode[Payload](claim.content)
+  private def decodeClaim(claim: JwtClaim): AuthResult[User] =
+    decode[Payload](claim.content).toValidated
       .leftMap(_ => AuthError.InvalidPayload)
-      .flatMap(_.toUser)
+      .andThen(_.toUser)
 
   private val maxExp                          = maxExpiration.toSeconds
   private inline def maxAllowed(now: Instant) = now.plusSeconds(maxExp)
@@ -81,12 +78,16 @@ private class AuthServiceInterpreter[F[_]: MonadThrow: Clock](
       } yield Payload(id, role)
 
   private case class Payload(id: String, role: String):
-    def toUser: Either[AuthError, User] =
-      role match {
-        case "Admin"  => Right(User(id, PermissionLevel.Admin))
-        case "Normal" => Right(User(id, PermissionLevel.Normal))
-        case _        => Left(AuthError.InvalidPayload)
+    def toUser: AuthResult[User] =
+      validateRole(role).andThen { role =>
+        User(id, role).leftMap(_ => AuthError.InvalidPayload)
       }
+
+    private def validateRole(role: String): AuthResult[Role] =
+      role match
+        case "Admin"  => Role.Admin.valid
+        case "Normal" => Role.Normal.valid
+        case _        => AuthError.InvalidPayload.invalid
   end Payload
 
 end AuthServiceInterpreter

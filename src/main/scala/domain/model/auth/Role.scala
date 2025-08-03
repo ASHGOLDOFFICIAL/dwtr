@@ -1,7 +1,7 @@
 package org.aulune
 package domain.model.auth
 
-enum PermissionLevel:
+enum Role:
   case Normal
   case Admin
-end PermissionLevel
+end Role
