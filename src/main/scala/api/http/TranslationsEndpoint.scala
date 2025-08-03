@@ -32,12 +32,17 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
   private val elementPath    = collectionPath / translationId
   private val tag            = tagPrefix + " Translations"
 
-  private def toErrorResponse(err: TranslationError): (StatusCode, String) =
+  private def toErrorResponse(
+      err: TranslationServiceError
+  ): (StatusCode, String) =
     err match {
-      case TranslationError.AlreadyExists =>
+      case TranslationServiceError.AlreadyExists =>
         (StatusCode.Conflict, "Already exists")
-      case TranslationError.NotFound => (StatusCode.NotFound, "Not found")
-      case TranslationError.InternalError(reason) =>
+      case TranslationServiceError.NotFound =>
+        (StatusCode.NotFound, "Not found")
+      case TranslationServiceError.PermissionDenied =>
+        (StatusCode.Forbidden, "Permission denied")
+      case TranslationServiceError.InternalError(reason) =>
         (StatusCode.InternalServerError, reason)
       case _ => (StatusCode.InternalServerError, "Unexpected error")
     }
@@ -79,8 +84,8 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
       .name("CreateTranslation")
       .summary("Creates a new translation for parent resource and returns it.")
       .tag(tag)
-      .serverLogic { _ => (mediaId, tc) =>
-        service.create(tc, mediumType, mediaId).map {
+      .serverLogic { user => (mediaId, tc) =>
+        service.create(user, tc, mediumType, mediaId).map {
           _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
         }
       }
@@ -93,8 +98,8 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
       .name("UpdateTranslation")
       .summary("Updates translation resource with given ID.")
       .tag(tag)
-      .serverLogic { _ => (mediaId, translationId, tc) =>
-        service.update((mediumType, mediaId, translationId), tc).map {
+      .serverLogic { user => (mediaId, translationId, tc) =>
+        service.update(user, (mediumType, mediaId, translationId), tc).map {
           _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
         }
       }
@@ -106,9 +111,9 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
       .name("DeleteTranslation")
       .summary("Deletes translation resource with given ID.")
       .tag(tag)
-      .serverLogic { _ => (mediaId, translationId) =>
+      .serverLogic { user => (mediaId, translationId) =>
         service
-          .delete((mediumType, mediaId, translationId))
+          .delete(user, (mediumType, mediaId, translationId))
           .map(_.leftMap(toErrorResponse))
       }
 

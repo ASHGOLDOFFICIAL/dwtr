@@ -1,8 +1,9 @@
 package org.aulune
 package domain.model
 
-enum TranslationError:
+enum TranslationServiceError:
   case AlreadyExists
   case NotFound
+  case PermissionDenied
   case InternalError(reason: String)
-end TranslationError
+end TranslationServiceError

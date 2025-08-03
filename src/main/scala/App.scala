@@ -37,9 +37,10 @@ object App extends IOApp.Simple:
       authService <- AuthService.build[IO](config.app.key).toResource
       given AuthService[IO] = authService
 
-      translationRepo    <- memory.TranslationRepository.build[IO].toResource
+      translationRepo <- memory.TranslationRepository.build[IO].toResource
+      translationPermissions = new TranslationPermissionService[IO]
       translationService <- TranslationService
-        .build[IO](translationRepo)
+        .build[IO](translationPermissions, translationRepo)
         .toResource
       given TranslationService[IO] = translationService
 
