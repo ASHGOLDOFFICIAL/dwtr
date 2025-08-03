@@ -24,12 +24,16 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
   private val elementPath    = collectionPath / audioPlayId
   private val tag            = "Audio Plays"
 
-  private def toErrorResponse(err: AudioPlayError): (StatusCode, String) =
+  private def toErrorResponse(
+      err: AudioPlayServiceError
+  ): (StatusCode, String) =
     err match {
-      case AudioPlayError.AlreadyExists =>
+      case AudioPlayServiceError.AlreadyExists =>
         (StatusCode.Conflict, "Already exists")
-      case AudioPlayError.NotFound => (StatusCode.NotFound, "Not found")
-      case AudioPlayError.InternalError(reason) =>
+      case AudioPlayServiceError.NotFound => (StatusCode.NotFound, "Not found")
+      case AudioPlayServiceError.PermissionDenied =>
+        (StatusCode.Forbidden, "Permission denied")
+      case AudioPlayServiceError.InternalError(reason) =>
         (StatusCode.InternalServerError, reason)
       case _ => (StatusCode.InternalServerError, "Unexpected error")
     }
@@ -82,8 +86,8 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .name("CreateAudioPlay")
       .summary("Creates a new audio play and returns the created resource.")
       .tag(tag)
-      .serverLogic { _ => ac =>
-        audioService.create(ac).map {
+      .serverLogic { user => ac =>
+        audioService.create(user, ac).map {
           _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
         }
       }
@@ -96,8 +100,8 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .name("UpdateAudioPlay")
       .summary("Updates audio play resource with given ID.")
       .tag(tag)
-      .serverLogic { _ => (id, ac) =>
-        audioService.update(id, ac).map {
+      .serverLogic { user => (id, ac) =>
+        audioService.update(user, id, ac).map {
           _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
         }
       }
@@ -109,8 +113,8 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       .name("DeleteAudioPlay")
       .summary("Deletes audio play resource with given ID.")
       .tag(tag)
-      .serverLogic { _ => id =>
-        audioService.delete(id).map(_.leftMap(toErrorResponse))
+      .serverLogic { user => id =>
+        audioService.delete(user, id).map(_.leftMap(toErrorResponse))
       }
 
   def endpoints: List[ServerEndpoint[Any, F]] = List(

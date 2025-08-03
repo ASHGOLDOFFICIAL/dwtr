@@ -3,11 +3,7 @@ package org.aulune
 import api.http.AudioPlaysEndpoint
 import domain.service.{AuthService, TranslationService}
 import infrastructure.memory
-import infrastructure.service.{
-  AudioPlayService,
-  AuthService,
-  TranslationService
-}
+import infrastructure.service.*
 
 import cats.effect.*
 import cats.syntax.all.*
@@ -47,8 +43,13 @@ object App extends IOApp.Simple:
         .toResource
       given TranslationService[IO] = translationService
 
-      audioRepo    <- memory.AudioPlayRepository.build[IO].toResource
-      audioService <- AudioPlayService.build[IO](audioRepo).toResource
+      audioRepo <- memory.AudioPlayRepository.build[IO].toResource
+      audioPermissions = new AudioPlayPermissionService[IO]
+      audioService     = new AudioPlayServiceImpl(
+        audioPermissions,
+        audioRepo,
+        new UuidGenImpl[IO]
+      )
 
       audioPlayEndpoints = new AudioPlaysEndpoint[IO](audioService).endpoints
 

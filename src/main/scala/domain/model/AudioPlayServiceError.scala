@@ -1,7 +1,8 @@
 package org.aulune
 package domain.model
 
-enum AudioPlayError:
+enum AudioPlayServiceError:
   case AlreadyExists
   case NotFound
+  case PermissionDenied
   case InternalError(reason: String)
