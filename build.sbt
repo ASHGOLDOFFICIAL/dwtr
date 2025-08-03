@@ -6,11 +6,21 @@ inThisBuild {
   )
 }
 
+
 lazy val root = (project in file("."))
   .settings(
     name             := "dwtr",
     idePackagePrefix := Some("org.aulune")
   )
+
+
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-feature",
+  "-unchecked",
+  "-new-syntax",
+  "-rewrite")
+
 
 val http4sVersion     = "0.23.30"
 val circeVersion      = "0.14.14"
@@ -25,6 +35,7 @@ val jwtVersion        = "11.0.2"
 
 resolvers += Resolver.sonatypeCentralSnapshots
 
+
 libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-ember-client",
   "org.http4s" %% "http4s-ember-server",
@@ -32,11 +43,13 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-circe"
 ).map(_ % http4sVersion)
 
+
 libraryDependencies ++= Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-generic",
   "io.circe" %% "circe-parser"
 ).map(_ % circeVersion)
+
 
 libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-core",
@@ -45,10 +58,12 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"
 ).map(_ % tapirVersion)
 
+
 libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core",
   "org.tpolecat" %% "doobie-hikari"
 ).map(_ % doobieVersion)
+
 
 libraryDependencies ++= Seq(
   "org.xerial"             % "sqlite-jdbc"     % sqliteVersion,
@@ -56,5 +71,5 @@ libraryDependencies ++= Seq(
   "org.typelevel"         %% "cats-effect"     % catsEffectVersion,
   "ch.qos.logback"         % "logback-classic" % logbackVersion,
   "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
-  "com.github.jwt-scala"  %% "jwt-circe"        % jwtVersion
+  "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion
 )
