@@ -1,10 +1,12 @@
 package org.aulune
 package api.dto
 
+
 import domain.model.{MediumType, Translation}
 
 import java.net.URI
 import java.util.UUID
+
 
 case class TranslationResponse(
     name: String,
@@ -12,8 +14,9 @@ case class TranslationResponse(
     title: String,
     originalType: MediumType,
     originalId: UUID,
-    links: List[URI]
+    links: List[URI],
 )
+
 
 object TranslationResponse:
   def fromDomain(domain: Translation): TranslationResponse =
@@ -23,14 +26,12 @@ object TranslationResponse:
       title = domain.title.value,
       originalType = domain.originalType,
       originalId = domain.originalId.value,
-      links = domain.links
+      links = domain.links,
     )
 
   val collectionIdentifier: String = "translations"
 
-  def name(domain: Translation): String = {
+  def name(domain: Translation): String =
     val parent: String =
       s"${AudioPlayResponse.collectionIdentifier}/${domain.originalId}"
     parent + s"/$collectionIdentifier/${domain.id.value}"
-  }
-end TranslationResponse

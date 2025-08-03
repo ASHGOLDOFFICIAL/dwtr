@@ -1,12 +1,14 @@
 package org.aulune
 package infrastructure.memory
 
+
 import domain.model.*
 import domain.repo.TranslationRepository
 
 import cats.Applicative
-import cats.effect.*
+import cats.effect.{Async, Ref}
 import cats.syntax.all.*
+
 
 object TranslationRepository:
   def build[F[_]: Async]: F[TranslationRepository[F]] =
@@ -14,14 +16,12 @@ object TranslationRepository:
       new TranslationRepositoryInterpreter[F](mapRef)
     }
 
-  private type TranslationMap =
-    Map[TranslationIdentity, Translation]
+  private type TranslationMap = Map[TranslationIdentity, Translation]
 
   given EntityIdentity[Translation, TranslationIdentity] =
     (elem: Translation) => (elem.originalType, elem.originalId, elem.id)
 
   private class TranslationRepositoryInterpreter[F[_]: Applicative](
-      mapRef: Ref[F, TranslationMap]
+      mapRef: Ref[F, TranslationMap],
   ) extends GenericRepositoryImpl[F, Translation, TranslationIdentity](mapRef)
       with TranslationRepository[F]
-end TranslationRepository

@@ -3,4 +3,4 @@ package domain.model
 
 import java.util.UUID
 
-case class MediaResourceID (value: UUID) extends AnyVal
+case class MediaResourceID(value: UUID) extends AnyVal

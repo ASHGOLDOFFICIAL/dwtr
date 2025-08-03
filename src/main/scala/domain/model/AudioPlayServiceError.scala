@@ -1,6 +1,7 @@
 package org.aulune
 package domain.model
 
+
 enum AudioPlayServiceError:
   case AlreadyExists
   case NotFound

@@ -3,6 +3,7 @@ package api.http
 
 import sttp.tapir.{EndpointInput, Validator, query}
 
+
 object QueryParams:
   def pagination(defaultLimit: Int, maxLimit: Int): EndpointInput[(Int, Int)] =
     query[Int]("offset")
@@ -13,5 +14,5 @@ object QueryParams:
         query[Int]("limit")
           .description("Pagination limit")
           .default(defaultLimit)
-          .validate(Validator.inRange(0, maxLimit))
+          .validate(Validator.inRange(0, maxLimit)),
       )
