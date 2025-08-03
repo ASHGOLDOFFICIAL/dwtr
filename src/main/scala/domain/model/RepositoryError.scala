@@ -7,4 +7,4 @@ import scala.util.control.NoStackTrace
 enum RepositoryError extends Exception with NoStackTrace:
   case AlreadyExists
   case NotFound
-  case StorageFailure(reason: String)
+  case StorageFailure

@@ -5,5 +5,6 @@ package domain.model
 enum AudioPlayServiceError:
   case AlreadyExists
   case NotFound
+  case BadRequest
   case PermissionDenied
-  case InternalError(reason: String)
+  case InternalError
