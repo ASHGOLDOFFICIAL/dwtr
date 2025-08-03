@@ -2,6 +2,7 @@ package org.aulune
 package api.http
 
 import api.dto.AudioPlayResponse
+import api.http.Authentication.authOnlyEndpoint
 import domain.model.*
 import domain.service.{AudioPlayService, AuthService, TranslationService}
 
@@ -79,7 +80,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       }
 
   private val postEndpoint =
-    AuthOnlyEndpoints.adminOnly.post
+    authOnlyEndpoint.post
       .in(collectionPath)
       .in(jsonBody[AudioPlayRequest].description("Audio play to create"))
       .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResponse]))
@@ -93,7 +94,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       }
 
   private val updateEndpoint =
-    AuthOnlyEndpoints.adminOnly.put
+    authOnlyEndpoint.put
       .in(elementPath)
       .in(jsonBody[AudioPlayRequest].description("New state"))
       .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]))
@@ -107,7 +108,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
       }
 
   private val deleteEndpoint =
-    AuthOnlyEndpoints.adminOnly.delete
+    authOnlyEndpoint.delete
       .in(elementPath)
       .out(statusCode(StatusCode.NoContent))
       .name("DeleteAudioPlay")

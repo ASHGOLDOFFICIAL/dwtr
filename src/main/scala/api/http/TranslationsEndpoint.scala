@@ -3,7 +3,7 @@ package api.http
 
 import api.codecs.TranslationCodecs.given
 import api.dto.TranslationResponse
-import api.http.AuthOnlyEndpoints.*
+import api.http.Authentication.*
 import api.schemes.TranslationSchemes.given
 import domain.model.*
 import domain.service.{AuthService, TranslationService}
@@ -77,7 +77,7 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
       }
 
   private val postEndpoint =
-    AuthOnlyEndpoints.adminOnly.post
+    authOnlyEndpoint.post
       .in(collectionPath)
       .in(jsonBody[TranslationRequest].description("Translation to create"))
       .out(statusCode(StatusCode.Created).and(jsonBody[TranslationResponse]))
@@ -91,7 +91,7 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
       }
 
   private val updateEndpoint =
-    AuthOnlyEndpoints.adminOnly.put
+    authOnlyEndpoint.put
       .in(elementPath)
       .in(jsonBody[TranslationRequest].description("New state"))
       .out(statusCode(StatusCode.Ok).and(jsonBody[TranslationResponse]))
@@ -105,7 +105,7 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
       }
 
   private val deleteEndpoint =
-    AuthOnlyEndpoints.adminOnly.delete
+    authOnlyEndpoint.delete
       .in(elementPath)
       .out(statusCode(StatusCode.NoContent))
       .name("DeleteTranslation")

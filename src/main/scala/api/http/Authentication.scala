@@ -10,7 +10,7 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.server.PartialServerEndpoint
 
-object AuthOnlyEndpoints:
+object Authentication:
   private val tokenAuth = auth
     .bearer[String]()
     .description("Bearer token identifying the user")
@@ -28,7 +28,7 @@ object AuthOnlyEndpoints:
       .authenticate(AuthToken(token))
       .map(_.leftMap(toErrorResponse))
 
-  def adminOnly[F[_]: AuthService: Monad]: PartialServerEndpoint[
+  def authOnlyEndpoint[F[_]: AuthService: Monad]: PartialServerEndpoint[
     String,
     User,
     Unit,
@@ -41,4 +41,4 @@ object AuthOnlyEndpoints:
       .securityIn(tokenAuth)
       .errorOut(statusCode.and(stringBody))
       .serverSecurityLogic(token => decodeToken(token).map(_.toEither))
-end AuthOnlyEndpoints
+end Authentication
