@@ -1,9 +1,12 @@
 package org.aulune
 package domain.model
 
-import java.net.URI
 
-case class TranslationId(value: Long)      extends AnyVal
+import java.net.URI
+import java.util.UUID
+
+
+case class TranslationId(value: UUID)      extends AnyVal
 case class TranslationTitle(value: String) extends AnyVal
 
 
@@ -12,8 +15,12 @@ case class Translation(
     title: TranslationTitle,
     originalType: MediumType,
     originalId: MediaResourceID,
-    links: List[URI],
+    links: List[URI]
 )
 
 
-type TranslationIdentity = (MediumType, MediaResourceID, TranslationId)
+case class TranslationIdentity(
+    medium: MediumType,
+    parent: MediaResourceID,
+    id: TranslationId
+)

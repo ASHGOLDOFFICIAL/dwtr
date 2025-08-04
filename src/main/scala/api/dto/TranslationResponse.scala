@@ -10,7 +10,7 @@ import java.util.UUID
 
 case class TranslationResponse(
     name: String,
-    id: Long,
+    id: UUID,
     title: String,
     originalType: MediumType,
     originalId: UUID,

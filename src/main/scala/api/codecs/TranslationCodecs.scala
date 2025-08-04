@@ -8,6 +8,8 @@ import domain.model.{MediumType, TranslationId, TranslationTitle}
 import io.circe.{Decoder, Encoder}
 import org.aulune
 
+import java.util.UUID
+
 
 object TranslationCodecs:
   given Encoder[MediumType] =
@@ -17,9 +19,6 @@ object TranslationCodecs:
     case 1     => Right(MediumType.AudioPlay)
     case other => Left(s"Invalid MediumType: $other")
   }
-
-  given Encoder[TranslationId] = Encoder.encodeLong.contramap(_.value)
-  given Decoder[TranslationId] = Decoder.decodeLong.map(TranslationId(_))
 
   given Encoder[TranslationTitle] = Encoder.encodeString.contramap(_.value)
 

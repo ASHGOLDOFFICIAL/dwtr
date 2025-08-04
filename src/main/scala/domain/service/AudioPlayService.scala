@@ -4,6 +4,7 @@ package domain.service
 
 import domain.model.*
 import domain.model.auth.User
+import domain.model.pagination.PaginationParams
 
 
 /** Service managing audio plays.
@@ -20,15 +21,15 @@ trait AudioPlayService[F[_]]:
 
   /** Get all audio plays.
    *
-   *  @param offset offset
-   *  @param limit max entries
+   *  @param token token of element to start with
+   *  @param count number of returned elements
+   *
    *  @return list of all audio plays
    */
   def getAll(
-      offset: Int,
-      limit: Int,
-      seriesId: Option[AudioPlaySeriesId],
-  ): F[List[AudioPlay]]
+      token: Option[String],
+      count: Int
+  ): F[Either[AudioPlayServiceError, List[AudioPlay]]]
 
   /** Create new audio play.
    *
@@ -39,7 +40,7 @@ trait AudioPlayService[F[_]]:
    */
   def create(
       user: User,
-      ac: AudioPlayRequest,
+      ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]]
 
   /** Updates existing audio play.
@@ -53,7 +54,7 @@ trait AudioPlayService[F[_]]:
   def update(
       user: User,
       id: MediaResourceID,
-      ac: AudioPlayRequest,
+      ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]]
 
   /** Deletes existing audio play.
@@ -65,5 +66,5 @@ trait AudioPlayService[F[_]]:
    */
   def delete(
       user: User,
-      id: MediaResourceID,
+      id: MediaResourceID
   ): F[Either[AudioPlayServiceError, Unit]]

@@ -21,16 +21,16 @@ trait TranslationService[F[_]]:
    *
    *  @param originalType type of original medium
    *  @param originalId ID of original
-   *  @param offset offset
-   *  @param limit max translations
+   *  @param token token of entry to start with
+   *  @param count number of elements
    *  @return list of found translations
    */
   def getAll(
       originalType: MediumType,
       originalId: MediaResourceID,
-      offset: Int,
-      limit: Int,
-  ): F[List[Translation]]
+      token: Option[String],
+      count: Int
+  ): F[Either[TranslationServiceError, List[Translation]]]
 
   /** Create new translation.
    *
@@ -45,7 +45,7 @@ trait TranslationService[F[_]]:
       user: User,
       tc: TranslationRequest,
       originalType: MediumType,
-      originalId: MediaResourceID,
+      originalId: MediaResourceID
   ): F[Either[TranslationServiceError, Translation]]
 
   /** Updates existing translation.
@@ -59,7 +59,7 @@ trait TranslationService[F[_]]:
   def update(
       user: User,
       id: TranslationIdentity,
-      tc: TranslationRequest,
+      tc: TranslationRequest
   ): F[Either[TranslationServiceError, Translation]]
 
   /** Deletes existing translation.
@@ -71,5 +71,5 @@ trait TranslationService[F[_]]:
    */
   def delete(
       user: User,
-      id: TranslationIdentity,
+      id: TranslationIdentity
   ): F[Either[TranslationServiceError, Unit]]

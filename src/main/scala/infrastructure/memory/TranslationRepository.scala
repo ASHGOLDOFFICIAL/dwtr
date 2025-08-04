@@ -9,6 +9,8 @@ import cats.Applicative
 import cats.effect.{Async, Ref}
 import cats.syntax.all.*
 
+import java.time.Instant
+
 
 object TranslationRepository:
   def build[F[_]: Async]: F[TranslationRepository[F]] =
@@ -19,9 +21,14 @@ object TranslationRepository:
   private type TranslationMap = Map[TranslationIdentity, Translation]
 
   given EntityIdentity[Translation, TranslationIdentity] =
-    (elem: Translation) => (elem.originalType, elem.originalId, elem.id)
+    (elem: Translation) =>
+      TranslationIdentity(elem.originalType, elem.originalId, elem.id)
 
   private class TranslationRepositoryInterpreter[F[_]: Applicative](
-      mapRef: Ref[F, TranslationMap],
-  ) extends GenericRepositoryImpl[F, Translation, TranslationIdentity](mapRef)
+      mapRef: Ref[F, TranslationMap]
+  ) extends GenericRepositoryImpl[
+        F,
+        Translation,
+        TranslationIdentity,
+        (TranslationIdentity, Instant)](mapRef)
       with TranslationRepository[F]

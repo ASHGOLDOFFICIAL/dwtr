@@ -16,6 +16,7 @@ import org.http4s.implicits.*
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
@@ -32,42 +33,50 @@ object App extends IOApp.Simple:
       config.sqlite.uri,
       config.sqlite.user,
       config.sqlite.password,
-      None,
+      None
     )
 
     authService <- AuthService.build[IO](config.app.key).toResource
     given AuthService[IO] = authService
 
-    translationRepo <- memory.TranslationRepository.build[IO].toResource
+    translationRepo <-
+      memory.TranslationRepository.build[IO].toResource
     translationPermissions = new TranslationPermissionService[IO]
-    translationService <- TranslationService
-      .build[IO](translationPermissions, translationRepo)
-      .toResource
+    translationService     = new TranslationServiceImpl(
+      config.app.pagination,
+      translationPermissions,
+      translationRepo)
     given TranslationService[IO] = translationService
 
     audioRepo <- memory.AudioPlayRepository.build[IO].toResource
     audioPermissions = new AudioPlayPermissionService[IO]
     audioService     = new AudioPlayServiceImpl(
+      config.app.pagination,
       audioPermissions,
-      audioRepo,
-      new UuidGenImpl[IO],
+      audioRepo
     )
 
-    audioPlayEndpoints = new AudioPlaysEndpoint[IO](audioService).endpoints
-
-    endpoints     = audioPlayEndpoints
-    docsEndpoints = SwaggerInterpreter()
-      .fromServerEndpoints[IO](endpoints, config.app.name, config.app.version)
-
-    appRoutes = Http4sServerInterpreter[IO]().toRoutes(endpoints)
-    docsRoutes: HttpRoutes[IO] =
-      Http4sServerInterpreter[IO]().toRoutes(docsEndpoints)
-    allRoutes                  = appRoutes <+> docsRoutes
+    audioPlayEndpoints =
+      new AudioPlaysEndpoint[IO](config.app.pagination, audioService).endpoints
+    endpoints = audioPlayEndpoints
 
     _ <- EmberServerBuilder
       .default[IO]
       .withHost(config.app.host)
       .withPort(config.app.port)
-      .withHttpApp(allRoutes.orNotFound)
+      .withHttpApp(routes(config, endpoints).orNotFound)
       .build
   yield ()).use(_ => IO.never)
+
+  private def routes(
+      config: Config,
+      endpoints: List[ServerEndpoint[Any, IO]]
+  ) =
+    val docsEndpoints = SwaggerInterpreter()
+      .fromServerEndpoints[IO](endpoints, config.app.name, config.app.version)
+
+    val appRoutes = Http4sServerInterpreter[IO]().toRoutes(endpoints)
+    val docsRoutes: HttpRoutes[IO] =
+      Http4sServerInterpreter[IO]().toRoutes(docsEndpoints)
+
+    appRoutes <+> docsRoutes

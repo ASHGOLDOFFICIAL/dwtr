@@ -2,6 +2,7 @@ package org.aulune
 package api.http
 
 
+import api.codecs.given
 import api.dto.AudioPlayResponse
 import api.http.Authentication.authOnlyEndpoint
 import domain.model.*
@@ -18,8 +19,9 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
-    audioService: AudioPlayService[F],
+class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async](
+    pagination: Config.Pagination,
+    service: AudioPlayService[F]
 ):
   private val audioPlayId = path[MediaResourceID]("audio_play_id")
     .description("ID of the audio play")
@@ -29,15 +31,17 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
   private val tag            = "Audio Plays"
 
   private def toErrorResponse(
-      err: AudioPlayServiceError,
+      err: AudioPlayServiceError
   ): (StatusCode, String) = err match
+    case AudioPlayServiceError.BadRequest    =>
+      (StatusCode.BadRequest, "Bad request")
     case AudioPlayServiceError.AlreadyExists =>
       (StatusCode.Conflict, "Already exists")
     case AudioPlayServiceError.NotFound => (StatusCode.NotFound, "Not found")
-    case AudioPlayServiceError.PermissionDenied      =>
+    case AudioPlayServiceError.PermissionDenied =>
       (StatusCode.Forbidden, "Permission denied")
-    case AudioPlayServiceError.InternalError(reason) =>
-      (StatusCode.InternalServerError, reason)
+    case AudioPlayServiceError.InternalError    =>
+      (StatusCode.InternalServerError, "Internal error")
     case _ => (StatusCode.InternalServerError, "Unexpected error")
 
   private val getEndpoint = endpoint.get
@@ -48,7 +52,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      audioService.getBy(id).map {
+      service.getBy(id).map {
         case Some(value) => Right(AudioPlayResponse.fromDomain(value))
         case None        => Left(StatusCode.NotFound)
       }
@@ -56,26 +60,17 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(
-      QueryParams
-        .pagination(16, 127)
-        .and(
-          query[Option[AudioPlaySeriesId]]("series_id")
-            .description("Audio play series ID"),
-        ),
-    )
+    .in(QueryParams.pagination(pagination.default, pagination.max))
     .out(statusCode(StatusCode.Ok).and(jsonBody[List[AudioPlayResponse]]))
+    .errorOut(statusCode.and(stringBody))
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
-    .serverLogic { case (offset, limit, seriesIdOption) =>
-      audioService
-        .getAll(
-          offset = offset,
-          limit = limit,
-          seriesId = seriesIdOption,
-        )
-        .map(l => Right(l.map(AudioPlayResponse.fromDomain)))
+    .serverLogic { case (pageSize, pageToken) =>
+      service
+        .getAll(pageToken, pageSize)
+        .map(
+          _.leftMap(toErrorResponse).map(_.map(AudioPlayResponse.fromDomain)))
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -86,7 +81,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     .summary("Creates a new audio play and returns the created resource.")
     .tag(tag)
     .serverLogic { user => ac =>
-      audioService.create(user, ac).map {
+      service.create(user, ac).map {
         _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
       }
     }
@@ -99,7 +94,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     .summary("Updates audio play resource with given ID.")
     .tag(tag)
     .serverLogic { user => (id, ac) =>
-      audioService.update(user, id, ac).map {
+      service.update(user, id, ac).map {
         _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
       }
     }
@@ -111,7 +106,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     .summary("Deletes audio play resource with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      audioService.delete(user, id).map(_.leftMap(toErrorResponse))
+      service.delete(user, id).map(_.leftMap(toErrorResponse))
     }
 
   def endpoints: List[ServerEndpoint[Any, F]] = List(
@@ -119,7 +114,7 @@ class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async: Functor](
     listEndpoint,
     postEndpoint,
     updateEndpoint,
-    deleteEndpoint,
+    deleteEndpoint
   ) ++ TranslationsEndpoint
-    .build(MediumType.AudioPlay, elementPath, tag)
+    .build(MediumType.AudioPlay, elementPath, tag, pagination)
     .endpoints

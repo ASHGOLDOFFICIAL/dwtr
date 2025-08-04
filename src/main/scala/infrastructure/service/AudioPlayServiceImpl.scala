@@ -5,46 +5,48 @@ package infrastructure.service
 import domain.model.*
 import domain.model.AudioPlayServicePermission.Write
 import domain.model.auth.User
-import domain.repo.AudioPlayRepository
-import domain.service.{AudioPlayService, PermissionService, UuidGen}
+import domain.model.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
+import domain.repo.{AudioPlayRepository, transform}
+import domain.service.{AudioPlayService, PermissionService}
 
-import cats.effect.Async
+import cats.data.Validated
+import cats.effect.std.UUIDGen
+import cats.effect.{Async, Clock}
 import cats.syntax.all.*
 
+import java.time.Instant
+import java.util.{Base64, UUID}
+import scala.util.Try
 
-class AudioPlayServiceImpl[F[_]: Async](
+
+class AudioPlayServiceImpl[F[_]: Async: Clock](
+    pagination: Config.Pagination,
     permissionService: PermissionService[F, AudioPlayServicePermission],
-    repo: AudioPlayRepository[F],
-    idGen: UuidGen[F],
+    repo: AudioPlayRepository[F]
 ) extends AudioPlayService[F]:
-  private def toAudioPlayError(err: RepositoryError): AudioPlayServiceError =
-    err match
-      case RepositoryError.AlreadyExists => AudioPlayServiceError.AlreadyExists
-      case RepositoryError.NotFound      => AudioPlayServiceError.NotFound
-      case RepositoryError.StorageFailure(msg) =>
-        AudioPlayServiceError.InternalError(msg)
-
-  private def requirePermission[A] =
-    PermissionService.requirePermission(permissionService) {
-      AudioPlayServiceError.PermissionDenied.asLeft[A].pure[F]
-    }
-
   override def getBy(id: MediaResourceID): F[Option[AudioPlay]] = repo.get(id)
 
   override def getAll(
-      offset: Int,
-      limit: Int,
-      seriesId: Option[AudioPlaySeriesId],
-  ): F[List[AudioPlay]] = repo.list(offset, limit)
+      token: Option[String],
+      count: Int
+  ): F[Either[AudioPlayServiceError, List[AudioPlay]]] =
+    PaginationParams(pagination.max)(count, token) match {
+      case Validated.Invalid(_) => AudioPlayServiceError.BadRequest.asLeft.pure
+      case Validated.Valid(params) =>
+        val token = params.pageToken.map(_.value)
+        for list <- repo.list(token, params.pageSize)
+        yield list.asRight
+    }
 
   override def create(
       user: User,
-      ac: AudioPlayRequest,
+      ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]] =
     requirePermission(Write, user) {
       for
-        id <- idGen.generate.map(MediaResourceID(_))
-        audio = ac.toDomain(id)
+        id  <- UUIDGen.randomUUID[F].map(MediaResourceID(_))
+        now <- Clock[F].realTimeInstant
+        audio = ac.toDomain(id, now)
         result <- repo.persist(audio)
       yield result.leftMap(toAudioPlayError).as(audio)
     }
@@ -52,16 +54,59 @@ class AudioPlayServiceImpl[F[_]: Async](
   override def update(
       user: User,
       id: MediaResourceID,
-      ac: AudioPlayRequest,
+      ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]] =
     requirePermission(Write, user) {
-      val updated = ac.toDomain(id)
-      repo.update(updated).map(_.leftMap(toAudioPlayError).as(updated))
+      repo
+        .transform(id, old => ac.update(old))
+        .map(_.leftMap(toAudioPlayError))
     }
 
   override def delete(
       user: User,
-      id: MediaResourceID,
+      id: MediaResourceID
   ): F[Either[AudioPlayServiceError, Unit]] = requirePermission(Write, user) {
     repo.delete(id).map(_.leftMap(toAudioPlayError))
   }
+
+  private def toAudioPlayError(err: RepositoryError): AudioPlayServiceError =
+    err match
+      case RepositoryError.AlreadyExists  => AudioPlayServiceError.AlreadyExists
+      case RepositoryError.NotFound       => AudioPlayServiceError.NotFound
+      case RepositoryError.StorageFailure => AudioPlayServiceError.InternalError
+
+  private def requirePermission[A] =
+    PermissionService.requirePermission(permissionService) {
+      AudioPlayServiceError.PermissionDenied.asLeft[A].pure[F]
+    }
+
+  extension (ac: AudioPlayRequest)
+    private def update(old: AudioPlay): AudioPlay = old.copy(
+      title = AudioPlayTitle(ac.title),
+      seriesId = ac.seriesId.map(AudioPlaySeriesId(_)),
+      seriesOrder = ac.seriesOrder)
+
+    private def toDomain(id: MediaResourceID, addedAt: Instant): AudioPlay =
+      AudioPlay(
+        id = id,
+        title = AudioPlayTitle(ac.title),
+        seriesId = ac.seriesId.map(AudioPlaySeriesId(_)),
+        seriesOrder = ac.seriesOrder)
+
+  // TODO: Make better
+  private given TokenDecoder[(MediaResourceID, Instant)] = token =>
+    Try {
+      val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
+      val Array(idStr, timeStr) = raw.split('|')
+      val id                    = MediaResourceID(UUID.fromString(idStr))
+      val instant               = Instant.ofEpochMilli(timeStr.toLong)
+      (id, instant)
+    }.toOption
+
+  private given TokenEncoder[(MediaResourceID, Instant)] =
+    case (id, instant) =>
+      val raw = s"${id.value.toString}|" +
+        s"${instant.toEpochMilli}"
+      Try(
+        Base64.getUrlEncoder.withoutPadding.encodeToString(
+          raw.getBytes("UTF-8"))).toOption

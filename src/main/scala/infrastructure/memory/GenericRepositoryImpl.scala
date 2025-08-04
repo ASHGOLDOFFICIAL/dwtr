@@ -2,6 +2,7 @@ package org.aulune
 package infrastructure.memory
 
 
+import domain.model.pagination.PaginationParams
 import domain.model.{EntityIdentity, RepositoryError}
 import domain.repo.GenericRepository
 
@@ -10,14 +11,14 @@ import cats.effect.Ref
 import cats.syntax.all.*
 
 
-class GenericRepositoryImpl[F[_]: Applicative, E, ID](
-    mapRef: Ref[F, Map[ID, E]],
+class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](
+    mapRef: Ref[F, Map[Id, E]]
 )(using
-    EntityIdentity[E, ID],
-) extends GenericRepository[F, E, ID]:
-  extension (elem: E) def id: ID = summon[EntityIdentity[E, ID]].identity(elem)
+    EntityIdentity[E, Id]
+) extends GenericRepository[F, E, Id, Token]:
+  extension (elem: E) private def id: Id = summon[EntityIdentity[E, Id]].identity(elem)
 
-  override def contains(id: ID): F[Boolean] = mapRef.get.map(_.contains(id))
+  override def contains(id: Id): F[Boolean] = mapRef.get.map(_.contains(id))
 
   override def persist(elem: E): F[Either[RepositoryError, E]] = mapRef.modify {
     currentMap =>
@@ -26,10 +27,15 @@ class GenericRepositoryImpl[F[_]: Applicative, E, ID](
       else (currentMap.updated(elem.id, elem), Right(elem))
   }
 
-  override def get(id: ID): F[Option[E]] = mapRef.get.map(_.get(id))
+  override def get(id: Id): F[Option[E]] = mapRef.get.map(_.get(id))
 
-  override def list(offset: Int, limit: Int): F[List[E]] =
-    mapRef.get.map(_.values.slice(offset, offset + limit).toList)
+  override def list(startWith: Option[Token], count: Int): F[List[E]] =
+    mapRef.get.map { all =>
+      val sorted = all.values.toList.sortBy(_.id.toString)
+      sorted.indexWhere(a => a == id, 0) match
+        case -1 => Nil
+        case x  => sorted.slice(x, x + count)
+    }
 
   override def update(elem: E): F[Either[RepositoryError, E]] = mapRef.modify {
     currentMap =>
@@ -37,6 +43,6 @@ class GenericRepositoryImpl[F[_]: Applicative, E, ID](
       then (currentMap.updated(elem.id, elem), Right(elem))
       else (currentMap, Left(RepositoryError.NotFound))
   }
-
-  override def delete(id: ID): F[Either[RepositoryError, Unit]] =
+  
+  override def delete(id: Id): F[Either[RepositoryError, Unit]] =
     mapRef.modify(prev => (prev.removed(id), Right(())))

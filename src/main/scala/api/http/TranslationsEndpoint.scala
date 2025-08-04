@@ -2,7 +2,8 @@ package org.aulune
 package api.http
 
 
-import api.codecs.TranslationCodecs.given
+import Config.Pagination
+import api.codecs.given
 import api.dto.TranslationResponse
 import api.http.Authentication.*
 import api.schemes.TranslationSchemes.given
@@ -26,16 +27,18 @@ object TranslationsEndpoint:
       mediumType: MediumType,
       mountPath: EndpointInput[MediaResourceID],
       tagPrefix: String,
+      pagination: Pagination
   ): TranslationsEndpoint[F] =
-    new TranslationsEndpoint[F](mediumType, mountPath, tagPrefix)
+    new TranslationsEndpoint[F](pagination, mediumType, mountPath, tagPrefix)
 
 
 private class TranslationsEndpoint[F[_]: AuthService: Async](
+    pagination: Pagination,
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceID],
-    tagPrefix: String,
+    tagPrefix: String
 )(using
-    service: TranslationService[F],
+    service: TranslationService[F]
 ):
   private val translationId = path[TranslationId]("translation_id")
     .description("ID of the translation")
@@ -44,16 +47,23 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
   private val elementPath    = collectionPath / translationId
   private val tag            = tagPrefix + " Translations"
 
+  private inline def translationIdentity(
+      parent: MediaResourceID,
+      id: TranslationId
+  ) = TranslationIdentity(mediumType, parent, id)
+
   private def toErrorResponse(
-      err: TranslationServiceError,
+      err: TranslationServiceError
   ): (StatusCode, String) = err match
     case TranslationServiceError.AlreadyExists =>
       (StatusCode.Conflict, "Already exists")
     case TranslationServiceError.NotFound => (StatusCode.NotFound, "Not found")
-    case TranslationServiceError.PermissionDenied      =>
+    case TranslationServiceError.BadRequest       =>
+      (StatusCode.BadRequest, "Bad request")
+    case TranslationServiceError.PermissionDenied =>
       (StatusCode.Forbidden, "Permission denied")
-    case TranslationServiceError.InternalError(reason) =>
-      (StatusCode.InternalServerError, reason)
+    case TranslationServiceError.InternalError    =>
+      (StatusCode.InternalServerError, "Internal error")
     case _ => (StatusCode.InternalServerError, "Unexpected error")
 
   private val getEndpoint = endpoint.get
@@ -64,23 +74,27 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
     .serverLogic { case (mediaId, translationId) =>
-      service.getBy((mediumType, mediaId, translationId)).map {
-        case Some(t) => Right(TranslationResponse.fromDomain(t))
-        case None    => Left(StatusCode.NotFound)
-      }
+      service
+        .getBy(translationIdentity(mediaId, translationId))
+        .map {
+          case Some(t) => Right(TranslationResponse.fromDomain(t))
+          case None    => Left(StatusCode.NotFound)
+        }
     }
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(QueryParams.pagination(16, 127))
+    .in(QueryParams.pagination(pagination.default, pagination.max))
     .out(jsonBody[List[TranslationResponse]])
+    .errorOut(statusCode.and(stringBody))
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
-    .serverLogic { case (mediaId, offset, limit) =>
+    .serverLogic { case (mediaId, pageSize, pageToken) =>
       service
-        .getAll(mediumType, mediaId, offset, limit)
-        .map(l => Right(l.map(TranslationResponse.fromDomain)))
+        .getAll(mediumType, mediaId, pageToken, pageSize)
+        .map(
+          _.leftMap(toErrorResponse).map(_.map(TranslationResponse.fromDomain)))
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -104,9 +118,11 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
     .summary("Updates translation resource with given ID.")
     .tag(tag)
     .serverLogic { user => (mediaId, translationId, tc) =>
-      service.update(user, (mediumType, mediaId, translationId), tc).map {
-        _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
-      }
+      service
+        .update(user, translationIdentity(mediaId, translationId), tc)
+        .map {
+          _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
+        }
     }
 
   private val deleteEndpoint = authOnlyEndpoint.delete
@@ -117,7 +133,7 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
     .tag(tag)
     .serverLogic { user => (mediaId, translationId) =>
       service
-        .delete(user, (mediumType, mediaId, translationId))
+        .delete(user, translationIdentity(mediaId, translationId))
         .map(_.leftMap(toErrorResponse))
     }
 
@@ -126,7 +142,7 @@ private class TranslationsEndpoint[F[_]: AuthService: Async](
     listEndpoint,
     postEndpoint,
     updateEndpoint,
-    deleteEndpoint,
+    deleteEndpoint
   )
 
 end TranslationsEndpoint
