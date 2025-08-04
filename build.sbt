@@ -14,14 +14,6 @@ lazy val root = (project in file("."))
   )
 
 
-scalacOptions ++= Seq(
-  "-deprecation",
-  "-feature",
-  "-unchecked",
-  "-new-syntax",
-  "-rewrite")
-
-
 val http4sVersion     = "0.23.30"
 val circeVersion      = "0.14.14"
 val catsEffectVersion = "3.6.3"
