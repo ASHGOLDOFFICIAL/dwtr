@@ -3,10 +3,11 @@ package domain.model
 
 
 import java.net.URI
+import java.time.Instant
 import java.util.UUID
 
 
-case class TranslationId(value: UUID)      extends AnyVal
+case class TranslationId(uuid: UUID)       extends AnyVal
 case class TranslationTitle(value: String) extends AnyVal
 
 
@@ -15,6 +16,7 @@ case class Translation(
     title: TranslationTitle,
     originalType: MediumType,
     originalId: MediaResourceID,
+    addedAt: Instant,
     links: List[URI]
 )
 

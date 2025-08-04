@@ -22,7 +22,7 @@ object TranslationResponse:
   def fromDomain(domain: Translation): TranslationResponse =
     TranslationResponse(
       name = name(domain),
-      id = domain.id.value,
+      id = domain.id.uuid,
       title = domain.title.value,
       originalType = domain.originalType,
       originalId = domain.originalId.value,
@@ -34,4 +34,4 @@ object TranslationResponse:
   def name(domain: Translation): String =
     val parent: String =
       s"${AudioPlayResponse.collectionIdentifier}/${domain.originalId}"
-    parent + s"/$collectionIdentifier/${domain.id.value}"
+    parent + s"/$collectionIdentifier/${domain.id.uuid}"

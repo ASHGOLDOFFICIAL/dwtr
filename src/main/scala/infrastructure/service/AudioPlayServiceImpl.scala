@@ -91,7 +91,8 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
         id = id,
         title = AudioPlayTitle(ac.title),
         seriesId = ac.seriesId.map(AudioPlaySeriesId(_)),
-        seriesOrder = ac.seriesOrder)
+        seriesOrder = ac.seriesOrder,
+        addedAt = addedAt)
 
   // TODO: Make better
   private given TokenDecoder[(MediaResourceID, Instant)] = token =>

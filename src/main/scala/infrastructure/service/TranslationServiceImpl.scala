@@ -103,7 +103,8 @@ class TranslationServiceImpl[F[_]: Async: Clock](
       title = TranslationTitle(t.title),
       originalType = id.medium,
       originalId = id.parent,
-      links = t.links
+      links = t.links,
+      addedAt = addedAt
     )
 
   // TODO: Make better
@@ -123,7 +124,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
     case (identity, instant) =>
       val raw = s"${identity.medium.ordinal}|" +
         s"${identity.parent.value.toString}|" +
-        s"${identity.id.value.toString}|" +
+        s"${identity.id.uuid.toString}|" +
         s"${instant.toEpochMilli}"
       Try(
         Base64.getUrlEncoder.withoutPadding.encodeToString(
