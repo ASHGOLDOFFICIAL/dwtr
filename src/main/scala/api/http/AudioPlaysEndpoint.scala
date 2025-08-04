@@ -2,7 +2,7 @@ package org.aulune
 package api.http
 
 
-import api.codecs.given
+import api.circe.given
 import api.dto.AudioPlayResponse
 import api.http.Authentication.authOnlyEndpoint
 import domain.model.*

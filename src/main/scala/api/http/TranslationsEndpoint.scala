@@ -3,7 +3,7 @@ package api.http
 
 
 import Config.Pagination
-import api.codecs.given
+import api.circe.given
 import api.dto.TranslationResponse
 import api.http.Authentication.*
 import api.schemes.TranslationSchemes.given
