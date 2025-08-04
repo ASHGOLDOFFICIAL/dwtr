@@ -2,8 +2,8 @@ package org.aulune
 package api.http
 
 
-import domain.model.auth.{AuthError, AuthToken, User}
-import domain.service.AuthService
+import domain.model.auth.{AuthenticationError, AuthenticationToken, User}
+import domain.service.AuthenticationService
 
 import cats.syntax.all.*
 import cats.{Functor, Monad}
@@ -17,18 +17,18 @@ object Authentication:
     .bearer[String]()
     .description("Bearer token identifying the user")
 
-  private def toErrorResponse(err: AuthError): (StatusCode, String) = err match
-    case AuthError.InvalidToken   => (StatusCode.BadRequest, "Invalid token")
-    case AuthError.ExpiredToken   => (StatusCode.Unauthorized, "Expired token")
-    case AuthError.InvalidPayload =>
+  private def toErrorResponse(err: AuthenticationError): (StatusCode, String) = err match
+    case AuthenticationError.InvalidToken   => (StatusCode.BadRequest, "Invalid token")
+    case AuthenticationError.ExpiredToken   => (StatusCode.Unauthorized, "Expired token")
+    case AuthenticationError.InvalidPayload =>
       (StatusCode.Unauthorized, "Invalid payload")
 
-  private def decodeToken[F[_]: AuthService: Functor](token: String) =
-    summon[AuthService[F]]
-      .authenticate(AuthToken(token))
+  private def decodeToken[F[_]: AuthenticationService: Functor](token: String) =
+    summon[AuthenticationService[F]]
+      .authenticate(AuthenticationToken(token))
       .map(_.leftMap(toErrorResponse))
 
-  def authOnlyEndpoint[F[_]: AuthService: Monad]: PartialServerEndpoint[
+  def authOnlyEndpoint[F[_]: AuthenticationService: Monad]: PartialServerEndpoint[
     String,
     User,
     Unit,

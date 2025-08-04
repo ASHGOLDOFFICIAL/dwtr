@@ -2,7 +2,7 @@ package org.aulune
 
 
 import api.http.AudioPlaysEndpoint
-import domain.service.{AuthService, TranslationService}
+import domain.service.{AuthenticationService, TranslationService}
 import infrastructure.jdbc.sqlite
 import infrastructure.service.*
 
@@ -36,8 +36,8 @@ object App extends IOApp.Simple:
       None
     )
 
-    authService <- AuthService.build[IO](config.app.key).toResource
-    given AuthService[IO] = authService
+    authService <- AuthenticationService.build[IO](config.app.key).toResource
+    given AuthenticationService[IO] = authService
 
     translationRepo <-
       sqlite.TranslationRepository.build[IO](transactor).toResource

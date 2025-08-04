@@ -6,7 +6,7 @@ import api.circe.given
 import api.dto.AudioPlayResponse
 import api.http.Authentication.authOnlyEndpoint
 import domain.model.*
-import domain.service.{AudioPlayService, AuthService, TranslationService}
+import domain.service.{AudioPlayService, AuthenticationService, TranslationService}
 
 import cats.Functor
 import cats.effect.Async
@@ -19,7 +19,7 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class AudioPlaysEndpoint[F[_]: AuthService: TranslationService: Async](
+class AudioPlaysEndpoint[F[_]: AuthenticationService: TranslationService: Async](
     pagination: Config.Pagination,
     service: AudioPlayService[F]
 ):

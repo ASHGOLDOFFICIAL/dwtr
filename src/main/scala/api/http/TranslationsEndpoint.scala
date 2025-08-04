@@ -8,7 +8,7 @@ import api.dto.TranslationResponse
 import api.http.Authentication.*
 import api.schemes.TranslationSchemes.given
 import domain.model.*
-import domain.service.{AuthService, TranslationService}
+import domain.service.{AuthenticationService, TranslationService}
 
 import cats.effect.Async
 import cats.syntax.all.*
@@ -23,7 +23,7 @@ import java.net.URI
 
 
 object TranslationsEndpoint:
-  def build[F[_]: AuthService: TranslationService: Async](
+  def build[F[_]: AuthenticationService: TranslationService: Async](
       mediumType: MediumType,
       mountPath: EndpointInput[MediaResourceID],
       tagPrefix: String,
@@ -32,7 +32,7 @@ object TranslationsEndpoint:
     new TranslationsEndpoint[F](pagination, mediumType, mountPath, tagPrefix)
 
 
-private class TranslationsEndpoint[F[_]: AuthService: Async](
+private class TranslationsEndpoint[F[_]: AuthenticationService: Async](
     pagination: Pagination,
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceID],
