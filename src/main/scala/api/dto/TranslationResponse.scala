@@ -29,7 +29,7 @@ object TranslationResponse:
       links = domain.links,
     )
 
-  val collectionIdentifier: String = "translations"
+  inline val collectionIdentifier: "translations" = "translations"
 
   def name(domain: Translation): String =
     val parent: String =

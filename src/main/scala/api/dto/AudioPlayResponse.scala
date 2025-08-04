@@ -25,7 +25,7 @@ object AudioPlayResponse:
     seriesOrder = domain.seriesOrder,
   )
 
-  val collectionIdentifier: String = "audioplays"
+  inline val collectionIdentifier: "audioplays" = "audioplays"
 
   def name(domain: AudioPlay): String =
     s"$collectionIdentifier/${domain.id.value}"
