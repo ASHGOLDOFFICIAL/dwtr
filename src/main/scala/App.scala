@@ -3,7 +3,7 @@ package org.aulune
 
 import api.http.AudioPlaysEndpoint
 import domain.service.{AuthService, TranslationService}
-import infrastructure.memory
+import infrastructure.jdbc.sqlite
 import infrastructure.service.*
 
 import cats.effect.*
@@ -40,7 +40,7 @@ object App extends IOApp.Simple:
     given AuthService[IO] = authService
 
     translationRepo <-
-      memory.TranslationRepository.build[IO].toResource
+      sqlite.TranslationRepository.build[IO](transactor).toResource
     translationPermissions = new TranslationPermissionService[IO]
     translationService     = new TranslationServiceImpl(
       config.app.pagination,
@@ -48,7 +48,7 @@ object App extends IOApp.Simple:
       translationRepo)
     given TranslationService[IO] = translationService
 
-    audioRepo <- memory.AudioPlayRepository.build[IO].toResource
+    audioRepo <- sqlite.AudioPlayRepository.build[IO](transactor).toResource
     audioPermissions = new AudioPlayPermissionService[IO]
     audioService     = new AudioPlayServiceImpl(
       config.app.pagination,
