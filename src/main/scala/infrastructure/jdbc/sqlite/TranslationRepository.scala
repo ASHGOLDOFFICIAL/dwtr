@@ -45,12 +45,12 @@ object TranslationRepository:
   )
   private val createTableSql = s"""
        |CREATE TABLE IF NOT EXISTS $tableName (
-       |  $idC TEXT NOT NULL UNIQUE,
-       |  $titleC TEXT NOT NULL,
+       |  $idC           TEXT    NOT NULL UNIQUE,
+       |  $titleC        TEXT    NOT NULL,
        |  $originalTypeC INTEGER NOT NULL,
-       |  $originalIdC TEXT NOT NULL,
-       |  $linksC TEXT NOT NULL,
-       |  $addedAtC TEXT NOT NULL
+       |  $originalIdC   TEXT    NOT NULL,
+       |  $linksC        TEXT    NOT NULL,
+       |  $addedAtC      TEXT    NOT NULL
        |)
     """.stripMargin
   private val createTable: Fragment = Fragment.const(createTableSql)
