@@ -2,8 +2,6 @@ package org.aulune
 package domain.model.pagination
 
 
-import domain.model.auth.UserValidationError
-
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*
 
@@ -23,11 +21,11 @@ object PaginationParams:
     PaginationValidationError.InvalidPageSize)
 
   private def validatePageToken[A: TokenDecoder](
-      token: Option[String]
-  ): ValidationResult[Option[CursorToken[A]]] = token.traverse { token =>
-    CursorToken(token)
-      .leftMap(_ => PaginationValidationError.InvalidPageToken)
-      .toValidatedNec
+      maybeToken: Option[String]
+  ): ValidationResult[Option[CursorToken[A]]] = maybeToken.traverse { str =>
+    CursorToken
+      .decode(str)
+      .toValidNec(PaginationValidationError.InvalidPageToken)
   }
 
   def apply[A: TokenDecoder](maxPageSize: Int)(

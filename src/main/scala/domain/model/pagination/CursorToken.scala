@@ -5,21 +5,17 @@ package domain.model.pagination
 import cats.data.Validated
 import cats.syntax.all.*
 
-import java.util.Base64
-import scala.util.Try
 
-
-final case class CursorToken[A] private (value: A) extends AnyVal
+opaque type CursorToken[A] = A
 
 
 object CursorToken:
-  def encode[A: TokenEncoder](cursor: CursorToken[A]): Option[String] =
-    summon[TokenEncoder[A]].encode(cursor.value)
-    
-  def decode[A: TokenDecoder](token: String): Option[A] =
-    summon[TokenDecoder[A]].decode(token)
+  def apply[A](elem: A): CursorToken[A] = elem
 
-  def apply[A: TokenDecoder](encoded: String): Validated[Unit, CursorToken[A]] =
-    decode(encoded) match
-      case Some(decoded) => new CursorToken(decoded).valid
-      case None          => ().invalid
+  def decode[A: TokenDecoder](encoded: String): Option[CursorToken[A]] =
+    summon[TokenDecoder[A]].decode(encoded).map(CursorToken.apply)
+
+  extension [A](token: CursorToken[A]) def value: A = token
+
+  extension [A: TokenEncoder](token: CursorToken[A])
+    def encode: Option[String] = summon[TokenEncoder[A]].encode(token)
