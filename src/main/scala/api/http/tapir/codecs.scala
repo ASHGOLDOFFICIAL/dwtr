@@ -1,6 +1,5 @@
 package org.aulune
-package api.tapir
-
+package api.http.tapir
 
 import domain.model.{MediaResourceId, TranslationId}
 

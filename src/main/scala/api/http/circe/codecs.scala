@@ -1,6 +1,5 @@
 package org.aulune
-package api.circe
-
+package api.http.circe
 
 import domain.model
 import domain.model.*

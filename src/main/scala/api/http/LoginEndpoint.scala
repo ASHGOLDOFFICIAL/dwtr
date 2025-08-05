@@ -2,9 +2,9 @@ package org.aulune
 package api.http
 
 
-import api.circe.given
 import api.dto.LoginResponse
-import api.schemes.LoginScheme.given
+import api.http.circe.given
+import api.http.tapir.given
 import domain.model.*
 import domain.model.auth.{Credentials, LoginError}
 import domain.service.AuthenticationService

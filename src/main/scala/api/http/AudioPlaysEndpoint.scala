@@ -4,7 +4,7 @@ package api.http
 
 import api.dto.AudioPlayResponse
 import api.http.Authentication.authOnlyEndpoint
-import api.tapir.given
+import api.http.tapir.given
 import domain.model.*
 import domain.service.{
   AudioPlayService,
