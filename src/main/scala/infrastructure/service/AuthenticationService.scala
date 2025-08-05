@@ -64,7 +64,7 @@ object AuthenticationService:
     ): F[AuthResult[AuthenticatedUser]] =
       for
         claim <- MonadThrow[F].fromTry(
-          JwtCirce.decode(token.value, secretKey, Seq(algo), options = options)
+          JwtCirce.decode(token.string, secretKey, Seq(algo), options = options)
         )
         payloadEither <- TokenPayload.fromString(claim.toJson).pure[F]
         result        <- payloadEither.flatTraverse { payload =>

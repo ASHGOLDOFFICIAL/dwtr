@@ -1,4 +1,10 @@
 package org.aulune
 package domain.model.auth
 
-case class AuthenticationToken(value: String) extends AnyVal
+opaque type AuthenticationToken = String
+
+
+object AuthenticationToken:
+  def apply(token: String): AuthenticationToken = token
+
+  extension (token: AuthenticationToken) def string: String = token

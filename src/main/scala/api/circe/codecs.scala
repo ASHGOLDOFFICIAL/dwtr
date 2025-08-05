@@ -19,7 +19,7 @@ given Decoder[MediumType] = Decoder.decodeInt.emap {
   case other => Left(s"Invalid MediumType: $other")
 }
 
-given Encoder[AuthenticationToken] = Encoder.encodeString.contramap(_.value)
+given Encoder[AuthenticationToken] = Encoder.encodeString.contramap(_.string)
 
 given Decoder[AuthenticationToken] = Decoder.decodeString.map(AuthenticationToken(_))
 
