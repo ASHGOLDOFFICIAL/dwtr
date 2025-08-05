@@ -3,7 +3,7 @@ package domain.service
 
 
 import domain.model.*
-import domain.model.auth.User
+import domain.model.auth.{AuthenticatedUser, User}
 
 
 /** Service managing translations.
@@ -42,7 +42,7 @@ trait TranslationService[F[_]]:
    *  @note user must have [[TranslationServicePermission.Create]] permission.
    */
   def create(
-      user: User,
+      user: AuthenticatedUser,
       tc: TranslationRequest,
       originalType: MediumType,
       originalId: MediaResourceID
@@ -57,7 +57,7 @@ trait TranslationService[F[_]]:
    *  @note user must have [[TranslationServicePermission.Update]] permission.
    */
   def update(
-      user: User,
+      user: AuthenticatedUser,
       id: TranslationIdentity,
       tc: TranslationRequest
   ): F[Either[TranslationServiceError, Translation]]
@@ -70,6 +70,6 @@ trait TranslationService[F[_]]:
    *  @note user must have [[TranslationServicePermission.Delete]] permission.
    */
   def delete(
-      user: User,
+      user: AuthenticatedUser,
       id: TranslationIdentity
   ): F[Either[TranslationServiceError, Unit]]

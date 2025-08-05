@@ -3,8 +3,7 @@ package domain.service
 
 
 import domain.model.*
-import domain.model.auth.User
-import domain.model.pagination.PaginationParams
+import domain.model.auth.{AuthenticatedUser, User}
 
 
 /** Service managing audio plays.
@@ -39,7 +38,7 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[AudioPlayServicePermission.Write]] permission.
    */
   def create(
-      user: User,
+      user: AuthenticatedUser,
       ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]]
 
@@ -52,7 +51,7 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[AudioPlayServicePermission.Write]] permission.
    */
   def update(
-      user: User,
+      user: AuthenticatedUser,
       id: MediaResourceID,
       ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]]
@@ -65,6 +64,6 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[AudioPlayServicePermission.Write]] permission.
    */
   def delete(
-      user: User,
+      user: AuthenticatedUser,
       id: MediaResourceID
   ): F[Either[AudioPlayServiceError, Unit]]

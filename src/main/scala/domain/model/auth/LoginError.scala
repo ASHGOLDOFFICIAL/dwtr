@@ -3,6 +3,6 @@ package domain.model.auth
 
 import scala.util.control.NoStackTrace
 
-
-enum AuthenticationError extends Exception with NoStackTrace:
+enum LoginError extends Exception with NoStackTrace:
+  case UserNotFound
   case InvalidCredentials

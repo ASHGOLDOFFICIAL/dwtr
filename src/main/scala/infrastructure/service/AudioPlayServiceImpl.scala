@@ -4,7 +4,7 @@ package infrastructure.service
 
 import domain.model.*
 import domain.model.AudioPlayServicePermission.Write
-import domain.model.auth.User
+import domain.model.auth.{AuthenticatedUser, User}
 import domain.model.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import domain.repo.{AudioPlayRepository, transform}
 import domain.service.{AudioPlayService, PermissionService}
@@ -39,7 +39,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
     }
 
   override def create(
-      user: User,
+      user: AuthenticatedUser,
       ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]] =
     requirePermission(Write, user) {
@@ -52,7 +52,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
     }
 
   override def update(
-      user: User,
+      user: AuthenticatedUser,
       id: MediaResourceID,
       ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]] =
@@ -63,7 +63,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
     }
 
   override def delete(
-      user: User,
+      user: AuthenticatedUser,
       id: MediaResourceID
   ): F[Either[AudioPlayServiceError, Unit]] = requirePermission(Write, user) {
     repo.delete(id).map(_.leftMap(toAudioPlayError))

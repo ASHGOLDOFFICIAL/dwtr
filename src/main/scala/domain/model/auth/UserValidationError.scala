@@ -5,4 +5,4 @@ import scala.util.control.NoStackTrace
 
 
 enum UserValidationError extends Exception with NoStackTrace:
-  case InvalidId
+  case InvalidUsername

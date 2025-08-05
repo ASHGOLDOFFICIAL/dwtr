@@ -4,7 +4,7 @@ package infrastructure.service
 
 import domain.model.*
 import domain.model.TranslationServicePermission.*
-import domain.model.auth.User
+import domain.model.auth.{AuthenticatedUser, User}
 import domain.model.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import domain.repo.{TranslationRepository, transform}
 import domain.service.{PermissionService, TranslationService}
@@ -43,7 +43,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
     }
 
   override def create(
-      user: User,
+      user: AuthenticatedUser,
       tc: TranslationRequest,
       originalType: MediumType,
       originalId: MediaResourceID
@@ -59,7 +59,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
     }
 
   override def update(
-      user: User,
+      user: AuthenticatedUser,
       id: TranslationIdentity,
       tc: TranslationRequest
   ): F[Either[TranslationServiceError, Translation]] =
@@ -70,7 +70,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
     }
 
   override def delete(
-      user: User,
+      user: AuthenticatedUser,
       id: TranslationIdentity
   ): F[Either[TranslationServiceError, Unit]] =
     requirePermission(Delete, user) {

@@ -4,6 +4,7 @@ package api.circe
 
 import domain.model
 import domain.model.*
+import domain.model.auth.AuthenticationToken
 
 import io.circe.{Decoder, Encoder}
 import org.aulune
@@ -17,6 +18,10 @@ given Decoder[MediumType] = Decoder.decodeInt.emap {
   case 1     => Right(MediumType.AudioPlay)
   case other => Left(s"Invalid MediumType: $other")
 }
+
+given Encoder[AuthenticationToken] = Encoder.encodeString.contramap(_.value)
+
+given Decoder[AuthenticationToken] = Decoder.decodeString.map(AuthenticationToken(_))
 
 given Encoder[TranslationTitle] = Encoder.encodeString.contramap(_.value)
 

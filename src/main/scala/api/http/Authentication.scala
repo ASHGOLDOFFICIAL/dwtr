@@ -2,7 +2,11 @@ package org.aulune
 package api.http
 
 
-import domain.model.auth.{AuthenticationError, AuthenticationToken, User}
+import domain.model.auth.{
+  AuthenticatedUser,
+  AuthenticationError,
+  AuthenticationToken
+}
 import domain.service.AuthenticationService
 
 import cats.syntax.all.*
@@ -18,10 +22,7 @@ object Authentication:
     .description("Bearer token identifying the user")
 
   private def toErrorResponse(err: AuthenticationError): (StatusCode, String) = err match
-    case AuthenticationError.InvalidToken   => (StatusCode.BadRequest, "Invalid token")
-    case AuthenticationError.ExpiredToken   => (StatusCode.Unauthorized, "Expired token")
-    case AuthenticationError.InvalidPayload =>
-      (StatusCode.Unauthorized, "Invalid payload")
+    case AuthenticationError.InvalidCredentials   => (StatusCode.BadRequest, "Invalid token")
 
   private def decodeToken[F[_]: AuthenticationService: Functor](token: String) =
     summon[AuthenticationService[F]]
@@ -30,7 +31,7 @@ object Authentication:
 
   def authOnlyEndpoint[F[_]: AuthenticationService: Monad]: PartialServerEndpoint[
     String,
-    User,
+    AuthenticatedUser,
     Unit,
     (StatusCode, String),
     Unit,
@@ -39,4 +40,4 @@ object Authentication:
   ] = endpoint
     .securityIn(tokenAuth)
     .errorOut(statusCode.and(stringBody))
-    .serverSecurityLogic(token => decodeToken(token).map(_.toEither))
+    .serverSecurityLogic(token => decodeToken(token))

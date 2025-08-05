@@ -4,10 +4,11 @@ package domain.service
 
 import domain.model.auth.*
 
-import cats.data.Validated
-
 
 trait AuthenticationService[F[_]]:
-  type AuthResult[A] = Validated[AuthenticationError, A]
+  type LoginResult[A] = Either[LoginError, A]
+  type AuthResult[A]  = Either[AuthenticationError, A]
 
-  def authenticate(token: AuthenticationToken): F[AuthResult[User]]
+  def login(credentials: Credentials): F[LoginResult[AuthenticationToken]]
+
+  def authenticate(token: AuthenticationToken): F[AuthResult[AuthenticatedUser]]

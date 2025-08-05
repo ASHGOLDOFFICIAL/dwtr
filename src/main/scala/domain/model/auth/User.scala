@@ -2,27 +2,40 @@ package org.aulune
 package domain.model.auth
 
 
-import cats.data.ValidatedNec
+import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*
 
-import java.util.UUID
-import scala.util.{Failure, Success, Try}
 
-
-case class UserId(value: UUID) extends AnyVal
-
-case class User private[auth] (id: UserId, role: Role)
+case class User private[model] (
+    username: String,
+    hashedPassword: String,
+    role: Role
+)
 
 
 object User:
-  private type UserValidationResult[A] = ValidatedNec[UserValidationError, A]
+  private type ValidationResult[A] = ValidatedNec[UserValidationError, A]
 
-  private def validateId(id: String): UserValidationResult[UserId] =
-    Try(UUID.fromString(id)) match
-      case Failure(_)    => UserValidationError.InvalidId.invalidNec
-      case Success(uuid) => UserId(uuid).validNec
+  private val usernameRegex = "^[A-Za-z0-9_-]{8,30}$".r
 
-  def apply(id: String, role: Role): UserValidationResult[User] = (
-    validateId(id),
-    role.validNec[UserValidationError],
-  ).mapN(User.apply)
+  private def validateUsername(username: String): ValidationResult[String] =
+    Validated.condNec(
+      usernameRegex.matches(username),
+      username,
+      UserValidationError.InvalidUsername)
+
+  def apply(
+      username: String,
+      hashedPassword: String,
+      role: Role
+  ): ValidationResult[User] = (
+    validateUsername(username),
+    hashedPassword.validNec,
+    role.validNec
+  ).mapN(new User(_, _, _))
+
+  def unsafeApply(
+      username: String,
+      hashedPassword: String,
+      role: Role
+  ): User = new User(username, hashedPassword, role)

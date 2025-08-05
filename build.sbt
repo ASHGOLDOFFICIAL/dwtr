@@ -24,6 +24,7 @@ val sqliteVersion     = "3.50.3.0"
 val doobieVersion     = "1.0.0-RC9"
 val tapirVersion      = "1.11.40"
 val jwtVersion        = "11.0.2"
+val argon2Version     = "2.12"
 
 resolvers += Resolver.sonatypeCentralSnapshots
 
@@ -63,5 +64,6 @@ libraryDependencies ++= Seq(
   "org.typelevel"         %% "cats-effect"     % catsEffectVersion,
   "ch.qos.logback"         % "logback-classic" % logbackVersion,
   "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
-  "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion
+  "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion,
+  "de.mkammerer"           % "argon2-jvm"      % argon2Version
 )
