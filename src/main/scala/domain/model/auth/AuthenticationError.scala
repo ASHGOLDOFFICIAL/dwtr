@@ -1,8 +1,0 @@
-package org.aulune
-package domain.model.auth
-
-import scala.util.control.NoStackTrace
-
-
-enum AuthenticationError extends Exception with NoStackTrace:
-  case InvalidCredentials

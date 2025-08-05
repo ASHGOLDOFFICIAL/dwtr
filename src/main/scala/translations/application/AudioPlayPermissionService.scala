@@ -1,0 +1,18 @@
+package org.aulune
+package translations.application
+
+import auth.domain.model.Role.Admin
+import auth.domain.model.{AuthenticatedUser, User}
+import shared.service.PermissionService
+
+import cats.Applicative
+import cats.syntax.all.*
+
+
+class AudioPlayPermissionService[F[_]: Applicative]
+    extends PermissionService[F, AudioPlayServicePermission]:
+  override def hasPermission(
+      user: AuthenticatedUser,
+      permission: AudioPlayServicePermission,
+  ): F[Boolean] = permission match
+    case _ => (user.role == Admin).pure[F]

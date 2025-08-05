@@ -1,11 +1,16 @@
 package org.aulune
 
 
-import api.http.{AudioPlaysEndpoint, LoginEndpoint}
-import domain.service.{AuthenticationService, TranslationService}
-import infrastructure.jdbc.sqlite
-import infrastructure.memory
-import infrastructure.service.*
+import auth.api.http.LoginEndpoint
+import auth.application.AuthenticationService
+import auth.infrastructure.memory.UserRepository
+import auth.infrastructure.service.{AuthenticationService, PasswordHasher}
+import translations.api.http.AudioPlaysEndpoint
+import translations.application.*
+import translations.infrastructure.jdbc.sqlite.{
+  AudioPlayRepository,
+  TranslationRepository
+}
 
 import cats.effect.*
 import cats.syntax.all.*
@@ -38,11 +43,11 @@ object App extends IOApp.Simple:
       hasher <- PasswordHasher.build[IO]
       given PasswordHasher[IO] = hasher
 
-      userRepo    <- memory.UserRepository.build[IO]
+      userRepo    <- UserRepository.build[IO]
       authService <- AuthenticationService.build[IO](config.app.key, userRepo)
       given AuthenticationService[IO] = authService
 
-      translationRepo <- sqlite.TranslationRepository.build[IO](transactor)
+      translationRepo <- TranslationRepository.build[IO](transactor)
       translationPermissions = new TranslationPermissionService[IO]
       translationService     = new TranslationServiceImpl(
         config.app.pagination,
@@ -50,7 +55,7 @@ object App extends IOApp.Simple:
         translationRepo)
       given TranslationService[IO] = translationService
 
-      audioRepo <- sqlite.AudioPlayRepository.build[IO](transactor)
+      audioRepo <- AudioPlayRepository.build[IO](transactor)
       audioPermissions = new AudioPlayPermissionService[IO]
       audioService     = new AudioPlayServiceImpl(
         config.app.pagination,
