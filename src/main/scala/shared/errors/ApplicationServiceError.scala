@@ -1,10 +1,10 @@
 package org.aulune
-package translations.application
+package shared.errors
 
 import scala.util.control.NoStackTrace
 
 
-enum TranslationServiceError extends Exception with NoStackTrace:
+enum ApplicationServiceError extends Exception with NoStackTrace:
   case AlreadyExists
   case NotFound
   case BadRequest

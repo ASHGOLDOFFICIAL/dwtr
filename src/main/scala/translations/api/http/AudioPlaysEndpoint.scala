@@ -3,17 +3,13 @@ package translations.api.http
 
 
 import auth.application.AuthenticationService
+import shared.errors.ApplicationServiceError
 import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
-import translations.api.http.TranslationsEndpoint
-import translations.api.http.circe.given
+import shared.toErrorResponse
 import translations.api.http.tapir.given
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
-import translations.application.{
-  AudioPlayService,
-  AudioPlayServiceError,
-  TranslationService
-}
+import translations.application.{AudioPlayService, TranslationService}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.MediumType
 
@@ -39,20 +35,6 @@ class AudioPlaysEndpoint[
   private val collectionPath = AudioPlayResponse.collectionIdentifier
   private val elementPath    = collectionPath / audioPlayId
   private val tag            = "Audio Plays"
-
-  private def toErrorResponse(
-      err: AudioPlayServiceError
-  ): (StatusCode, String) = err match
-    case AudioPlayServiceError.BadRequest =>
-      (StatusCode.BadRequest, "Bad request")
-    case AudioPlayServiceError.AlreadyExists =>
-      (StatusCode.Conflict, "Already exists")
-    case AudioPlayServiceError.NotFound => (StatusCode.NotFound, "Not found")
-    case AudioPlayServiceError.PermissionDenied =>
-      (StatusCode.Forbidden, "Permission denied")
-    case AudioPlayServiceError.InternalError =>
-      (StatusCode.InternalServerError, "Internal error")
-    case _ => (StatusCode.InternalServerError, "Unexpected error")
 
   private val getEndpoint = endpoint.get
     .in(elementPath)

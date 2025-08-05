@@ -3,9 +3,10 @@ package shared.service
 
 
 import auth.domain.model.AuthenticatedUser
+import shared.errors.ApplicationServiceError
 
-import cats.FlatMap
 import cats.syntax.all.*
+import cats.{FlatMap, Monad}
 
 
 trait PermissionService[F[_], P]:
@@ -14,10 +15,23 @@ end PermissionService
 
 
 object PermissionService:
-  def requirePermission[F[_]: FlatMap, P, A](service: PermissionService[F, P])(
+  def requirePermission[F[_]: FlatMap, P, A](
+      required: P,
+      from: AuthenticatedUser
+  )(
       notGranted: => F[A]
-  )(required: P, from: AuthenticatedUser)(onGranted: => F[A]): F[A] =
-    service.hasPermission(from, required).flatMap {
-      case false => notGranted
-      case true  => onGranted
-    }
+  )(onGranted: => F[A])(using
+      service: PermissionService[F, P]
+  ): F[A] = service.hasPermission(from, required).flatMap {
+    case false => notGranted
+    case true  => onGranted
+  }
+
+  def requirePermissionOrDeny[M[_]: Monad, P, A](
+      required: P,
+      from: AuthenticatedUser
+  )(toDo: => M[Either[ApplicationServiceError, A]])(using
+      PermissionService[M, P]
+  ): M[Either[ApplicationServiceError, A]] = requirePermission(required, from) {
+    ApplicationServiceError.PermissionDenied.asLeft[A].pure[M]
+  }(toDo)

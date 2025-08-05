@@ -3,14 +3,16 @@ package translations.application
 
 
 import auth.domain.model.{AuthenticatedUser, User}
+import shared.errors.ApplicationServiceError
 import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import shared.repositories.{RepositoryError, transform}
 import shared.service.PermissionService
+import shared.service.PermissionService.requirePermissionOrDeny
+import shared.toApplicationError
 import translations.application.TranslationServicePermission.*
 import translations.application.dto.TranslationRequest
 import translations.application.{
   TranslationService,
-  TranslationServiceError,
   TranslationServicePermission
 }
 import translations.domain.model.shared.MediaResourceId
@@ -29,8 +31,9 @@ import scala.util.Try
 
 class TranslationServiceImpl[F[_]: Async: Clock](
     pagination: Config.Pagination,
-    permissionService: PermissionService[F, TranslationServicePermission],
     repo: TranslationRepository[F]
+)(using
+    PermissionService[F, TranslationServicePermission]
 ) extends TranslationService[F]:
   override def getBy(id: TranslationIdentity): F[Option[Translation]] =
     repo.get(id)
@@ -40,10 +43,10 @@ class TranslationServiceImpl[F[_]: Async: Clock](
       originalId: MediaResourceId,
       token: Option[String],
       count: Int
-  ): F[Either[TranslationServiceError, List[Translation]]] =
+  ): F[Either[ApplicationServiceError, List[Translation]]] =
     PaginationParams(pagination.max)(count, token) match {
       case Validated.Invalid(_) =>
-        TranslationServiceError.BadRequest.asLeft.pure
+        ApplicationServiceError.BadRequest.asLeft.pure
       case Validated.Valid(params) =>
         val token = params.pageToken.map(_.value)
         for list <- repo.list(token, params.pageSize)
@@ -55,46 +58,34 @@ class TranslationServiceImpl[F[_]: Async: Clock](
       tc: TranslationRequest,
       originalType: MediumType,
       originalId: MediaResourceId
-  ): F[Either[TranslationServiceError, Translation]] =
-    requirePermission(Create, user) {
+  ): F[Either[ApplicationServiceError, Translation]] =
+    requirePermissionOrDeny(Create, user) {
       for
         id <- UUIDGen.randomUUID[F].map(TranslationId(_))
         identity = TranslationIdentity(originalType, originalId, id)
         now <- Clock[F].realTimeInstant
         translation = tc.toDomain(identity, now)
         result <- repo.persist(translation)
-      yield result.leftMap(toTranslationError)
+      yield result.leftMap(toApplicationError)
     }
 
   override def update(
       user: AuthenticatedUser,
       id: TranslationIdentity,
       tc: TranslationRequest
-  ): F[Either[TranslationServiceError, Translation]] =
-    requirePermission(Update, user) {
+  ): F[Either[ApplicationServiceError, Translation]] =
+    requirePermissionOrDeny(Update, user) {
       repo
         .transform(id, old => tc.update(old))
-        .map(_.leftMap(toTranslationError))
+        .map(_.leftMap(toApplicationError))
     }
 
   override def delete(
       user: AuthenticatedUser,
       id: TranslationIdentity
-  ): F[Either[TranslationServiceError, Unit]] =
-    requirePermission(Delete, user) {
-      repo.delete(id).map(_.leftMap(toTranslationError))
-    }
-
-  private def toTranslationError(
-      err: RepositoryError
-  ): TranslationServiceError = err match
-    case RepositoryError.AlreadyExists  => TranslationServiceError.AlreadyExists
-    case RepositoryError.NotFound       => TranslationServiceError.NotFound
-    case RepositoryError.StorageFailure => TranslationServiceError.InternalError
-
-  private def requirePermission[A] =
-    PermissionService.requirePermission(permissionService) {
-      TranslationServiceError.PermissionDenied.asLeft[A].pure[F]
+  ): F[Either[ApplicationServiceError, Unit]] =
+    requirePermissionOrDeny(Delete, user) {
+      repo.delete(id).map(_.leftMap(toApplicationError))
     }
 
   extension (t: TranslationRequest)

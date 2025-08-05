@@ -4,12 +4,14 @@ package translations.api.http
 
 import Config.Pagination
 import auth.application.AuthenticationService
+import shared.errors.ApplicationServiceError
 import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
+import shared.toErrorResponse
 import translations.api.http.circe.given
 import translations.api.http.tapir.given
+import translations.application.TranslationService
 import translations.application.dto.{TranslationRequest, TranslationResponse}
-import translations.application.{TranslationService, TranslationServiceError}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{
   MediumType,
@@ -58,20 +60,6 @@ private class TranslationsEndpoint[F[_]: AuthenticationService: Async](
       parent: MediaResourceId,
       id: TranslationId
   ) = TranslationIdentity(mediumType, parent, id)
-
-  private def toErrorResponse(
-      err: TranslationServiceError
-  ): (StatusCode, String) = err match
-    case TranslationServiceError.AlreadyExists =>
-      (StatusCode.Conflict, "Already exists")
-    case TranslationServiceError.NotFound => (StatusCode.NotFound, "Not found")
-    case TranslationServiceError.BadRequest =>
-      (StatusCode.BadRequest, "Bad request")
-    case TranslationServiceError.PermissionDenied =>
-      (StatusCode.Forbidden, "Permission denied")
-    case TranslationServiceError.InternalError =>
-      (StatusCode.InternalServerError, "Internal error")
-    case _ => (StatusCode.InternalServerError, "Unexpected error")
 
   private val getEndpoint = endpoint.get
     .in(elementPath)

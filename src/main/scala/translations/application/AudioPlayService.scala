@@ -1,7 +1,9 @@
 package org.aulune
 package translations.application
 
-import auth.domain.model.{AuthenticatedUser, User}
+
+import auth.domain.model.AuthenticatedUser
+import shared.errors.ApplicationServiceError
 import translations.application.dto.AudioPlayRequest
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.MediaResourceId
@@ -29,7 +31,7 @@ trait AudioPlayService[F[_]]:
   def getAll(
       token: Option[String],
       count: Int
-  ): F[Either[AudioPlayServiceError, List[AudioPlay]]]
+  ): F[Either[ApplicationServiceError, List[AudioPlay]]]
 
   /** Create new audio play.
    *
@@ -41,7 +43,7 @@ trait AudioPlayService[F[_]]:
   def create(
       user: AuthenticatedUser,
       ac: AudioPlayRequest
-  ): F[Either[AudioPlayServiceError, AudioPlay]]
+  ): F[Either[ApplicationServiceError, AudioPlay]]
 
   /** Updates existing audio play.
    *
@@ -55,7 +57,7 @@ trait AudioPlayService[F[_]]:
       user: AuthenticatedUser,
       id: MediaResourceId,
       ac: AudioPlayRequest
-  ): F[Either[AudioPlayServiceError, AudioPlay]]
+  ): F[Either[ApplicationServiceError, AudioPlay]]
 
   /** Deletes existing audio play.
    *
@@ -67,4 +69,4 @@ trait AudioPlayService[F[_]]:
   def delete(
       user: AuthenticatedUser,
       id: MediaResourceId
-  ): F[Either[AudioPlayServiceError, Unit]]
+  ): F[Either[ApplicationServiceError, Unit]]

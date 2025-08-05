@@ -3,9 +3,11 @@ package translations.application
 
 
 import auth.domain.model.AuthenticatedUser
+import shared.errors.ApplicationServiceError
 import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import shared.repositories.{RepositoryError, transform}
 import shared.service.PermissionService
+import shared.service.PermissionService.requirePermissionOrDeny
 import translations.application.AudioPlayServicePermission.Write
 import translations.application.dto.AudioPlayRequest
 import translations.domain.model.audioplay.{
@@ -28,17 +30,19 @@ import scala.util.Try
 
 class AudioPlayServiceImpl[F[_]: Async: Clock](
     pagination: Config.Pagination,
-    permissionService: PermissionService[F, AudioPlayServicePermission],
     repo: AudioPlayRepository[F]
+)(using
+    PermissionService[F, AudioPlayServicePermission]
 ) extends AudioPlayService[F]:
   override def getBy(id: MediaResourceId): F[Option[AudioPlay]] = repo.get(id)
 
   override def getAll(
       token: Option[String],
       count: Int
-  ): F[Either[AudioPlayServiceError, List[AudioPlay]]] =
+  ): F[Either[ApplicationServiceError, List[AudioPlay]]] =
     PaginationParams(pagination.max)(count, token) match {
-      case Validated.Invalid(_) => AudioPlayServiceError.BadRequest.asLeft.pure
+      case Validated.Invalid(_) =>
+        ApplicationServiceError.BadRequest.asLeft.pure
       case Validated.Valid(params) =>
         val token = params.pageToken.map(_.value)
         for list <- repo.list(token, params.pageSize)
@@ -48,8 +52,8 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
   override def create(
       user: AuthenticatedUser,
       ac: AudioPlayRequest
-  ): F[Either[AudioPlayServiceError, AudioPlay]] =
-    requirePermission(Write, user) {
+  ): F[Either[ApplicationServiceError, AudioPlay]] =
+    requirePermissionOrDeny(Write, user) {
       for
         id  <- UUIDGen.randomUUID[F].map(MediaResourceId(_))
         now <- Clock[F].realTimeInstant
@@ -62,8 +66,8 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
       user: AuthenticatedUser,
       id: MediaResourceId,
       ac: AudioPlayRequest
-  ): F[Either[AudioPlayServiceError, AudioPlay]] =
-    requirePermission(Write, user) {
+  ): F[Either[ApplicationServiceError, AudioPlay]] =
+    requirePermissionOrDeny(Write, user) {
       repo
         .transform(id, old => ac.update(old))
         .map(_.leftMap(toAudioPlayError))
@@ -72,20 +76,18 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
   override def delete(
       user: AuthenticatedUser,
       id: MediaResourceId
-  ): F[Either[AudioPlayServiceError, Unit]] = requirePermission(Write, user) {
-    repo.delete(id).map(_.leftMap(toAudioPlayError))
-  }
-
-  private def toAudioPlayError(err: RepositoryError): AudioPlayServiceError =
-    err match
-      case RepositoryError.AlreadyExists  => AudioPlayServiceError.AlreadyExists
-      case RepositoryError.NotFound       => AudioPlayServiceError.NotFound
-      case RepositoryError.StorageFailure => AudioPlayServiceError.InternalError
-
-  private def requirePermission[A] =
-    PermissionService.requirePermission(permissionService) {
-      AudioPlayServiceError.PermissionDenied.asLeft[A].pure[F]
+  ): F[Either[ApplicationServiceError, Unit]] =
+    requirePermissionOrDeny(Write, user) {
+      repo.delete(id).map(_.leftMap(toAudioPlayError))
     }
+
+  private def toAudioPlayError(err: RepositoryError): ApplicationServiceError =
+    err match
+      case RepositoryError.AlreadyExists =>
+        ApplicationServiceError.AlreadyExists
+      case RepositoryError.NotFound       => ApplicationServiceError.NotFound
+      case RepositoryError.StorageFailure =>
+        ApplicationServiceError.InternalError
 
   extension (ac: AudioPlayRequest)
     private def update(old: AudioPlay): AudioPlay = old.copy(

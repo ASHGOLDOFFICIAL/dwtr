@@ -3,11 +3,9 @@ package translations.application
 
 
 import auth.domain.model.{AuthenticatedUser, User}
+import shared.errors.ApplicationServiceError
+import translations.application.TranslationServicePermission
 import translations.application.dto.TranslationRequest
-import translations.application.{
-  TranslationServiceError,
-  TranslationServicePermission
-}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{
   MediumType,
@@ -41,7 +39,7 @@ trait TranslationService[F[_]]:
       originalId: MediaResourceId,
       token: Option[String],
       count: Int
-  ): F[Either[TranslationServiceError, List[Translation]]]
+  ): F[Either[ApplicationServiceError, List[Translation]]]
 
   /** Create new translation.
    *
@@ -57,7 +55,7 @@ trait TranslationService[F[_]]:
       tc: TranslationRequest,
       originalType: MediumType,
       originalId: MediaResourceId
-  ): F[Either[TranslationServiceError, Translation]]
+  ): F[Either[ApplicationServiceError, Translation]]
 
   /** Updates existing translation.
    *
@@ -71,7 +69,7 @@ trait TranslationService[F[_]]:
       user: AuthenticatedUser,
       id: TranslationIdentity,
       tc: TranslationRequest
-  ): F[Either[TranslationServiceError, Translation]]
+  ): F[Either[ApplicationServiceError, Translation]]
 
   /** Deletes existing translation.
    *
@@ -83,4 +81,4 @@ trait TranslationService[F[_]]:
   def delete(
       user: AuthenticatedUser,
       id: TranslationIdentity
-  ): F[Either[TranslationServiceError, Unit]]
+  ): F[Either[ApplicationServiceError, Unit]]

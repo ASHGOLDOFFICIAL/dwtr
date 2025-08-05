@@ -5,6 +5,7 @@ import auth.api.http.LoginEndpoint
 import auth.application.AuthenticationService
 import auth.infrastructure.memory.UserRepository
 import auth.infrastructure.service.{AuthenticationService, PasswordHasher}
+import shared.service.PermissionService
 import translations.api.http.AudioPlaysEndpoint
 import translations.application.*
 import translations.infrastructure.jdbc.sqlite.{
@@ -48,18 +49,17 @@ object App extends IOApp.Simple:
       given AuthenticationService[IO] = authService
 
       translationRepo <- TranslationRepository.build[IO](transactor)
-      translationPermissions = new TranslationPermissionService[IO]
-      translationService     = new TranslationServiceImpl(
-        config.app.pagination,
-        translationPermissions,
-        translationRepo)
+      given PermissionService[IO, TranslationServicePermission] =
+        new TranslationPermissionService[IO]
+      translationService =
+        new TranslationServiceImpl(config.app.pagination, translationRepo)
       given TranslationService[IO] = translationService
 
       audioRepo <- AudioPlayRepository.build[IO](transactor)
-      audioPermissions = new AudioPlayPermissionService[IO]
-      audioService     = new AudioPlayServiceImpl(
+      given PermissionService[IO, AudioPlayServicePermission] =
+        new AudioPlayPermissionService[IO]
+      audioService = new AudioPlayServiceImpl(
         config.app.pagination,
-        audioPermissions,
         audioRepo
       )
 
