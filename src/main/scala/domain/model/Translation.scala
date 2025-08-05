@@ -7,10 +7,6 @@ import java.time.Instant
 import java.util.UUID
 
 
-case class TranslationId(uuid: UUID)       extends AnyVal
-case class TranslationTitle(value: String) extends AnyVal
-
-
 case class Translation(
     id: TranslationId,
     title: TranslationTitle,

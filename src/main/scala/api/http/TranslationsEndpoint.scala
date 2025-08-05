@@ -7,6 +7,7 @@ import api.circe.given
 import api.dto.TranslationResponse
 import api.http.Authentication.*
 import api.schemes.TranslationSchemes.given
+import api.tapir.given
 import domain.model.*
 import domain.service.{AuthenticationService, TranslationService}
 

@@ -10,7 +10,7 @@ import java.util.UUID
 
 case class TranslationResponse(
     name: String,
-    id: UUID,
+    id: String,
     title: String,
     originalType: MediumType,
     originalId: String,
@@ -22,7 +22,7 @@ object TranslationResponse:
   def fromDomain(domain: Translation): TranslationResponse =
     TranslationResponse(
       name = name(domain),
-      id = domain.id.uuid,
+      id = domain.id.string,
       title = domain.title.value,
       originalType = domain.originalType,
       originalId = domain.originalId.string,
@@ -34,4 +34,4 @@ object TranslationResponse:
   def name(domain: Translation): String =
     val parent: String =
       s"${AudioPlayResponse.collectionIdentifier}/${domain.originalId}"
-    parent + s"/$collectionIdentifier/${domain.id.uuid}"
+    parent + s"/$collectionIdentifier/${domain.id.string}"

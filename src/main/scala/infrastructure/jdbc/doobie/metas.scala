@@ -27,7 +27,7 @@ given Meta[Instant] = Meta[String].imap(Instant.parse)(_.toString)
 
 
 given Meta[TranslationId] =
-  Meta[String].imap(s => TranslationId(UUID.fromString(s)))(_.uuid.toString)
+  Meta[String].imap(TranslationId.unsafeApply)(_.string)
 
 
 given Meta[TranslationTitle] = Meta[String].imap(TranslationTitle(_))(_.value)

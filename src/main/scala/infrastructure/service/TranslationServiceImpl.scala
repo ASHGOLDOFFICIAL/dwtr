@@ -124,7 +124,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
     case (identity, instant) =>
       val raw = s"${identity.medium.ordinal}|" +
         s"${identity.parent.string}|" +
-        s"${identity.id.uuid.toString}|" +
+        s"${identity.id.string}|" +
         s"${instant.toEpochMilli}"
       Try(
         Base64.getUrlEncoder.withoutPadding.encodeToString(
