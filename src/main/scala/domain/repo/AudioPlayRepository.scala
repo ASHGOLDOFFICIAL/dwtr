@@ -2,7 +2,7 @@ package org.aulune
 package domain.repo
 
 
-import domain.model.{AudioPlay, MediaResourceID}
+import domain.model.{AudioPlay, MediaResourceId}
 
 import java.time.Instant
 
@@ -11,5 +11,5 @@ trait AudioPlayRepository[F[_]]
     extends GenericRepository[
       F,
       AudioPlay,
-      MediaResourceID,
-      (MediaResourceID, Instant)]
+      MediaResourceId,
+      (MediaResourceId, Instant)]

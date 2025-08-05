@@ -22,19 +22,19 @@ import scala.util.Try
 class TranslationServiceImpl[F[_]: Async: Clock](
     pagination: Config.Pagination,
     permissionService: PermissionService[F, TranslationServicePermission],
-    repo: TranslationRepository[F],
+    repo: TranslationRepository[F]
 ) extends TranslationService[F]:
   override def getBy(id: TranslationIdentity): F[Option[Translation]] =
     repo.get(id)
 
   override def getAll(
       originalType: MediumType,
-      originalId: MediaResourceID,
+      originalId: MediaResourceId,
       token: Option[String],
       count: Int
   ): F[Either[TranslationServiceError, List[Translation]]] =
     PaginationParams(pagination.max)(count, token) match {
-      case Validated.Invalid(_)    =>
+      case Validated.Invalid(_) =>
         TranslationServiceError.BadRequest.asLeft.pure
       case Validated.Valid(params) =>
         val token = params.pageToken.map(_.value)
@@ -46,7 +46,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
       user: AuthenticatedUser,
       tc: TranslationRequest,
       originalType: MediumType,
-      originalId: MediaResourceID
+      originalId: MediaResourceId
   ): F[Either[TranslationServiceError, Translation]] =
     requirePermission(Create, user) {
       for
@@ -113,7 +113,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
       val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
       val Array(mediaStr, parentStr, idStr, timeStr) = raw.split('|')
       val media    = MediumType.fromOrdinal(mediaStr.toInt)
-      val parent   = MediaResourceID(UUID.fromString(parentStr))
+      val parent   = MediaResourceId.unsafeApply(parentStr)
       val id       = TranslationId(UUID.fromString(idStr))
       val instant  = Instant.ofEpochMilli(timeStr.toLong)
       val identity = TranslationIdentity(media, parent, id)
@@ -123,7 +123,7 @@ class TranslationServiceImpl[F[_]: Async: Clock](
   private given TokenEncoder[(TranslationIdentity, Instant)] =
     case (identity, instant) =>
       val raw = s"${identity.medium.ordinal}|" +
-        s"${identity.parent.value.toString}|" +
+        s"${identity.parent.string}|" +
         s"${identity.id.uuid.toString}|" +
         s"${instant.toEpochMilli}"
       Try(

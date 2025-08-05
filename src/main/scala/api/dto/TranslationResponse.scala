@@ -2,7 +2,7 @@ package org.aulune
 package api.dto
 
 
-import domain.model.{MediumType, Translation}
+import domain.model.{MediumType, Translation, MediaResourceId}
 
 import java.net.URI
 import java.util.UUID
@@ -13,7 +13,7 @@ case class TranslationResponse(
     id: UUID,
     title: String,
     originalType: MediumType,
-    originalId: UUID,
+    originalId: String,
     links: List[URI],
 )
 
@@ -25,7 +25,7 @@ object TranslationResponse:
       id = domain.id.uuid,
       title = domain.title.value,
       originalType = domain.originalType,
-      originalId = domain.originalId.value,
+      originalId = domain.originalId.string,
       links = domain.links,
     )
 

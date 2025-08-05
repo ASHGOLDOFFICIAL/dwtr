@@ -2,14 +2,14 @@ package org.aulune
 package api.dto
 
 
-import domain.model.AudioPlay
+import domain.model.{AudioPlay, MediaResourceId}
 
 import java.util.UUID
 
 
 case class AudioPlayResponse(
     name: String,
-    id: UUID,
+    id: String,
     title: String,
     seriesId: Option[Long],
     seriesOrder: Option[Int],
@@ -19,7 +19,7 @@ case class AudioPlayResponse(
 object AudioPlayResponse:
   def fromDomain(domain: AudioPlay): AudioPlayResponse = AudioPlayResponse(
     name = name(domain),
-    id = domain.id.value,
+    id = domain.id.string,
     title = domain.title.value,
     seriesId = domain.seriesId.map(_.value),
     seriesOrder = domain.seriesOrder,
@@ -28,4 +28,4 @@ object AudioPlayResponse:
   inline val collectionIdentifier: "audioplays" = "audioplays"
 
   def name(domain: AudioPlay): String =
-    s"$collectionIdentifier/${domain.id.value}"
+    s"$collectionIdentifier/${domain.id}"

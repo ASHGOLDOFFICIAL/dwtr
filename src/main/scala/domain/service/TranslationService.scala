@@ -27,7 +27,7 @@ trait TranslationService[F[_]]:
    */
   def getAll(
       originalType: MediumType,
-      originalId: MediaResourceID,
+      originalId: MediaResourceId,
       token: Option[String],
       count: Int
   ): F[Either[TranslationServiceError, List[Translation]]]
@@ -45,7 +45,7 @@ trait TranslationService[F[_]]:
       user: AuthenticatedUser,
       tc: TranslationRequest,
       originalType: MediumType,
-      originalId: MediaResourceID
+      originalId: MediaResourceId
   ): F[Either[TranslationServiceError, Translation]]
 
   /** Updates existing translation.

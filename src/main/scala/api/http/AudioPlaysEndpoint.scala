@@ -2,13 +2,16 @@ package org.aulune
 package api.http
 
 
-import api.circe.given
 import api.dto.AudioPlayResponse
 import api.http.Authentication.authOnlyEndpoint
+import api.tapir.given
 import domain.model.*
-import domain.service.{AudioPlayService, AuthenticationService, TranslationService}
+import domain.service.{
+  AudioPlayService,
+  AuthenticationService,
+  TranslationService
+}
 
-import cats.Functor
 import cats.effect.Async
 import cats.syntax.all.*
 import io.circe.generic.auto.*
@@ -19,11 +22,13 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class AudioPlaysEndpoint[F[_]: AuthenticationService: TranslationService: Async](
+class AudioPlaysEndpoint[
+    F[_]: AuthenticationService: TranslationService: Async
+](
     pagination: Config.Pagination,
     service: AudioPlayService[F]
 ):
-  private val audioPlayId = path[MediaResourceID]("audio_play_id")
+  private val audioPlayId = path[MediaResourceId]("audio_play_id")
     .description("ID of the audio play")
 
   private val collectionPath = AudioPlayResponse.collectionIdentifier
@@ -33,14 +38,14 @@ class AudioPlaysEndpoint[F[_]: AuthenticationService: TranslationService: Async]
   private def toErrorResponse(
       err: AudioPlayServiceError
   ): (StatusCode, String) = err match
-    case AudioPlayServiceError.BadRequest    =>
+    case AudioPlayServiceError.BadRequest =>
       (StatusCode.BadRequest, "Bad request")
     case AudioPlayServiceError.AlreadyExists =>
       (StatusCode.Conflict, "Already exists")
     case AudioPlayServiceError.NotFound => (StatusCode.NotFound, "Not found")
     case AudioPlayServiceError.PermissionDenied =>
       (StatusCode.Forbidden, "Permission denied")
-    case AudioPlayServiceError.InternalError    =>
+    case AudioPlayServiceError.InternalError =>
       (StatusCode.InternalServerError, "Internal error")
     case _ => (StatusCode.InternalServerError, "Unexpected error")
 

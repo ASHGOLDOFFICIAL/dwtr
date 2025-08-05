@@ -24,7 +24,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
     permissionService: PermissionService[F, AudioPlayServicePermission],
     repo: AudioPlayRepository[F]
 ) extends AudioPlayService[F]:
-  override def getBy(id: MediaResourceID): F[Option[AudioPlay]] = repo.get(id)
+  override def getBy(id: MediaResourceId): F[Option[AudioPlay]] = repo.get(id)
 
   override def getAll(
       token: Option[String],
@@ -44,7 +44,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
   ): F[Either[AudioPlayServiceError, AudioPlay]] =
     requirePermission(Write, user) {
       for
-        id  <- UUIDGen.randomUUID[F].map(MediaResourceID(_))
+        id  <- UUIDGen.randomUUID[F].map(MediaResourceId(_))
         now <- Clock[F].realTimeInstant
         audio = ac.toDomain(id, now)
         result <- repo.persist(audio)
@@ -53,7 +53,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
 
   override def update(
       user: AuthenticatedUser,
-      id: MediaResourceID,
+      id: MediaResourceId,
       ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]] =
     requirePermission(Write, user) {
@@ -64,7 +64,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
 
   override def delete(
       user: AuthenticatedUser,
-      id: MediaResourceID
+      id: MediaResourceId
   ): F[Either[AudioPlayServiceError, Unit]] = requirePermission(Write, user) {
     repo.delete(id).map(_.leftMap(toAudioPlayError))
   }
@@ -86,7 +86,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
       seriesId = ac.seriesId.map(AudioPlaySeriesId(_)),
       seriesOrder = ac.seriesOrder)
 
-    private def toDomain(id: MediaResourceID, addedAt: Instant): AudioPlay =
+    private def toDomain(id: MediaResourceId, addedAt: Instant): AudioPlay =
       AudioPlay(
         id = id,
         title = AudioPlayTitle(ac.title),
@@ -95,18 +95,18 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
         addedAt = addedAt)
 
   // TODO: Make better
-  private given TokenDecoder[(MediaResourceID, Instant)] = token =>
+  private given TokenDecoder[(MediaResourceId, Instant)] = token =>
     Try {
       val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
       val Array(idStr, timeStr) = raw.split('|')
-      val id                    = MediaResourceID(UUID.fromString(idStr))
+      val id                    = MediaResourceId(UUID.fromString(idStr))
       val instant               = Instant.ofEpochMilli(timeStr.toLong)
       (id, instant)
     }.toOption
 
-  private given TokenEncoder[(MediaResourceID, Instant)] =
+  private given TokenEncoder[(MediaResourceId, Instant)] =
     case (id, instant) =>
-      val raw = s"${id.value.toString}|" +
+      val raw = s"${id.string}|" +
         s"${instant.toEpochMilli}"
       Try(
         Base64.getUrlEncoder.withoutPadding.encodeToString(

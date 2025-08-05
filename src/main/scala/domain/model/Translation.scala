@@ -15,7 +15,7 @@ case class Translation(
     id: TranslationId,
     title: TranslationTitle,
     originalType: MediumType,
-    originalId: MediaResourceID,
+    originalId: MediaResourceId,
     addedAt: Instant,
     links: List[URI]
 )
@@ -23,6 +23,6 @@ case class Translation(
 
 case class TranslationIdentity(
     medium: MediumType,
-    parent: MediaResourceID,
+    parent: MediaResourceId,
     id: TranslationId
 )

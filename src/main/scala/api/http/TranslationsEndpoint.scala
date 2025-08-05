@@ -25,7 +25,7 @@ import java.net.URI
 object TranslationsEndpoint:
   def build[F[_]: AuthenticationService: TranslationService: Async](
       mediumType: MediumType,
-      mountPath: EndpointInput[MediaResourceID],
+      mountPath: EndpointInput[MediaResourceId],
       tagPrefix: String,
       pagination: Pagination
   ): TranslationsEndpoint[F] =
@@ -35,7 +35,7 @@ object TranslationsEndpoint:
 private class TranslationsEndpoint[F[_]: AuthenticationService: Async](
     pagination: Pagination,
     mediumType: MediumType,
-    rootPath: EndpointInput[MediaResourceID],
+    rootPath: EndpointInput[MediaResourceId],
     tagPrefix: String
 )(using
     service: TranslationService[F]
@@ -48,7 +48,7 @@ private class TranslationsEndpoint[F[_]: AuthenticationService: Async](
   private val tag            = tagPrefix + " Translations"
 
   private inline def translationIdentity(
-      parent: MediaResourceID,
+      parent: MediaResourceId,
       id: TranslationId
   ) = TranslationIdentity(mediumType, parent, id)
 
@@ -58,11 +58,11 @@ private class TranslationsEndpoint[F[_]: AuthenticationService: Async](
     case TranslationServiceError.AlreadyExists =>
       (StatusCode.Conflict, "Already exists")
     case TranslationServiceError.NotFound => (StatusCode.NotFound, "Not found")
-    case TranslationServiceError.BadRequest       =>
+    case TranslationServiceError.BadRequest =>
       (StatusCode.BadRequest, "Bad request")
     case TranslationServiceError.PermissionDenied =>
       (StatusCode.Forbidden, "Permission denied")
-    case TranslationServiceError.InternalError    =>
+    case TranslationServiceError.InternalError =>
       (StatusCode.InternalServerError, "Internal error")
     case _ => (StatusCode.InternalServerError, "Unexpected error")
 

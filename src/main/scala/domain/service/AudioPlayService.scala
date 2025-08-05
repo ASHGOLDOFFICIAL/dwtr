@@ -16,7 +16,7 @@ trait AudioPlayService[F[_]]:
    *  @param id audio play identity
    *  @return requested audio play if found
    */
-  def getBy(id: MediaResourceID): F[Option[AudioPlay]]
+  def getBy(id: MediaResourceId): F[Option[AudioPlay]]
 
   /** Get all audio plays.
    *
@@ -52,7 +52,7 @@ trait AudioPlayService[F[_]]:
    */
   def update(
       user: AuthenticatedUser,
-      id: MediaResourceID,
+      id: MediaResourceId,
       ac: AudioPlayRequest
   ): F[Either[AudioPlayServiceError, AudioPlay]]
 
@@ -65,5 +65,5 @@ trait AudioPlayService[F[_]]:
    */
   def delete(
       user: AuthenticatedUser,
-      id: MediaResourceID
+      id: MediaResourceId
   ): F[Either[AudioPlayServiceError, Unit]]

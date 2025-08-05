@@ -5,9 +5,9 @@ import java.time.Instant
 
 
 case class AudioPlay(
-    id: MediaResourceID,
+    id: MediaResourceId,
     title: AudioPlayTitle,
     seriesId: Option[AudioPlaySeriesId],
     seriesOrder: Option[Int],
-    addedAt: Instant,
+    addedAt: Instant
 )

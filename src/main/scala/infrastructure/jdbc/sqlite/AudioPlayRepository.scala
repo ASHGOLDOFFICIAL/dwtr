@@ -51,7 +51,7 @@ object AudioPlayRepository:
   private class AudioPlayRepositoryInterpreter[F[_]: MonadCancelThrow](
       transactor: Transactor[F]
   ) extends AudioPlayRepository[F]:
-    override def contains(id: MediaResourceID): F[Boolean] = selectF
+    override def contains(id: MediaResourceId): F[Boolean] = selectF
       .existsF(
         selectF(tableName)("1")
           .whereF(idC, fr"= $id"))
@@ -75,7 +75,7 @@ object AudioPlayRepository:
         case Left(e)  => RepositoryError.StorageFailure.asLeft
       }
 
-    override def get(id: MediaResourceID): F[Option[AudioPlay]] = selectF(
+    override def get(id: MediaResourceId): F[Option[AudioPlay]] = selectF(
       tableName)(columns: _*)
       .whereF(idC, fr"= $id")
       .query[AudioPlay]
@@ -83,7 +83,7 @@ object AudioPlayRepository:
       .transact(transactor)
 
     override def list(
-        startWith: Option[(MediaResourceID, Instant)],
+        startWith: Option[(MediaResourceId, Instant)],
         count: Int
     ): F[List[AudioPlay]] = {
       val base = selectF(tableName)(columns: _*)
@@ -113,7 +113,7 @@ object AudioPlayRepository:
       }
       .handleErrorWith(_ => RepositoryError.StorageFailure.asLeft.pure[F])
 
-    override def delete(id: MediaResourceID): F[Either[RepositoryError, Unit]] =
+    override def delete(id: MediaResourceId): F[Either[RepositoryError, Unit]] =
       deleteF(tableName)
         .whereF(idC, fr"= $id")
         .update

@@ -15,8 +15,8 @@ given Meta[MediumType] = Meta[Int].imap { case 1 => MediumType.AudioPlay } {
 }
 
 
-given Meta[MediaResourceID] =
-  Meta[String].imap(s => MediaResourceID(UUID.fromString(s)))(_.value.toString)
+given Meta[MediaResourceId] =
+  Meta[String].imap(MediaResourceId.unsafeApply)(_.string)
 
 
 given Meta[AudioPlayTitle] = Meta[String].imap(AudioPlayTitle(_))(_.value)
