@@ -3,8 +3,6 @@ package domain.model
 
 import java.time.Instant
 
-case class AudioPlayTitle(value: String) extends AnyVal
-
 
 case class AudioPlay(
     id: MediaResourceID,
