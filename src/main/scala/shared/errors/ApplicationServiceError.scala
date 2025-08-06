@@ -4,7 +4,7 @@ package shared.errors
 import scala.util.control.NoStackTrace
 
 
-enum ApplicationServiceError extends Exception with NoStackTrace:
+enum ApplicationServiceError extends NoStackTrace:
   case AlreadyExists
   case NotFound
   case BadRequest

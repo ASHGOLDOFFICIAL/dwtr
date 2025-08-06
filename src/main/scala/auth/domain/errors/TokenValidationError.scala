@@ -4,7 +4,7 @@ package auth.domain.errors
 import scala.util.control.NoStackTrace
 
 
-enum TokenValidationError extends Exception with NoStackTrace:
+enum TokenValidationError extends NoStackTrace:
   case Expired
   case ExpirationTooFar
   case InvalidPayload

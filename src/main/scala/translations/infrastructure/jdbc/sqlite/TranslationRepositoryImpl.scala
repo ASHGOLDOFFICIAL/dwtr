@@ -3,7 +3,6 @@ package translations.infrastructure.jdbc.sqlite
 
 
 import shared.infrastructure.doobie.*
-import shared.repositories.RepositoryError
 import translations.domain.model.translation.{Translation, TranslationIdentity}
 import translations.domain.repositories.TranslationRepository
 import translations.infrastructure.jdbc.doobie.given
@@ -15,6 +14,7 @@ import doobie.implicits.*
 import io.circe.*
 import io.circe.parser.*
 import io.circe.syntax.*
+import org.aulune.shared.errors.RepositoryError
 
 import java.net.URI
 import java.time.Instant

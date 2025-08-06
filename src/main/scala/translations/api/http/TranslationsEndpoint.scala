@@ -4,10 +4,9 @@ package translations.api.http
 
 import Config.Pagination
 import auth.application.AuthenticationService
-import shared.errors.ApplicationServiceError
+import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
-import shared.toErrorResponse
 import translations.api.http.circe.given
 import translations.api.http.tapir.given
 import translations.application.TranslationService

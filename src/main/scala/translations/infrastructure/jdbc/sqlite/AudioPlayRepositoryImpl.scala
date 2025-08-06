@@ -3,7 +3,6 @@ package translations.infrastructure.jdbc.sqlite
 
 
 import shared.infrastructure.doobie.*
-import shared.repositories.RepositoryError
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.repositories.AudioPlayRepository
@@ -13,6 +12,7 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
 import doobie.*
 import doobie.implicits.*
+import org.aulune.shared.errors.RepositoryError
 
 import java.time.Instant
 

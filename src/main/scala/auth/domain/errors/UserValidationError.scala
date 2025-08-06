@@ -4,5 +4,5 @@ package auth.domain.errors
 import scala.util.control.NoStackTrace
 
 
-enum UserValidationError extends Exception with NoStackTrace:
+enum UserValidationError extends NoStackTrace:
   case InvalidUsername

@@ -2,11 +2,12 @@ package org.aulune
 package shared.infrastructure.repositories.memory
 
 
-import shared.repositories.{EntityIdentity, GenericRepository, RepositoryError}
+import shared.repositories.{EntityIdentity, GenericRepository}
 
 import cats.Applicative
 import cats.effect.Ref
 import cats.syntax.all.*
+import org.aulune.shared.errors.RepositoryError
 
 
 class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](

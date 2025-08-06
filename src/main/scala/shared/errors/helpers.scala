@@ -1,9 +1,7 @@
 package org.aulune
-package shared
+package shared.errors
 
-
-import shared.errors.ApplicationServiceError
-import shared.repositories.RepositoryError
+import shared.errors.{ApplicationServiceError, RepositoryError}
 
 import org.aulune
 import sttp.model.StatusCode

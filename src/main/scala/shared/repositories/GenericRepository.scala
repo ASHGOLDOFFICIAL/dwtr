@@ -3,6 +3,7 @@ package shared.repositories
 
 import cats.Monad
 import cats.syntax.all.*
+import org.aulune.shared.errors.RepositoryError
 
 
 /** Repository with basic CRUD operations.
