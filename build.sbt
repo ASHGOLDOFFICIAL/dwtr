@@ -57,7 +57,9 @@ libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-core",
   "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
   "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
-  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"
+  "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs",
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui",
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle",
 ).map(_ % tapirVersion)
 
 

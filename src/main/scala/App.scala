@@ -29,12 +29,16 @@ import doobie.Transactor
 import org.http4s.HttpRoutes
 import org.http4s.ember.server.*
 import org.http4s.implicits.*
+import org.http4s.server.Router
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
+import sttp.apispec.openapi.Server
+import sttp.apispec.openapi.circe.yaml.*
+import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import sttp.tapir.swagger.SwaggerUI
 
 
 object App extends IOApp.Simple:
@@ -43,11 +47,11 @@ object App extends IOApp.Simple:
   override def run: IO[Unit] =
     val config     = ConfigSource.defaultReference.loadOrThrow[Config]
     val transactor = Transactor.fromDriverManager[IO](
-      classOf[org.sqlite.JDBC].getName,
-      config.sqlite.uri,
-      config.sqlite.user,
-      config.sqlite.password,
-      None,
+      driver = classOf[org.sqlite.JDBC].getName,
+      url = config.sqlite.uri,
+      user = config.sqlite.user,
+      password = config.sqlite.password,
+      logHandler = None,
     )
 
     for
@@ -81,20 +85,33 @@ object App extends IOApp.Simple:
         .default[IO]
         .withHost(config.app.host)
         .withPort(config.app.port)
-        .withHttpApp(routes(config, endpoints).orNotFound)
+        .withHttpApp(makeRoutes(List("v1"), endpoints, config).orNotFound)
         .build
         .use(_ => IO.never)
     yield ()
 
-  private def routes(
+  private def makeRoutes[F[_]: Async](
+      mountPoint: List[String],
+      endpoints: List[ServerEndpoint[Any, F]],
       config: Config,
-      endpoints: List[ServerEndpoint[Any, IO]],
   ) =
-    val docsEndpoints = SwaggerInterpreter()
-      .fromServerEndpoints[IO](endpoints, config.app.name, config.app.version)
+    val appRoutes  = Http4sServerInterpreter[F]().toRoutes(endpoints)
+    val docsRoutes = makeSwaggerRoutes(mountPoint, endpoints, config)
+    Router("/" + mountPoint.mkString("/") -> (appRoutes <+> docsRoutes))
 
-    val appRoutes = Http4sServerInterpreter[IO]().toRoutes(endpoints)
-    val docsRoutes: HttpRoutes[IO] =
-      Http4sServerInterpreter[IO]().toRoutes(docsEndpoints)
-
-    appRoutes <+> docsRoutes
+  private def makeSwaggerRoutes[F[_]: Async](
+      mountPoint: List[String],
+      endpoints: List[ServerEndpoint[Any, F]],
+      config: Config,
+  ) =
+    val openApiYaml = OpenAPIDocsInterpreter()
+      .toOpenAPI(
+        endpoints.map(_.endpoint),
+        title = config.app.name,
+        version = config.app.version,
+      )
+      .addServer(Server(
+        s"http://localhost:${config.app.port.value}/${mountPoint.mkString("/")}")
+        .description("Local development server"))
+      .toYaml
+    Http4sServerInterpreter[F]().toRoutes(SwaggerUI[F](openApiYaml))
