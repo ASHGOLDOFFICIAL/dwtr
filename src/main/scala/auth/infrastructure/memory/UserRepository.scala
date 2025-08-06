@@ -1,6 +1,7 @@
 package org.aulune
 package auth.infrastructure.memory
 
+
 import auth.domain.model.Role.Admin
 import auth.domain.model.User
 import auth.domain.repositories.UserRepository
@@ -8,13 +9,13 @@ import shared.infrastructure.repositories.memory.GenericRepositoryImpl
 import shared.repositories.EntityIdentity
 
 import cats.Applicative
-import cats.effect.{Async, Ref}
+import cats.effect.{Ref, Sync}
 import cats.syntax.all.*
 
 
 // TODO: Fix hardcode
 object UserRepository:
-  def build[F[_]: Async]: F[UserRepository[F]] = Ref
+  def build[F[_]: Sync]: F[UserRepository[F]] = Ref
     .of[F, Map[String, User]](
       Map.from(
         Seq(
