@@ -20,8 +20,8 @@ import translations.domain.model.translation.*
 import translations.domain.repositories.TranslationRepository
 
 import cats.data.Validated
-import cats.effect.std.UUIDGen
-import cats.effect.{Async, Clock, Ref}
+import cats.effect.std.{SecureRandom, UUIDGen}
+import cats.effect.{Clock, Sync}
 import cats.syntax.all.*
 
 import java.time.Instant
@@ -29,12 +29,14 @@ import java.util.{Base64, UUID}
 import scala.util.Try
 
 
-class TranslationServiceImpl[F[_]: Async: Clock](
-    pagination: Config.Pagination,
-    repo: TranslationRepository[F]
+class TranslationServiceImpl[F[_]: SecureRandom: Sync](
+    pagination: Config.Pagination
 )(using
+    TranslationRepository[F],
     PermissionService[F, TranslationServicePermission]
 ) extends TranslationService[F]:
+  private val repo = summon[TranslationRepository[F]]
+
   override def getBy(id: TranslationIdentity): F[Option[Translation]] =
     repo.get(id)
 

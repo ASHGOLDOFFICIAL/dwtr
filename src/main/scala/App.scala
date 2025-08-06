@@ -3,6 +3,7 @@ package org.aulune
 
 import auth.api.http.LoginEndpoint
 import auth.application.AuthenticationService
+import auth.domain.repositories.UserRepository
 import auth.domain.service.PasswordHashingService
 import auth.infrastructure.memory.UserRepository
 import auth.infrastructure.service.{
@@ -12,6 +13,10 @@ import auth.infrastructure.service.{
 import shared.service.PermissionService
 import translations.api.http.AudioPlaysEndpoint
 import translations.application.*
+import translations.domain.repositories.{
+  AudioPlayRepository,
+  TranslationRepository
+}
 import translations.infrastructure.jdbc.sqlite.{
   AudioPlayRepository,
   TranslationRepository
@@ -45,32 +50,29 @@ object App extends IOApp.Simple:
     )
 
     for
-      hasher <- Argon2iPasswordHashingService.build[IO]
-      given PasswordHashingService[IO] = hasher
+      given PasswordHashingService[IO] <-
+        Argon2iPasswordHashingService.build[IO]
 
-      userRepo    <- UserRepository.build[IO]
-      authService <-
-        AuthenticationServiceImpl.build[IO](config.app.key, userRepo)
-      given AuthenticationService[IO] = authService
+      given UserRepository[IO]        <- UserRepository.build[IO]
+      given AuthenticationService[IO] <-
+        AuthenticationServiceImpl.build[IO](config.app.key)
 
-      translationRepo <- TranslationRepository.build[IO](transactor)
       given PermissionService[IO, TranslationServicePermission] =
         new TranslationPermissionService[IO]
-      translationService =
-        new TranslationServiceImpl(config.app.pagination, translationRepo)
-      given TranslationService[IO] = translationService
 
-      audioRepo <- AudioPlayRepository.build[IO](transactor)
+      given TranslationRepository[IO] <-
+        TranslationRepository.build[IO](transactor)
+      given TranslationService[IO] =
+        new TranslationServiceImpl[IO](config.app.pagination)
+
+      given AudioPlayRepository[IO] <- AudioPlayRepository.build[IO](transactor)
       given PermissionService[IO, AudioPlayServicePermission] =
         new AudioPlayPermissionService[IO]
-      audioService = new AudioPlayServiceImpl(
-        config.app.pagination,
-        audioRepo
-      )
+      given AudioPlayService[IO] =
+        new AudioPlayServiceImpl[IO](config.app.pagination)
 
-      audioPlayEndpoints = new AudioPlaysEndpoint[IO](
-        config.app.pagination,
-        audioService).endpoints
+      audioPlayEndpoints =
+        new AudioPlaysEndpoint[IO](config.app.pagination).endpoints
       endpoints = audioPlayEndpoints :+ new LoginEndpoint[IO].loginEndpoint
 
       _ <- EmberServerBuilder

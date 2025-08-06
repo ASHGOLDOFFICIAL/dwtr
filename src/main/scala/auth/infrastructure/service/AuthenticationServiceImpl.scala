@@ -27,22 +27,20 @@ import scala.concurrent.duration.*
 
 
 object AuthenticationServiceImpl:
-  def build[F[_]: MonadThrow: Clock: PasswordHashingService](
-      key: String,
-      repo: UserRepository[F]
-  ): F[AuthenticationService[F]] = new AuthenticationServiceInterpreter[F](
-    repo,
-    JwtAlgorithm.HS256,
-    key,
-    24.hours).pure
+  def build[F[_]: MonadThrow: Clock](key: String)(using
+      PasswordHashingService[F],
+      UserRepository[F]
+  ): F[AuthenticationService[F]] =
+    new AuthenticationServiceInterpreter[F](JwtAlgorithm.HS256, key, 24.hours)
+      .pure[F]
 
-  private class AuthenticationServiceInterpreter[F[
-      _
-  ]: MonadThrow: Clock: PasswordHashingService](
-      repo: UserRepository[F],
+  private class AuthenticationServiceInterpreter[F[_]: MonadThrow: Clock](
       algo: JwtHmacAlgorithm,
       secretKey: String,
       maxExpiration: FiniteDuration
+  )(using
+      repo: UserRepository[F],
+      hasher: PasswordHashingService[F]
   ) extends AuthenticationService[F]:
 
     // Note that disabling expiration check allows invalid dates

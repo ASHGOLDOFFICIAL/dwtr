@@ -19,7 +19,7 @@ import translations.domain.model.translation.{
   TranslationIdentity
 }
 
-import cats.effect.Async
+import cats.Functor
 import cats.syntax.all.*
 import io.circe.generic.auto.*
 import sttp.model.StatusCode
@@ -32,23 +32,29 @@ import java.net.URI
 
 
 object TranslationsEndpoint:
-  def build[F[_]: AuthenticationService: TranslationService: Async](
+  def build[F[_]: Functor](
       mediumType: MediumType,
       mountPath: EndpointInput[MediaResourceId],
       tagPrefix: String,
       pagination: Pagination
+  )(using
+      TranslationService[F],
+      AuthenticationService[F]
   ): TranslationsEndpoint[F] =
     new TranslationsEndpoint[F](pagination, mediumType, mountPath, tagPrefix)
 
 
-private class TranslationsEndpoint[F[_]: AuthenticationService: Async](
+private class TranslationsEndpoint[F[_]: Functor](
     pagination: Pagination,
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceId],
     tagPrefix: String
 )(using
-    service: TranslationService[F]
+    TranslationService[F],
+    AuthenticationService[F]
 ):
+  private val service = TranslationService[F]
+
   private val translationId = path[TranslationId]("translation_id")
     .description("ID of the translation")
 

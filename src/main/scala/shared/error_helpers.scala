@@ -21,7 +21,6 @@ def toErrorResponse(
     (StatusCode.Forbidden, "Permission denied")
   case ApplicationServiceError.InternalError =>
     (StatusCode.InternalServerError, "Internal error")
-  case _ => (StatusCode.InternalServerError, "Unexpected error")
 
 
 def toApplicationError(

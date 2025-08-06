@@ -13,7 +13,7 @@ import translations.application.{AudioPlayService, TranslationService}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.MediumType
 
-import cats.effect.Async
+import cats.Functor
 import cats.syntax.all.*
 import io.circe.generic.auto.*
 import sttp.model.StatusCode
@@ -23,12 +23,13 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class AudioPlaysEndpoint[
-    F[_]: AuthenticationService: TranslationService: Async
-](
-    pagination: Config.Pagination,
-    service: AudioPlayService[F]
+class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(using
+    AudioPlayService[F],
+    AuthenticationService[F],
+    TranslationService[F]
 ):
+  private val service = AudioPlayService[F]
+
   private val audioPlayId = path[MediaResourceId]("audio_play_id")
     .description("ID of the audio play")
 

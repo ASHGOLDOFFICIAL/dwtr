@@ -19,8 +19,8 @@ import translations.domain.model.shared.MediaResourceId
 import translations.domain.repositories.AudioPlayRepository
 
 import cats.data.Validated
-import cats.effect.std.UUIDGen
-import cats.effect.{Async, Clock}
+import cats.effect.std.{SecureRandom, UUIDGen}
+import cats.effect.{Clock, Sync}
 import cats.syntax.all.*
 
 import java.time.Instant
@@ -28,12 +28,14 @@ import java.util.{Base64, UUID}
 import scala.util.Try
 
 
-class AudioPlayServiceImpl[F[_]: Async: Clock](
-    pagination: Config.Pagination,
-    repo: AudioPlayRepository[F]
+class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
+    pagination: Config.Pagination
 )(using
+    AudioPlayRepository[F],
     PermissionService[F, AudioPlayServicePermission]
 ) extends AudioPlayService[F]:
+  private val repo = summon[AudioPlayRepository[F]]
+
   override def getBy(id: MediaResourceId): F[Option[AudioPlay]] = repo.get(id)
 
   override def getAll(
@@ -42,7 +44,7 @@ class AudioPlayServiceImpl[F[_]: Async: Clock](
   ): F[Either[ApplicationServiceError, List[AudioPlay]]] =
     PaginationParams(pagination.max)(count, token) match {
       case Validated.Invalid(_) =>
-        ApplicationServiceError.BadRequest.asLeft.pure
+        ApplicationServiceError.BadRequest.asLeft.pure[F]
       case Validated.Valid(params) =>
         val token = params.pageToken.map(_.value)
         for list <- repo.list(token, params.pageSize)

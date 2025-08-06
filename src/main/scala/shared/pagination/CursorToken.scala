@@ -1,9 +1,6 @@
 package org.aulune
 package shared.pagination
 
-import cats.data.Validated
-import cats.syntax.all.*
-
 
 opaque type CursorToken[A] = A
 
