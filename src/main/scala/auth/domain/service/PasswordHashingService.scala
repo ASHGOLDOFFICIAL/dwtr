@@ -19,3 +19,9 @@ trait PasswordHashingService[F[_]]:
    *  @return `true` if passwords match, otherwise `false`
    */
   def verifyPassword(password: String, hashed: String): F[Boolean]
+
+
+object PasswordHashingService:
+  /** Alias for `summon` */
+  transparent inline def apply[F[_]: PasswordHashingService]
+      : PasswordHashingService[F] = summon

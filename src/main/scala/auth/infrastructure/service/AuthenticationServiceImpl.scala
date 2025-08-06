@@ -26,7 +26,7 @@ import java.time.Instant
 import scala.concurrent.duration.*
 
 
-object AuthenticationService:
+object AuthenticationServiceImpl:
   def build[F[_]: MonadThrow: Clock: PasswordHashingService](
       key: String,
       repo: UserRepository[F]
@@ -56,7 +56,7 @@ object AuthenticationService:
     ): F[LoginResult[AuthenticationToken]] =
       repo.get(credentials.username).flatMap {
         case None       => LoginError.UserNotFound.asLeft.pure[F]
-        case Some(user) => summon[PasswordHashingService[F]]
+        case Some(user) => PasswordHashingService[F]
             .verifyPassword(credentials.password, user.hashedPassword)
             .flatMap { result =>
               if result then generateToken(user).map(_.asRight)

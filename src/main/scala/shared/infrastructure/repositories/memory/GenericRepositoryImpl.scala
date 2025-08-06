@@ -1,7 +1,7 @@
 package org.aulune
 package shared.infrastructure.repositories.memory
 
-import shared.pagination.PaginationParams
+
 import shared.repositories.{EntityIdentity, GenericRepository, RepositoryError}
 
 import cats.Applicative
@@ -14,7 +14,7 @@ class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](
 )(using
     EntityIdentity[E, Id]
 ) extends GenericRepository[F, E, Id, Token]:
-  extension (elem: E) private def id: Id = summon[EntityIdentity[E, Id]].identity(elem)
+  extension (elem: E) private def id: Id = EntityIdentity[E, Id].identity(elem)
 
   override def contains(id: Id): F[Boolean] = mapRef.get.map(_.contains(id))
 
@@ -41,6 +41,6 @@ class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](
       then (currentMap.updated(elem.id, elem), Right(elem))
       else (currentMap, Left(RepositoryError.NotFound))
   }
-  
+
   override def delete(id: Id): F[Either[RepositoryError, Unit]] =
     mapRef.modify(prev => (prev.removed(id), Right(())))

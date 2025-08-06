@@ -70,3 +70,9 @@ trait AudioPlayService[F[_]]:
       user: AuthenticatedUser,
       id: MediaResourceId
   ): F[Either[ApplicationServiceError, Unit]]
+
+
+object AudioPlayService:
+  /** Alias for `summon` */
+  transparent inline def apply[F[_]: AudioPlayService]: AudioPlayService[F] =
+    summon

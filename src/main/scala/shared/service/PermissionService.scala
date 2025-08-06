@@ -15,6 +15,11 @@ end PermissionService
 
 
 object PermissionService:
+  /** Alias for `summon` */
+  transparent inline def apply[F[_], P](using
+      inline ev: PermissionService[F, P]
+  ): PermissionService[F, P] = ev
+
   def requirePermission[F[_]: FlatMap, P, A](
       required: P,
       from: AuthenticatedUser

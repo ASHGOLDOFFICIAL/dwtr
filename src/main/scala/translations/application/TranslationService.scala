@@ -2,9 +2,8 @@ package org.aulune
 package translations.application
 
 
-import auth.domain.model.{AuthenticatedUser, User}
+import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
-import translations.application.TranslationServicePermission
 import translations.application.dto.TranslationRequest
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{
@@ -82,3 +81,9 @@ trait TranslationService[F[_]]:
       user: AuthenticatedUser,
       id: TranslationIdentity
   ): F[Either[ApplicationServiceError, Unit]]
+
+
+object TranslationService:
+  /** Alias for `summon` */
+  transparent inline def apply[F[_]: TranslationService]
+      : TranslationService[F] = summon

@@ -7,7 +7,7 @@ import auth.domain.service.PasswordHashingService
 import auth.infrastructure.memory.UserRepository
 import auth.infrastructure.service.{
   Argon2iPasswordHashingService,
-  AuthenticationService
+  AuthenticationServiceImpl
 }
 import shared.service.PermissionService
 import translations.api.http.AudioPlaysEndpoint
@@ -49,7 +49,8 @@ object App extends IOApp.Simple:
       given PasswordHashingService[IO] = hasher
 
       userRepo    <- UserRepository.build[IO]
-      authService <- AuthenticationService.build[IO](config.app.key, userRepo)
+      authService <-
+        AuthenticationServiceImpl.build[IO](config.app.key, userRepo)
       given AuthenticationService[IO] = authService
 
       translationRepo <- TranslationRepository.build[IO](transactor)
