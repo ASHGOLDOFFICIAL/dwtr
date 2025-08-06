@@ -1,10 +1,10 @@
 package org.aulune
-package translations.application
+package translations.infrastructure.service
+
 
 import auth.domain.model.AuthenticatedUser
 import auth.domain.model.Role.Admin
 import shared.service.PermissionService
-import translations.application.TranslationServicePermission
 
 import cats.Applicative
 import cats.syntax.all.*
@@ -14,6 +14,6 @@ class TranslationPermissionService[F[_]: Applicative]
     extends PermissionService[F, TranslationServicePermission]:
   override def hasPermission(
       user: AuthenticatedUser,
-      permission: TranslationServicePermission,
+      permission: TranslationServicePermission
   ): F[Boolean] = permission match
     case _ => (user.role == Admin).pure[F]

@@ -7,6 +7,7 @@ import shared.errors.ApplicationServiceError
 import translations.application.dto.AudioPlayRequest
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.MediaResourceId
+import translations.infrastructure.service.AudioPlayServicePermission
 
 
 /** Service managing audio plays.

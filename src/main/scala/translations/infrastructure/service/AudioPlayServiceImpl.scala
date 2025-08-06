@@ -1,5 +1,5 @@
 package org.aulune
-package translations.application
+package translations.infrastructure.service
 
 
 import auth.domain.model.AuthenticatedUser
@@ -8,7 +8,7 @@ import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import shared.repositories.{RepositoryError, transform}
 import shared.service.PermissionService
 import shared.service.PermissionService.requirePermissionOrDeny
-import translations.application.AudioPlayServicePermission.Write
+import translations.application.AudioPlayService
 import translations.application.dto.AudioPlayRequest
 import translations.domain.model.audioplay.{
   AudioPlay,
@@ -17,6 +17,7 @@ import translations.domain.model.audioplay.{
 }
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.repositories.AudioPlayRepository
+import translations.infrastructure.service.AudioPlayServicePermission.Write
 
 import cats.data.Validated
 import cats.effect.std.{SecureRandom, UUIDGen}

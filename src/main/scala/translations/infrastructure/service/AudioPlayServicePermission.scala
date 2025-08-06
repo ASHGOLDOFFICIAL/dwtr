@@ -1,5 +1,6 @@
 package org.aulune
-package translations.application
+package translations.infrastructure.service
+
 
 enum AudioPlayServicePermission:
   case Write

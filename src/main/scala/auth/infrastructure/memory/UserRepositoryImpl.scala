@@ -14,7 +14,7 @@ import cats.syntax.all.*
 
 
 // TODO: Fix hardcode
-object UserRepository:
+object UserRepositoryImpl:
   def build[F[_]: Sync]: F[UserRepository[F]] = Ref
     .of[F, Map[String, User]](
       Map.from(

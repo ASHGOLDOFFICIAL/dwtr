@@ -11,6 +11,7 @@ import translations.domain.model.translation.{
   Translation,
   TranslationIdentity
 }
+import translations.infrastructure.service.TranslationServicePermission
 
 
 /** Service managing translations.

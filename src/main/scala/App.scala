@@ -5,7 +5,7 @@ import auth.api.http.LoginEndpoint
 import auth.application.AuthenticationService
 import auth.domain.repositories.UserRepository
 import auth.domain.service.PasswordHashingService
-import auth.infrastructure.memory.UserRepository
+import auth.infrastructure.memory.UserRepositoryImpl
 import auth.infrastructure.service.{
   Argon2iPasswordHashingService,
   AuthenticationServiceImpl
@@ -18,9 +18,10 @@ import translations.domain.repositories.{
   TranslationRepository
 }
 import translations.infrastructure.jdbc.sqlite.{
-  AudioPlayRepository,
-  TranslationRepository
+  AudioPlayRepositoryImpl,
+  TranslationRepositoryImpl
 }
+import translations.infrastructure.service.*
 
 import cats.effect.*
 import cats.syntax.all.*
@@ -53,7 +54,7 @@ object App extends IOApp.Simple:
       given PasswordHashingService[IO] <-
         Argon2iPasswordHashingService.build[IO]
 
-      given UserRepository[IO]        <- UserRepository.build[IO]
+      given UserRepository[IO]        <- UserRepositoryImpl.build[IO]
       given AuthenticationService[IO] <-
         AuthenticationServiceImpl.build[IO](config.app.key)
 
@@ -61,11 +62,12 @@ object App extends IOApp.Simple:
         new TranslationPermissionService[IO]
 
       given TranslationRepository[IO] <-
-        TranslationRepository.build[IO](transactor)
+        TranslationRepositoryImpl.build[IO](transactor)
       given TranslationService[IO] =
         new TranslationServiceImpl[IO](config.app.pagination)
 
-      given AudioPlayRepository[IO] <- AudioPlayRepository.build[IO](transactor)
+      given AudioPlayRepository[IO] <-
+        AudioPlayRepositoryImpl.build[IO](transactor)
       given PermissionService[IO, AudioPlayServicePermission] =
         new AudioPlayPermissionService[IO]
       given AudioPlayService[IO] =
