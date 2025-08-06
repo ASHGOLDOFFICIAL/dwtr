@@ -53,7 +53,7 @@ object AuthenticationServiceImpl:
 
     override def login(
         credentials: Credentials
-    ): F[LoginResult[AuthenticationToken]] =
+    ): F[Either[LoginError, AuthenticationToken]] =
       repo.get(credentials.username).flatMap {
         case None       => LoginError.UserNotFound.asLeft.pure[F]
         case Some(user) => PasswordHashingService[F]
@@ -66,8 +66,9 @@ object AuthenticationServiceImpl:
 
     override def authenticate(
         token: AuthenticationToken
-    ): F[AuthResult[AuthenticatedUser]] = authenticateWithErrors(token).attempt
-      .map(_.leftMap(_ => AuthenticationError.InvalidCredentials))
+    ): F[Either[AuthenticationError, AuthenticatedUser]] =
+      authenticateWithErrors(token).attempt
+        .map(_.leftMap(_ => AuthenticationError.InvalidCredentials))
 
     private def authenticateWithErrors(
         token: AuthenticationToken

@@ -8,8 +8,8 @@ import auth.domain.model.{AuthenticatedUser, AuthenticationToken, Credentials}
 
 
 trait AuthenticationService[F[_]]:
-  type LoginResult[A] = Either[LoginError, A]
-  type AuthResult[A]  = Either[AuthenticationError, A]
+  private type LoginResult[A] = Either[LoginError, A]
+  private type AuthResult[A]  = Either[AuthenticationError, A]
 
   def login(credentials: Credentials): F[LoginResult[AuthenticationToken]]
 
