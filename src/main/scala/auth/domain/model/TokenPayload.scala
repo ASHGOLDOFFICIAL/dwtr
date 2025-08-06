@@ -3,7 +3,6 @@ package auth.domain.model
 
 
 import auth.domain.errors.TokenValidationError
-import auth.domain.model.{AuthenticatedUser, Role, TokenPayload, User}
 
 import cats.syntax.all.*
 import io.circe.parser.decode

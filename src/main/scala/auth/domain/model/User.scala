@@ -3,7 +3,6 @@ package auth.domain.model
 
 
 import auth.domain.errors.UserValidationError
-import auth.domain.model.User
 
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*
