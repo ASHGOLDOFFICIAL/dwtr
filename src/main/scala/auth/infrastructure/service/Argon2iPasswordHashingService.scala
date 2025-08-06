@@ -19,7 +19,7 @@ object Argon2iPasswordHashingService:
     .map(argon2 => new Argon2iPasswordHashingService[F](argon2))
 
 
-private class Argon2iPasswordHashingService[F[_]: Sync](argon2i: Argon2)
+private final class Argon2iPasswordHashingService[F[_]: Sync](argon2i: Argon2)
     extends PasswordHashingService[F]:
   override def hashPassword(password: String): F[String] =
     passwordResource(password)

@@ -28,7 +28,7 @@ object UserRepositoryImpl:
 
   private given EntityIdentity[User, String] = u => u.username
 
-  private class UserRepositoryImpl[F[_]: Applicative](
+  private final class UserRepositoryImpl[F[_]: Applicative](
       mapRef: Ref[F, Map[String, User]]
   ) extends GenericRepositoryImpl[F, User, String, Nothing](mapRef)
       with UserRepository[F]

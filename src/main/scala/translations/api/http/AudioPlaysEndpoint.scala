@@ -23,7 +23,7 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(using
+final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(using
     AudioPlayService[F],
     AuthenticationService[F],
     TranslationService[F]

@@ -2,7 +2,7 @@ package org.aulune
 package auth.domain.model
 
 
-case class AuthenticatedUser(
+final case class AuthenticatedUser(
     username: String,
     role: Role
 )

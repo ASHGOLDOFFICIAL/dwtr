@@ -29,7 +29,7 @@ import java.util.{Base64, UUID}
 import scala.util.Try
 
 
-class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
+final class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
     pagination: Config.Pagination
 )(using
     AudioPlayRepository[F],

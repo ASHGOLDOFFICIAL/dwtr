@@ -44,7 +44,7 @@ object TranslationsEndpoint:
     new TranslationsEndpoint[F](pagination, mediumType, mountPath, tagPrefix)
 
 
-private class TranslationsEndpoint[F[_]: Functor](
+private final class TranslationsEndpoint[F[_]: Functor](
     pagination: Pagination,
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceId],

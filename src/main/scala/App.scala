@@ -8,7 +8,7 @@ import auth.domain.service.PasswordHashingService
 import auth.infrastructure.memory.UserRepositoryImpl
 import auth.infrastructure.service.{
   Argon2iPasswordHashingService,
-  AuthenticationServiceImpl
+  TokenAuthenticationService
 }
 import shared.service.PermissionService
 import translations.api.http.AudioPlaysEndpoint
@@ -56,7 +56,7 @@ object App extends IOApp.Simple:
 
       given UserRepository[IO]        <- UserRepositoryImpl.build[IO]
       given AuthenticationService[IO] <-
-        AuthenticationServiceImpl.build[IO](config.app.key)
+        TokenAuthenticationService.build[IO](config.app.key)
 
       given PermissionService[IO, TranslationServicePermission] =
         new TranslationPermissionService[IO]

@@ -19,7 +19,7 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class LoginEndpoint[F[_]: Functor](using
+final class LoginEndpoint[F[_]: Functor](using
     service: AuthenticationService[F]
 ):
   private val tag = "Auth"

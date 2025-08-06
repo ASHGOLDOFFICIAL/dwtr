@@ -26,7 +26,7 @@ import java.util.{Base64, UUID}
 import scala.util.Try
 
 
-class TranslationServiceImpl[F[_]: SecureRandom: Sync](
+final class TranslationServiceImpl[F[_]: SecureRandom: Sync](
     pagination: Config.Pagination
 )(using
     TranslationRepository[F],

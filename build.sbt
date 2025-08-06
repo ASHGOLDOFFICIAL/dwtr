@@ -24,6 +24,7 @@ scalacOptions ++= Seq(
 
 val argon2Version     = "2.12"
 val catsEffectVersion = "3.6.3"
+val catsVersion       = "2.13.0"
 val circeVersion      = "0.14.14"
 val doobieVersion     = "1.0.0-RC9"
 val http4sVersion     = "0.23.30"
@@ -69,6 +70,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "org.xerial"     % "sqlite-jdbc"    % sqliteVersion,
   "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+  "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
   "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
   "ch.qos.logback"         % "logback-classic" % logbackVersion,
   "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,

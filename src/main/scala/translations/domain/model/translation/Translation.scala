@@ -7,7 +7,7 @@ import java.net.URI
 import java.time.Instant
 
 
-case class Translation(
+final case class Translation(
     id: TranslationId,
     title: TranslationTitle,
     originalType: MediumType,
@@ -17,7 +17,7 @@ case class Translation(
 )
 
 
-case class TranslationIdentity(
+final case class TranslationIdentity(
     medium: MediumType,
     parent: MediaResourceId,
     id: TranslationId

@@ -6,7 +6,7 @@ import translations.domain.model.shared.MediaResourceId
 import java.time.Instant
 
 
-case class AudioPlay(
+final case class AudioPlay(
     id: MediaResourceId,
     title: AudioPlayTitle,
     seriesId: Option[AudioPlaySeriesId],

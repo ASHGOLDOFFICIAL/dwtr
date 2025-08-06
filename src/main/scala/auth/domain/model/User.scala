@@ -8,7 +8,7 @@ import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*
 
 
-case class User private[model] (
+final case class User private[model] (
     username: String,
     hashedPassword: String,
     role: Role

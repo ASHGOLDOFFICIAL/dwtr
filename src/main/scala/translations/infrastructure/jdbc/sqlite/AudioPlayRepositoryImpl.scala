@@ -54,7 +54,7 @@ object AudioPlayRepositoryImpl:
   """.stripMargin)
 
 
-private class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
+private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F]
 ) extends AudioPlayRepository[F]:
   import AudioPlayRepositoryImpl.ColumnNames.*

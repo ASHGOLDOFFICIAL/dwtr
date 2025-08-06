@@ -10,7 +10,7 @@ import cats.Applicative
 import cats.syntax.all.*
 
 
-class AudioPlayPermissionService[F[_]: Applicative]
+final class AudioPlayPermissionService[F[_]: Applicative]
     extends PermissionService[F, AudioPlayServicePermission]:
   override def hasPermission(
       user: AuthenticatedUser,

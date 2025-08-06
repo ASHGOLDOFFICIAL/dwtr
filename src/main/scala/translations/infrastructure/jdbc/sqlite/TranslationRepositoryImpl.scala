@@ -61,7 +61,7 @@ object TranslationRepositoryImpl:
   private val createTable: Fragment = Fragment.const(createTableSql)
 
 
-private class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
+private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F]
 ) extends TranslationRepository[F]:
   import TranslationRepositoryImpl.ColumnNames.*

@@ -10,7 +10,7 @@ import cats.Applicative
 import cats.syntax.all.*
 
 
-class TranslationPermissionService[F[_]: Applicative]
+final class TranslationPermissionService[F[_]: Applicative]
     extends PermissionService[F, TranslationServicePermission]:
   override def hasPermission(
       user: AuthenticatedUser,

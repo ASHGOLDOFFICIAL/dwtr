@@ -12,7 +12,7 @@ import java.time.Instant
 import scala.util.Try
 
 
-case class TokenPayload(
+final case class TokenPayload(
     sub: String,
     iat: Instant,
     exp: Instant,
