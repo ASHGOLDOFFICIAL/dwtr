@@ -19,9 +19,10 @@ import translations.domain.model.translation.*
 import translations.domain.repositories.TranslationRepository
 import translations.infrastructure.service.TranslationServicePermission.*
 
+import cats.Monad
 import cats.data.Validated
+import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
-import cats.effect.{Clock, Sync}
 import cats.syntax.all.*
 
 import java.time.Instant
@@ -29,7 +30,7 @@ import java.util.{Base64, UUID}
 import scala.util.Try
 
 
-final class TranslationServiceImpl[F[_]: SecureRandom: Sync](
+final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
 )(using
     TranslationRepository[F],

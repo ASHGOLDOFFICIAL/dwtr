@@ -19,9 +19,10 @@ import translations.domain.model.shared.MediaResourceId
 import translations.domain.repositories.AudioPlayRepository
 import translations.infrastructure.service.AudioPlayServicePermission.Write
 
+import cats.Monad
 import cats.data.Validated
+import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
-import cats.effect.{Clock, Sync}
 import cats.syntax.all.*
 
 import java.time.Instant
@@ -29,7 +30,7 @@ import java.util.{Base64, UUID}
 import scala.util.Try
 
 
-final class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
+final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
 )(using
     AudioPlayRepository[F],
