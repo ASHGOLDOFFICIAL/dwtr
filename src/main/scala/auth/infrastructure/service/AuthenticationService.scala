@@ -10,11 +10,10 @@ import auth.domain.errors.{
 }
 import auth.domain.model.*
 import auth.domain.repositories.UserRepository
-import auth.infrastructure.service.PasswordHasher
 
 import cats.MonadThrow
 import cats.data.Validated
-import cats.effect.{Clock, Sync}
+import cats.effect.Clock
 import cats.syntax.all.*
 import io.circe.*
 import io.circe.generic.auto.*
@@ -27,7 +26,7 @@ import scala.concurrent.duration.*
 
 
 object AuthenticationService:
-  def build[F[_]: Sync: Clock: PasswordHasher](
+  def build[F[_]: MonadThrow: Clock: PasswordHasher](
       key: String,
       repo: UserRepository[F]
   ): F[AuthenticationService[F]] = new AuthenticationServiceInterpreter[F](
@@ -38,7 +37,7 @@ object AuthenticationService:
 
   private class AuthenticationServiceInterpreter[F[
       _
-  ]: Sync: Clock: PasswordHasher](
+  ]: MonadThrow: Clock: PasswordHasher](
       repo: UserRepository[F],
       algo: JwtHmacAlgorithm,
       secretKey: String,
@@ -66,18 +65,20 @@ object AuthenticationService:
 
     override def authenticate(
         token: AuthenticationToken
-    ): F[AuthResult[AuthenticatedUser]] =
+    ): F[AuthResult[AuthenticatedUser]] = authenticateWithErrors(token).attempt
+      .map(_.leftMap(_ => AuthenticationError.InvalidCredentials))
+
+    private def authenticateWithErrors(
+        token: AuthenticationToken
+    ): F[AuthenticatedUser] =
       for
         claim <- MonadThrow[F].fromTry(
           JwtCirce.decode(token.string, secretKey, Seq(algo), options = options)
         )
-        payloadEither <- TokenPayload.fromString(claim.toJson).pure[F]
-        result        <- payloadEither.flatTraverse { payload =>
-          validatePayload(payload).map { result =>
-            result.map(_ => payload.toAuthenticatedUser).toEither
-          }
-        }
-      yield result.leftMap(_ => AuthenticationError.InvalidCredentials)
+        payload <-
+          MonadThrow[F].fromEither(TokenPayload.fromString(claim.toJson))
+        result <- validatePayload(payload).map(_ => payload.toAuthenticatedUser)
+      yield result
 
     private def generateToken(user: User): F[AuthenticationToken] =
       Clock[F].realTimeInstant.map { now =>
