@@ -9,7 +9,7 @@ import auth.application.dto.LoginResponse
 import auth.domain.errors.LoginError
 import auth.domain.model.Credentials
 
-import cats.effect.Async
+import cats.Functor
 import cats.syntax.all.*
 import io.circe.generic.auto.*
 import sttp.model.StatusCode
@@ -19,7 +19,9 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-class LoginEndpoint[F[_]: AuthenticationService: Async]:
+class LoginEndpoint[F[_]: Functor](using
+    service: AuthenticationService[F]
+):
   private val tag = "Auth"
 
   private def toErrorResponse(
@@ -38,7 +40,7 @@ class LoginEndpoint[F[_]: AuthenticationService: Async]:
     .summary("Authenticate to receive token.")
     .tag(tag)
     .serverLogic { credentials =>
-      summon[AuthenticationService[F]].login(credentials).map {
+      service.login(credentials).map {
         _.map(LoginResponse(_)).leftMap(toErrorResponse)
       }
     }
