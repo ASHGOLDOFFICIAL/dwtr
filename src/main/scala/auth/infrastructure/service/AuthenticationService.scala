@@ -10,6 +10,7 @@ import auth.domain.errors.{
 }
 import auth.domain.model.*
 import auth.domain.repositories.UserRepository
+import auth.domain.service.PasswordHashingService
 
 import cats.MonadThrow
 import cats.data.Validated
@@ -26,7 +27,7 @@ import scala.concurrent.duration.*
 
 
 object AuthenticationService:
-  def build[F[_]: MonadThrow: Clock: PasswordHasher](
+  def build[F[_]: MonadThrow: Clock: PasswordHashingService](
       key: String,
       repo: UserRepository[F]
   ): F[AuthenticationService[F]] = new AuthenticationServiceInterpreter[F](
@@ -37,7 +38,7 @@ object AuthenticationService:
 
   private class AuthenticationServiceInterpreter[F[
       _
-  ]: MonadThrow: Clock: PasswordHasher](
+  ]: MonadThrow: Clock: PasswordHashingService](
       repo: UserRepository[F],
       algo: JwtHmacAlgorithm,
       secretKey: String,
@@ -55,8 +56,8 @@ object AuthenticationService:
     ): F[LoginResult[AuthenticationToken]] =
       repo.get(credentials.username).flatMap {
         case None       => LoginError.UserNotFound.asLeft.pure[F]
-        case Some(user) => summon[PasswordHasher[F]]
-            .validatePassword(credentials.password, user.hashedPassword)
+        case Some(user) => summon[PasswordHashingService[F]]
+            .verifyPassword(credentials.password, user.hashedPassword)
             .flatMap { result =>
               if result then generateToken(user).map(_.asRight)
               else LoginError.InvalidCredentials.asLeft.pure[F]

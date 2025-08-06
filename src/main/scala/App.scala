@@ -3,8 +3,12 @@ package org.aulune
 
 import auth.api.http.LoginEndpoint
 import auth.application.AuthenticationService
+import auth.domain.service.PasswordHashingService
 import auth.infrastructure.memory.UserRepository
-import auth.infrastructure.service.{AuthenticationService, PasswordHasher}
+import auth.infrastructure.service.{
+  Argon2iPasswordHashingService,
+  AuthenticationService
+}
 import shared.service.PermissionService
 import translations.api.http.AudioPlaysEndpoint
 import translations.application.*
@@ -41,8 +45,8 @@ object App extends IOApp.Simple:
     )
 
     for
-      hasher <- PasswordHasher.build[IO]
-      given PasswordHasher[IO] = hasher
+      hasher <- Argon2iPasswordHashingService.build[IO]
+      given PasswordHashingService[IO] = hasher
 
       userRepo    <- UserRepository.build[IO]
       authService <- AuthenticationService.build[IO](config.app.key, userRepo)
