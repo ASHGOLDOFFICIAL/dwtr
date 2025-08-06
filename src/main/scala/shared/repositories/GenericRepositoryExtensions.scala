@@ -1,9 +1,11 @@
 package org.aulune
 package shared.repositories
 
+
+import shared.errors.RepositoryError
+
 import cats.Monad
 import cats.syntax.all.*
-import org.aulune.shared.errors.RepositoryError
 
 
 extension [M[_]: Monad, E, Id, Token](repo: GenericRepository[M, E, Id, Token])

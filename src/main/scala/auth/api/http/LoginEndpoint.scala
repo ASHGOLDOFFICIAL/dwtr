@@ -20,12 +20,12 @@ import sttp.tapir.server.ServerEndpoint
 
 
 final class LoginEndpoint[F[_]: Functor](using
-    service: AuthenticationService[F]
+    service: AuthenticationService[F],
 ):
   private val tag = "Auth"
 
   private def toErrorResponse(
-      err: LoginError
+      err: LoginError,
   ): (StatusCode, String) = err match
     case LoginError.UserNotFound => (StatusCode.NotFound, "User not found")
     case LoginError.InvalidCredentials =>

@@ -1,6 +1,7 @@
 package org.aulune
 package translations.domain.model.translation
 
+
 import translations.domain.model.shared.MediaResourceId
 
 import java.net.URI
@@ -13,12 +14,12 @@ final case class Translation(
     originalType: MediumType,
     originalId: MediaResourceId,
     addedAt: Instant,
-    links: List[URI]
+    links: List[URI],
 )
 
 
 final case class TranslationIdentity(
     medium: MediumType,
     parent: MediaResourceId,
-    id: TranslationId
+    id: TranslationId,
 )

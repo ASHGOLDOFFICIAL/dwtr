@@ -1,12 +1,9 @@
 package org.aulune
 package translations.domain.repositories
 
+
 import shared.repositories.GenericRepository
-import translations.domain.model.translation.{
-  Translation,
-  TranslationId,
-  TranslationIdentity
-}
+import translations.domain.model.translation.{Translation, TranslationIdentity}
 
 import java.time.Instant
 

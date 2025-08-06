@@ -15,7 +15,7 @@ import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{
   MediumType,
   TranslationId,
-  TranslationIdentity
+  TranslationIdentity,
 }
 
 import cats.Functor
@@ -35,10 +35,10 @@ object TranslationsEndpoint:
       mediumType: MediumType,
       mountPath: EndpointInput[MediaResourceId],
       tagPrefix: String,
-      pagination: Pagination
+      pagination: Pagination,
   )(using
       TranslationService[F],
-      AuthenticationService[F]
+      AuthenticationService[F],
   ): TranslationsEndpoint[F] =
     new TranslationsEndpoint[F](pagination, mediumType, mountPath, tagPrefix)
 
@@ -47,10 +47,10 @@ private final class TranslationsEndpoint[F[_]: Functor](
     pagination: Pagination,
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceId],
-    tagPrefix: String
+    tagPrefix: String,
 )(using
     TranslationService[F],
-    AuthenticationService[F]
+    AuthenticationService[F],
 ):
   private val service = TranslationService[F]
 
@@ -63,7 +63,7 @@ private final class TranslationsEndpoint[F[_]: Functor](
 
   private inline def translationIdentity(
       parent: MediaResourceId,
-      id: TranslationId
+      id: TranslationId,
   ) = TranslationIdentity(mediumType, parent, id)
 
   private val getEndpoint = endpoint.get
@@ -142,7 +142,7 @@ private final class TranslationsEndpoint[F[_]: Functor](
     listEndpoint,
     postEndpoint,
     updateEndpoint,
-    deleteEndpoint
+    deleteEndpoint,
   )
 
 end TranslationsEndpoint

@@ -1,7 +1,6 @@
 package org.aulune
 package shared.pagination
 
-
 opaque type CursorToken[A] = A
 
 

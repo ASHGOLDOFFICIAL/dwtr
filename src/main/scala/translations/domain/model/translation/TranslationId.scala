@@ -2,8 +2,6 @@ package org.aulune
 package translations.domain.model.translation
 
 import java.util.UUID
-import scala.util.{Failure, Success, Try}
-
 
 opaque type TranslationId = String
 

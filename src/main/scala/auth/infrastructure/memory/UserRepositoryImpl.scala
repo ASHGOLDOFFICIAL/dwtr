@@ -22,13 +22,13 @@ object UserRepositoryImpl:
           "admin" -> User.unsafeApply(
             "admin",
             "$argon2i$v=19$m=65536,t=10,p=1$0kddhyj8EtkoWH7yxD6fYg$/YLsg0BdvD/mC7xFFV0ekSvBTEainYPicbBwSDU2ZAA",
-            Admin))
+            Admin)),
       ))
-    .map { mapRef => new UserRepositoryImpl[F](mapRef) }
+    .map(mapR => new UserRepositoryImpl[F](mapR))
 
   private given EntityIdentity[User, String] = u => u.username
 
   private final class UserRepositoryImpl[F[_]: Applicative](
-      mapRef: Ref[F, Map[String, User]]
-  ) extends GenericRepositoryImpl[F, User, String, Nothing](mapRef)
+      mapR: Ref[F, Map[String, User]],
+  ) extends GenericRepositoryImpl[F, User, String, Nothing](mapR)
       with UserRepository[F]

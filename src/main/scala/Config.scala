@@ -20,11 +20,11 @@ object Config:
       host: Host,
       port: Port,
       key: String,
-      pagination: Pagination
+      pagination: Pagination,
   )
 
   case class Pagination(max: Int, default: Int)
-  
+
   case class Sqlite(uri: String, user: String, password: String)
 
   given ConfigReader[Uri] = ConfigReader.fromString { str =>

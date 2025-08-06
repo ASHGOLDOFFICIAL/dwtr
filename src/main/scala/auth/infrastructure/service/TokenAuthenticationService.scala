@@ -6,7 +6,7 @@ import auth.application.AuthenticationService
 import auth.domain.errors.{
   AuthenticationError,
   LoginError,
-  TokenValidationError
+  TokenValidationError,
 }
 import auth.domain.model.*
 import auth.domain.repositories.UserRepository
@@ -29,7 +29,7 @@ import scala.concurrent.duration.*
 object TokenAuthenticationService:
   def build[F[_]: MonadThrow: Clock](key: String)(using
       PasswordHashingService[F],
-      UserRepository[F]
+      UserRepository[F],
   ): F[AuthenticationService[F]] =
     new TokenAuthenticationService[F](JwtAlgorithm.HS256, key, 24.hours)
       .pure[F]
@@ -38,20 +38,20 @@ object TokenAuthenticationService:
 private final class TokenAuthenticationService[F[_]: MonadThrow: Clock](
     algo: JwtHmacAlgorithm,
     secretKey: String,
-    maxExpiration: FiniteDuration
+    maxExpiration: FiniteDuration,
 )(using
     repo: UserRepository[F],
-    hasher: PasswordHashingService[F]
+    hasher: PasswordHashingService[F],
 ) extends AuthenticationService[F]:
 
   // Note that disabling expiration check allows invalid dates
   private val options = JwtOptions(
     signature = true,
-    expiration = false // We perform manual checks.
+    expiration = false, // We perform manual checks.
   )
 
   override def login(
-      credentials: Credentials
+      credentials: Credentials,
   ): F[Either[LoginError, AuthenticationToken]] =
     repo.get(credentials.username).flatMap {
       case None       => LoginError.UserNotFound.asLeft.pure[F]
@@ -64,17 +64,17 @@ private final class TokenAuthenticationService[F[_]: MonadThrow: Clock](
     }
 
   override def authenticate(
-      token: AuthenticationToken
+      token: AuthenticationToken,
   ): F[Either[AuthenticationError, AuthenticatedUser]] =
     authenticateWithErrors(token).attempt
       .map(_.leftMap(_ => AuthenticationError.InvalidCredentials))
 
   private def authenticateWithErrors(
-      token: AuthenticationToken
+      token: AuthenticationToken,
   ): F[AuthenticatedUser] =
     for
       claim <- MonadThrow[F].fromTry(
-        JwtCirce.decode(token.string, secretKey, Seq(algo), options = options)
+        JwtCirce.decode(token.string, secretKey, Seq(algo), options = options),
       )
       payload <- MonadThrow[F].fromEither(TokenPayload.fromString(claim.toJson))
       result  <- validatePayload(payload).map(_ => payload.toAuthenticatedUser)
@@ -91,18 +91,18 @@ private final class TokenAuthenticationService[F[_]: MonadThrow: Clock](
   private type TokenValidation[A] = Validated[TokenValidationError, A]
 
   private def validatePayload(
-      payload: TokenPayload
+      payload: TokenPayload,
   ): F[TokenValidation[Unit]] = validateExpiration(payload)
 
   private def validateExpiration(
-      payload: TokenPayload
+      payload: TokenPayload,
   ): F[TokenValidation[Unit]] = Clock[F].realTimeInstant.map { now =>
     validateExpirationPure(now, payload.exp)
   }
 
   private def validateExpirationPure(
       now: Instant,
-      expiration: Instant
+      expiration: Instant,
   ): TokenValidation[Unit] =
     if expiration.isBefore(now) then TokenValidationError.Expired.invalid
     else if expiration.isAfter(maxAllowed(now)) then

@@ -1,6 +1,7 @@
 package org.aulune
 package translations.domain.model.shared
 
+
 import java.util.UUID
 import scala.util.{Failure, Success, Try}
 

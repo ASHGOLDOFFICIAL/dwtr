@@ -2,6 +2,7 @@ package org.aulune
 package translations.infrastructure.jdbc.sqlite
 
 
+import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
 import translations.domain.model.translation.{Translation, TranslationIdentity}
 import translations.domain.repositories.TranslationRepository
@@ -14,7 +15,6 @@ import doobie.implicits.*
 import io.circe.*
 import io.circe.parser.*
 import io.circe.syntax.*
-import org.aulune.shared.errors.RepositoryError
 
 import java.net.URI
 import java.time.Instant
@@ -22,7 +22,7 @@ import java.time.Instant
 
 object TranslationRepositoryImpl:
   def build[F[_]: MonadCancelThrow](
-      transactor: Transactor[F]
+      transactor: Transactor[F],
   ): F[TranslationRepository[F]] =
     for
       _ <- createTable.update.run.transact(transactor)
@@ -44,7 +44,7 @@ object TranslationRepositoryImpl:
       originalTypeC,
       originalIdC,
       linksC,
-      addedAtC
+      addedAtC,
     )
 
   import ColumnNames.*
@@ -62,7 +62,7 @@ object TranslationRepositoryImpl:
 
 
 private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
-    transactor: Transactor[F]
+    transactor: Transactor[F],
 ) extends TranslationRepository[F]:
   import TranslationRepositoryImpl.ColumnNames.*
 
@@ -77,39 +77,37 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
 
   override def persist(
-      elem: Translation
-  ): F[Either[RepositoryError, Translation]] = {
-    insertF(tableName)(allColumns.head, allColumns.tail: _*)
-      .valuesF(
-        fr"${elem.id}, ${elem.title}, ${elem.originalType}, ${elem.originalId}, ${elem.links}, ${elem.addedAt}"
-      )
-      .update
-      .run
-      .transact(transactor)
-      .attempt
-      .map {
-        case Right(_) => elem.asRight
-        case Left(e)  => RepositoryError.StorageFailure.asLeft
-      }
-  }
+      elem: Translation,
+  ): F[Either[RepositoryError, Translation]] = insertF(tableName)(
+    allColumns.head,
+    allColumns.tail*)
+    .valuesF(
+      fr"${elem.id}, ${elem.title}, ${elem.originalType}, ${elem.originalId}, ${elem.links}, ${elem.addedAt}",
+    )
+    .update
+    .run
+    .transact(transactor)
+    .attempt
+    .map {
+      case Right(_) => elem.asRight
+      case Left(e)  => RepositoryError.StorageFailure.asLeft
+    }
 
   override def get(
-      id: TranslationIdentity
-  ): F[Option[Translation]] = {
-    selectF(tableName)(allColumns: _*)
-      .whereF(idC, fr"= ${id.id}")
-      .andF(originalIdC, fr"= ${id.parent}")
-      .andF(originalTypeC, fr"= ${id.medium}")
-      .query[Translation]
-      .option
-      .transact(transactor)
-  }
+      id: TranslationIdentity,
+  ): F[Option[Translation]] = selectF(tableName)(allColumns*)
+    .whereF(idC, fr"= ${id.id}")
+    .andF(originalIdC, fr"= ${id.parent}")
+    .andF(originalTypeC, fr"= ${id.medium}")
+    .query[Translation]
+    .option
+    .transact(transactor)
 
   override def list(
       startWith: Option[(TranslationIdentity, Instant)],
-      count: Int
-  ): F[List[Translation]] = {
-    val base = selectF(tableName)(allColumns: _*)
+      count: Int,
+  ): F[List[Translation]] =
+    val base = selectF(tableName)(allColumns*)
     val cond = startWith match
       case Some(s) => base
           .whereF(addedAtC, fr">= ${s._2}")
@@ -122,11 +120,10 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
       .query[Translation]
       .to[List]
       .transact(transactor)
-  }
 
   override def update(
-      elem: Translation
-  ): F[Either[RepositoryError, Translation]] = {
+      elem: Translation,
+  ): F[Either[RepositoryError, Translation]] =
     updateF(tableName)(titleC -> fr"${elem.title}", linksC -> fr"${elem.links}")
       .whereF(idC, fr"= ${elem.id}")
       .andF(originalIdC, fr"= ${elem.originalId}")
@@ -139,21 +136,18 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
         case _ => elem.asRight
       }
       .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
-  }
 
   override def delete(
-      id: TranslationIdentity
-  ): F[Either[RepositoryError, Unit]] = {
-    deleteF(tableName)
-      .whereF(idC, fr"= ${id.id}")
-      .andF(originalIdC, fr"= ${id.parent}")
-      .andF(originalTypeC, fr"= ${id.medium}")
-      .update
-      .run
-      .transact(transactor)
-      .map(_ => ().asRight)
-      .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
-  }
+      id: TranslationIdentity,
+  ): F[Either[RepositoryError, Unit]] = deleteF(tableName)
+    .whereF(idC, fr"= ${id.id}")
+    .andF(originalIdC, fr"= ${id.parent}")
+    .andF(originalTypeC, fr"= ${id.medium}")
+    .update
+    .run
+    .transact(transactor)
+    .map(_ => ().asRight)
+    .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
 
   private given Meta[List[URI]] = Meta[String].imap { str =>
     decode[List[URI]](str).getOrElse(Nil)

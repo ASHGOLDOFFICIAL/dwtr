@@ -22,10 +22,11 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(using
+final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(
+    using
     AudioPlayService[F],
     AuthenticationService[F],
-    TranslationService[F]
+    TranslationService[F],
 ):
   private val service = AudioPlayService[F]
 
@@ -106,7 +107,7 @@ final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(usi
     listEndpoint,
     postEndpoint,
     updateEndpoint,
-    deleteEndpoint
+    deleteEndpoint,
   ) ++ TranslationsEndpoint
     .build(MediumType.AudioPlay, elementPath, tag, pagination)
     .endpoints

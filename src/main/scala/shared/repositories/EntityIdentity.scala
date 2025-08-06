@@ -9,5 +9,5 @@ trait EntityIdentity[E, Id]:
 object EntityIdentity:
   /** Alias for `summon` */
   transparent inline def apply[E, Id](using
-      inline ev: EntityIdentity[E, Id]
+      inline ev: EntityIdentity[E, Id],
   ): EntityIdentity[E, Id] = ev

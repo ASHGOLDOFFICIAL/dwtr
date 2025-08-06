@@ -16,7 +16,7 @@ final case class TokenPayload(
     sub: String,
     iat: Instant,
     exp: Instant,
-    role: Role
+    role: Role,
 ):
   def toAuthenticatedUser: AuthenticatedUser = AuthenticatedUser(sub, role)
 

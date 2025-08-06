@@ -13,7 +13,7 @@ import translations.application.dto.AudioPlayRequest
 import translations.domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeriesId,
-  AudioPlayTitle
+  AudioPlayTitle,
 }
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.repositories.AudioPlayRepository
@@ -30,10 +30,10 @@ import scala.util.Try
 
 
 final class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
-    pagination: Config.Pagination
+    pagination: Config.Pagination,
 )(using
     AudioPlayRepository[F],
-    PermissionService[F, AudioPlayServicePermission]
+    PermissionService[F, AudioPlayServicePermission],
 ) extends AudioPlayService[F]:
   private val repo = summon[AudioPlayRepository[F]]
 
@@ -41,20 +41,19 @@ final class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
 
   override def getAll(
       token: Option[String],
-      count: Int
+      count: Int,
   ): F[Either[ApplicationServiceError, List[AudioPlay]]] =
-    PaginationParams(pagination.max)(count, token) match {
+    PaginationParams(pagination.max)(count, token) match
       case Validated.Invalid(_) =>
         ApplicationServiceError.BadRequest.asLeft.pure[F]
       case Validated.Valid(params) =>
         val token = params.pageToken.map(_.value)
         for list <- repo.list(token, params.pageSize)
         yield list.asRight
-    }
 
   override def create(
       user: AuthenticatedUser,
-      ac: AudioPlayRequest
+      ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlay]] =
     requirePermissionOrDeny(Write, user) {
       for
@@ -68,7 +67,7 @@ final class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
   override def update(
       user: AuthenticatedUser,
       id: MediaResourceId,
-      ac: AudioPlayRequest
+      ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlay]] =
     requirePermissionOrDeny(Write, user) {
       repo
@@ -78,7 +77,7 @@ final class AudioPlayServiceImpl[F[_]: SecureRandom: Sync](
 
   override def delete(
       user: AuthenticatedUser,
-      id: MediaResourceId
+      id: MediaResourceId,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Write, user) {
       repo.delete(id).map(_.leftMap(toAudioPlayError))

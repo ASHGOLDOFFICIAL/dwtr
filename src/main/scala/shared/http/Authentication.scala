@@ -24,13 +24,13 @@ object Authentication:
         (StatusCode.BadRequest, "Invalid token")
 
   private def decodeToken[F[_]: Functor](token: String)(using
-      service: AuthenticationService[F]
+      service: AuthenticationService[F],
   ) = service
     .authenticate(AuthenticationToken(token))
     .map(_.leftMap(toErrorResponse))
 
   def authOnlyEndpoint[F[_]: Functor](using
-      AuthenticationService[F]
+      AuthenticationService[F],
   ): PartialServerEndpoint[
     String,
     AuthenticatedUser,
@@ -38,7 +38,7 @@ object Authentication:
     (StatusCode, String),
     Unit,
     Any,
-    F
+    F,
   ] = endpoint
     .securityIn(tokenAuth)
     .errorOut(statusCode.and(stringBody))

@@ -1,6 +1,7 @@
 package org.aulune
 package translations.application.dto
 
+
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.MediaResourceId
 
@@ -12,7 +13,7 @@ case class AudioPlayResponse(
     id: String,
     title: String,
     seriesId: Option[Long],
-    seriesOrder: Option[Int]
+    seriesOrder: Option[Int],
 )
 
 
@@ -22,7 +23,7 @@ object AudioPlayResponse:
     id = domain.id.string,
     title = domain.title.value,
     seriesId = domain.seriesId.map(_.value),
-    seriesOrder = domain.seriesOrder
+    seriesOrder = domain.seriesOrder,
   )
 
   inline val collectionIdentifier: "audioplays" = "audioplays"

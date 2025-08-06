@@ -2,6 +2,7 @@ package org.aulune
 package translations.infrastructure.jdbc.sqlite
 
 
+import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.MediaResourceId
@@ -12,14 +13,13 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
 import doobie.*
 import doobie.implicits.*
-import org.aulune.shared.errors.RepositoryError
 
 import java.time.Instant
 
 
 object AudioPlayRepositoryImpl:
   def build[F[_]: MonadCancelThrow](
-      transactor: Transactor[F]
+      transactor: Transactor[F],
   ): F[AudioPlayRepository[F]] =
     for
       _ <- createTableQuery.update.run.transact(transactor)
@@ -39,7 +39,7 @@ object AudioPlayRepositoryImpl:
       titleC,
       seriesIdC,
       seriesOrderC,
-      addedAtC
+      addedAtC,
     )
 
   import ColumnNames.*
@@ -55,7 +55,7 @@ object AudioPlayRepositoryImpl:
 
 
 private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
-    transactor: Transactor[F]
+    transactor: Transactor[F],
 ) extends AudioPlayRepository[F]:
   import AudioPlayRepositoryImpl.ColumnNames.*
 
@@ -68,10 +68,10 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
 
   override def persist(
-      elem: AudioPlay
+      elem: AudioPlay,
   ): F[Either[RepositoryError, AudioPlay]] = insertF(tableName)(
     allColumns.head,
-    allColumns.tail: _*)
+    allColumns.tail*)
     .valuesF(
       fr"${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesOrder}, ${elem.addedAt}")
     .update
@@ -84,7 +84,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     }
 
   override def get(id: MediaResourceId): F[Option[AudioPlay]] = selectF(
-    tableName)(allColumns: _*)
+    tableName)(allColumns*)
     .whereF(idC, fr"= $id")
     .query[AudioPlay]
     .option
@@ -92,21 +92,19 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def list(
       startWith: Option[(MediaResourceId, Instant)],
-      count: Int
-  ): F[List[AudioPlay]] = {
-    val base = selectF(tableName)(allColumns: _*)
-    val cond = startWith match {
+      count: Int,
+  ): F[List[AudioPlay]] =
+    val base = selectF(tableName)(allColumns*)
+    val cond = startWith match
       case Some(t) =>
         base.whereF(addedAtC, fr">= ${t._2}").andF(idC, fr"<> ${t._1}")
       case None => base
-    }
     val full = cond.orderByF(addedAtC).ascF.limitF(count)
 
     full.query[AudioPlay].to[List].transact(transactor)
-  }
 
   override def update(
-      elem: AudioPlay
+      elem: AudioPlay,
   ): F[Either[RepositoryError, AudioPlay]] = updateF(tableName)(
     titleC       -> fr"${elem.title}",
     seriesIdC    -> fr"${elem.seriesId}",

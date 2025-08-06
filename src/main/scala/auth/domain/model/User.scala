@@ -11,7 +11,7 @@ import cats.syntax.all.*
 final case class User private[model] (
     username: String,
     hashedPassword: String,
-    role: Role
+    role: Role,
 )
 
 
@@ -29,15 +29,15 @@ object User:
   def apply(
       username: String,
       hashedPassword: String,
-      role: Role
+      role: Role,
   ): ValidationResult[User] = (
     validateUsername(username),
     hashedPassword.validNec,
-    role.validNec
+    role.validNec,
   ).mapN(new User(_, _, _))
 
   def unsafeApply(
       username: String,
       hashedPassword: String,
-      role: Role
+      role: Role,
   ): User = new User(username, hashedPassword, role)

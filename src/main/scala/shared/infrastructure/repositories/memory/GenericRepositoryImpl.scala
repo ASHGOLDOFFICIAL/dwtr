@@ -2,18 +2,18 @@ package org.aulune
 package shared.infrastructure.repositories.memory
 
 
+import shared.errors.RepositoryError
 import shared.repositories.{EntityIdentity, GenericRepository}
 
 import cats.Applicative
 import cats.effect.Ref
 import cats.syntax.all.*
-import org.aulune.shared.errors.RepositoryError
 
 
 class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](
-    mapR: Ref[F, Map[Id, E]]
+    mapR: Ref[F, Map[Id, E]],
 )(using
-    EntityIdentity[E, Id]
+    EntityIdentity[E, Id],
 ) extends GenericRepository[F, E, Id, Token]:
   extension (elem: E) private def id: Id = EntityIdentity[E, Id].identity(elem)
 

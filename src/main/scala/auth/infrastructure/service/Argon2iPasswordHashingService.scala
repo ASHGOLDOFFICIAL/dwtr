@@ -23,7 +23,7 @@ private final class Argon2iPasswordHashingService[F[_]: Sync](argon2i: Argon2)
     extends PasswordHashingService[F]:
   override def hashPassword(password: String): F[String] =
     passwordResource(password)
-      .use { chars => Sync[F].blocking(argon2i.hash(10, 65536, 1, chars)) }
+      .use(chars => Sync[F].blocking(argon2i.hash(10, 65536, 1, chars)))
 
   override def verifyPassword(password: String, hashed: String): F[Boolean] =
     passwordResource(password).use { chars =>

@@ -1,6 +1,7 @@
 package org.aulune
 package translations.application.dto
 
+
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{MediumType, Translation}
 

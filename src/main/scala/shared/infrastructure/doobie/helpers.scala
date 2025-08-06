@@ -1,6 +1,7 @@
 package org.aulune
 package shared.infrastructure.doobie
 
+
 import doobie.Fragment
 import doobie.implicits.toSqlInterpolator
 
@@ -11,7 +12,7 @@ inline def deleteF(inline from: String): Fragment =
 
 inline def insertF(inline into: String)(
     inline col: String,
-    inline cols: String*
+    inline cols: String*,
 ): Fragment = fr"INSERT INTO" ++ Fragment.const(into) ++
   fr0"(" ++ Fragment.const0(cols.foldLeft(col)(_ + ", " + _)) ++ fr")"
 
@@ -20,14 +21,14 @@ inline def selectF: Fragment = fr"SELECT"
 
 
 inline def selectF(inline from: String)(
-    inline cols: String*
+    inline cols: String*,
 ): Fragment = fr"SELECT" ++ Fragment.const(cols.mkString(", ")) ++
   fr"FROM" ++ Fragment.const(from)
 
 
 inline def updateF(inline table: String)(
     inline kv: (String, Fragment),
-    inline kvs: (String, Fragment)*
+    inline kvs: (String, Fragment)*,
 ): Fragment =
   def setC(kv: (String, Fragment)) = Fragment.const(kv._1) ++ fr"= " ++ kv._2
   val setPart                      = kvs

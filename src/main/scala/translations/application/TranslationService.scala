@@ -9,7 +9,7 @@ import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{
   MediumType,
   Translation,
-  TranslationIdentity
+  TranslationIdentity,
 }
 import translations.infrastructure.service.TranslationServicePermission
 
@@ -38,7 +38,7 @@ trait TranslationService[F[_]]:
       originalType: MediumType,
       originalId: MediaResourceId,
       token: Option[String],
-      count: Int
+      count: Int,
   ): F[Either[ApplicationServiceError, List[Translation]]]
 
   /** Create new translation.
@@ -54,7 +54,7 @@ trait TranslationService[F[_]]:
       user: AuthenticatedUser,
       tc: TranslationRequest,
       originalType: MediumType,
-      originalId: MediaResourceId
+      originalId: MediaResourceId,
   ): F[Either[ApplicationServiceError, Translation]]
 
   /** Updates existing translation.
@@ -68,7 +68,7 @@ trait TranslationService[F[_]]:
   def update(
       user: AuthenticatedUser,
       id: TranslationIdentity,
-      tc: TranslationRequest
+      tc: TranslationRequest,
   ): F[Either[ApplicationServiceError, Translation]]
 
   /** Deletes existing translation.
@@ -80,7 +80,7 @@ trait TranslationService[F[_]]:
    */
   def delete(
       user: AuthenticatedUser,
-      id: TranslationIdentity
+      id: TranslationIdentity,
   ): F[Either[ApplicationServiceError, Unit]]
 
 

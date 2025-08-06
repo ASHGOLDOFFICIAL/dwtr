@@ -5,5 +5,5 @@ import auth.domain.model.AuthenticationToken
 
 
 final case class LoginResponse(
-    token: AuthenticationToken
+    token: AuthenticationToken,
 )

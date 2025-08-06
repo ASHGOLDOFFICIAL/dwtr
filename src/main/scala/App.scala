@@ -8,18 +8,18 @@ import auth.domain.service.PasswordHashingService
 import auth.infrastructure.memory.UserRepositoryImpl
 import auth.infrastructure.service.{
   Argon2iPasswordHashingService,
-  TokenAuthenticationService
+  TokenAuthenticationService,
 }
 import shared.service.PermissionService
 import translations.api.http.AudioPlaysEndpoint
 import translations.application.*
 import translations.domain.repositories.{
   AudioPlayRepository,
-  TranslationRepository
+  TranslationRepository,
 }
 import translations.infrastructure.jdbc.sqlite.{
   AudioPlayRepositoryImpl,
-  TranslationRepositoryImpl
+  TranslationRepositoryImpl,
 }
 import translations.infrastructure.service.*
 
@@ -47,7 +47,7 @@ object App extends IOApp.Simple:
       config.sqlite.uri,
       config.sqlite.user,
       config.sqlite.password,
-      None
+      None,
     )
 
     for
@@ -88,7 +88,7 @@ object App extends IOApp.Simple:
 
   private def routes(
       config: Config,
-      endpoints: List[ServerEndpoint[Any, IO]]
+      endpoints: List[ServerEndpoint[Any, IO]],
   ) =
     val docsEndpoints = SwaggerInterpreter()
       .fromServerEndpoints[IO](endpoints, config.app.name, config.app.version)

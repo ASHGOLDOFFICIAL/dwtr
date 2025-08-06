@@ -14,6 +14,6 @@ final class TranslationPermissionService[F[_]: Applicative]
     extends PermissionService[F, TranslationServicePermission]:
   override def hasPermission(
       user: AuthenticatedUser,
-      permission: TranslationServicePermission
+      permission: TranslationServicePermission,
   ): F[Boolean] = permission match
     case _ => (user.role == Admin).pure[F]

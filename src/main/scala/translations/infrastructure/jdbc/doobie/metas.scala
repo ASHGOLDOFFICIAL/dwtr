@@ -1,12 +1,13 @@
 package org.aulune
 package translations.infrastructure.jdbc.doobie
 
+
 import translations.domain.model.audioplay.{AudioPlaySeriesId, AudioPlayTitle}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{
   MediumType,
   TranslationId,
-  TranslationTitle
+  TranslationTitle,
 }
 
 import doobie.Meta

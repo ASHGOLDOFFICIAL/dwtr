@@ -1,14 +1,13 @@
 package org.aulune
 package shared.errors
 
-import shared.errors.{ApplicationServiceError, RepositoryError}
 
 import org.aulune
 import sttp.model.StatusCode
 
 
 def toErrorResponse(
-    err: ApplicationServiceError
+    err: ApplicationServiceError,
 ): (StatusCode, String) = err match
   case ApplicationServiceError.BadRequest =>
     (StatusCode.BadRequest, "Bad request")
@@ -22,7 +21,7 @@ def toErrorResponse(
 
 
 def toApplicationError(
-    err: RepositoryError
+    err: RepositoryError,
 ): ApplicationServiceError = err match
   case RepositoryError.AlreadyExists  => ApplicationServiceError.AlreadyExists
   case RepositoryError.NotFound       => ApplicationServiceError.NotFound

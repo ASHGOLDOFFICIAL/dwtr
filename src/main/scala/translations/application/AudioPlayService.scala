@@ -31,7 +31,7 @@ trait AudioPlayService[F[_]]:
    */
   def getAll(
       token: Option[String],
-      count: Int
+      count: Int,
   ): F[Either[ApplicationServiceError, List[AudioPlay]]]
 
   /** Create new audio play.
@@ -43,7 +43,7 @@ trait AudioPlayService[F[_]]:
    */
   def create(
       user: AuthenticatedUser,
-      ac: AudioPlayRequest
+      ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlay]]
 
   /** Updates existing audio play.
@@ -57,7 +57,7 @@ trait AudioPlayService[F[_]]:
   def update(
       user: AuthenticatedUser,
       id: MediaResourceId,
-      ac: AudioPlayRequest
+      ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlay]]
 
   /** Deletes existing audio play.
@@ -69,7 +69,7 @@ trait AudioPlayService[F[_]]:
    */
   def delete(
       user: AuthenticatedUser,
-      id: MediaResourceId
+      id: MediaResourceId,
   ): F[Either[ApplicationServiceError, Unit]]
 
 
