@@ -10,11 +10,11 @@ import cats.effect.Ref
 import cats.syntax.all.*
 
 
-class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](
+class GenericRepositoryImpl[F[_]: Applicative, E, Id](
     mapR: Ref[F, Map[Id, E]],
 )(using
     EntityIdentity[E, Id],
-) extends GenericRepository[F, E, Id, Token]:
+) extends GenericRepository[F, E, Id]:
   extension (elem: E) private def id: Id = EntityIdentity[E, Id].identity(elem)
 
   override def contains(id: Id): F[Boolean] = mapR.get.map(_.contains(id))
@@ -27,14 +27,6 @@ class GenericRepositoryImpl[F[_]: Applicative, E, Id, Token](
   }
 
   override def get(id: Id): F[Option[E]] = mapR.get.map(_.get(id))
-
-  override def list(startWith: Option[Token], count: Int): F[List[E]] =
-    mapR.get.map { all =>
-      val sorted = all.values.toList.sortBy(_.id.toString)
-      sorted.indexWhere(a => a == id, 0) match
-        case -1 => Nil
-        case x  => sorted.slice(x, x + count)
-    }
 
   override def update(elem: E): F[Either[RepositoryError, E]] = mapR.modify {
     currentMap =>

@@ -3,12 +3,13 @@ package shared.repositories
 
 
 import shared.errors.RepositoryError
+import shared.errors.RepositoryError.NotFound
 
 import cats.Monad
 import cats.syntax.all.*
 
 
-extension [M[_]: Monad, E, Id, Token](repo: GenericRepository[M, E, Id, Token])
+extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
   /** Updates element with given ID by applying function.
    *  @param id element ID
    *  @param f function to apply
@@ -16,6 +17,5 @@ extension [M[_]: Monad, E, Id, Token](repo: GenericRepository[M, E, Id, Token])
    */
   def transform(id: Id, f: E => E): M[Either[RepositoryError, E]] =
     repo.get(id).flatMap {
-      case Some(e) => repo.update(f(e))
-      case None    => RepositoryError.NotFound.asLeft.pure
+      _.fold(NotFound.asLeft.pure[M])(el => repo.update(f(el)))
     }

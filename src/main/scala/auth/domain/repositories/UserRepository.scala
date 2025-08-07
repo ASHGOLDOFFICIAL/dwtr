@@ -6,4 +6,4 @@ import auth.domain.model.User
 import shared.repositories.GenericRepository
 
 
-trait UserRepository[F[_]] extends GenericRepository[F, User, String, Nothing]
+trait UserRepository[F[_]] extends GenericRepository[F, User, String]

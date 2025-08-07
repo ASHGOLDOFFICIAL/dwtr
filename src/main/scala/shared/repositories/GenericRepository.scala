@@ -13,9 +13,8 @@ import cats.syntax.all.*
  *  @tparam F effect type
  *  @tparam E element type
  *  @tparam Id element identity type
- *  @tparam Token type of element used for pagination purposes
  */
-trait GenericRepository[F[_], E, Id, Token]:
+trait GenericRepository[F[_], E, Id]:
   /** Check if element exists in repository. No consistency guarantee is implied
    *  in concurrent environments.
    *  @param id element identity
@@ -36,13 +35,6 @@ trait GenericRepository[F[_], E, Id, Token]:
    *  @return element if found
    */
   def get(id: Id): F[Option[E]]
-
-  /** List contained elements.
-   *  @param startWith optional token with information for continued listing
-   *  @param count number of elements to return
-   *  @return list of elements
-   */
-  def list(startWith: Option[Token], count: Int): F[List[E]]
 
   /** Update element in repository.
    *  @param elem element to update

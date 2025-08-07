@@ -30,5 +30,5 @@ object UserRepositoryImpl:
 
   private final class UserRepositoryImpl[F[_]: Applicative](
       mapR: Ref[F, Map[String, User]],
-  ) extends GenericRepositoryImpl[F, User, String, Nothing](mapR)
+  ) extends GenericRepositoryImpl[F, User, String](mapR)
       with UserRepository[F]
