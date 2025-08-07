@@ -36,11 +36,15 @@ object TranslationsController:
       mountPath: EndpointInput[MediaResourceId],
       tagPrefix: String,
       pagination: Pagination,
-  )(using
-      TranslationService[F],
-      AuthenticationService[F],
-  ): TranslationsController[F] =
-    new TranslationsController[F](pagination, mediumType, mountPath, tagPrefix)
+      service: TranslationService[F],
+      authService: AuthenticationService[F],
+  ): TranslationsController[F] = new TranslationsController[F](
+    pagination,
+    mediumType,
+    mountPath,
+    tagPrefix,
+    service,
+    authService)
 
 
 private final class TranslationsController[F[_]: Functor](
@@ -48,11 +52,10 @@ private final class TranslationsController[F[_]: Functor](
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceId],
     tagPrefix: String,
-)(using
-    TranslationService[F],
-    AuthenticationService[F],
+    service: TranslationService[F],
+    authService: AuthenticationService[F],
 ):
-  private val service = TranslationService[F]
+  private given AuthenticationService[F] = authService
 
   private val translationId = path[TranslationId]("translation_id")
     .description("ID of the translation")

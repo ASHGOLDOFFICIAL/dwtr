@@ -36,11 +36,10 @@ import scala.util.Try
 
 final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
-)(using
-    AudioPlayRepository[F],
-    PermissionService[F, AudioPlayServicePermission],
+    repo: AudioPlayRepository[F],
+    permissionService: PermissionService[F, AudioPlayServicePermission],
 ) extends AudioPlayService[F]:
-  private val repo = summon[AudioPlayRepository[F]]
+  given PermissionService[F, AudioPlayServicePermission] = permissionService
 
   override def findById(id: MediaResourceId): F[Option[AudioPlayResponse]] =
     for result <- repo.get(id)

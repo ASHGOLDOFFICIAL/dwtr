@@ -32,12 +32,11 @@ import scala.util.Try
 
 final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
-)(using
-    TranslationRepository[F],
-    PermissionService[F, TranslationServicePermission],
+    repo: TranslationRepository[F],
+    permissionService: PermissionService[F, TranslationServicePermission],
 ) extends TranslationService[F]:
-  private val repo = summon[TranslationRepository[F]]
-
+  given PermissionService[F, TranslationServicePermission] = permissionService
+  
   override def findById(
       id: TranslationIdentity,
   ): F[Option[TranslationResponse]] =

@@ -18,9 +18,7 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-final class LoginController[F[_]: Functor](using
-    service: AuthenticationService[F],
-):
+final class LoginController[F[_]: Functor](service: AuthenticationService[F]):
   private val tag = "Authentication"
 
   private val loginEndpoint: ServerEndpoint[Any, F] = endpoint.post

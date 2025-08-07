@@ -22,14 +22,13 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
-    using
-    AudioPlayService[F],
-    AuthenticationService[F],
-    TranslationService[F],
+final class AudioPlaysController[F[_]: Functor](
+    pagination: Config.Pagination,
+    service: AudioPlayService[F],
+    authService: AuthenticationService[F],
+    translationService: TranslationService[F],
 ):
-  private val service = AudioPlayService[F]
-
+  private given AuthenticationService[F] = authService
   private val audioPlayId = path[MediaResourceId]("audio_play_id")
     .description("ID of the audio play")
 
@@ -104,5 +103,11 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     updateEndpoint,
     deleteEndpoint,
   ) ++ TranslationsController
-    .build(MediumType.AudioPlay, elementPath, tag, pagination)
+    .build(
+      MediumType.AudioPlay,
+      elementPath,
+      tag,
+      pagination,
+      translationService,
+      authService)
     .endpoints
