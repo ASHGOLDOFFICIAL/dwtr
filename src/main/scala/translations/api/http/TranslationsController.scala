@@ -73,13 +73,9 @@ private final class TranslationsController[F[_]: Functor](
     .name("GetTranslation")
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
-    .serverLogic { case (mediaId, translationId) =>
-      service
-        .findById(translationIdentity(mediaId, translationId))
-        .map {
-          case Some(t) => Right(TranslationResponse.fromDomain(t))
-          case None    => Left(StatusCode.NotFound)
-        }
+    .serverLogic { case (mediaId, id) =>
+      for result <- service.findById(translationIdentity(mediaId, id))
+      yield result.toRight(StatusCode.NotFound)
     }
 
   private val listEndpoint = endpoint.get
@@ -91,10 +87,8 @@ private final class TranslationsController[F[_]: Functor](
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
     .serverLogic { case (mediaId, pageSize, pageToken) =>
-      service
-        .listAll(mediumType, mediaId, pageToken, pageSize)
-        .map(
-          _.leftMap(toErrorResponse).map(_.map(TranslationResponse.fromDomain)))
+      for result <- service.listAll(mediumType, mediaId, pageToken, pageSize)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -105,9 +99,8 @@ private final class TranslationsController[F[_]: Functor](
     .summary("Creates a new translation for parent resource and returns it.")
     .tag(tag)
     .serverLogic { user => (mediaId, tc) =>
-      service.create(user, tc, mediumType, mediaId).map {
-        _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
-      }
+      for result <- service.create(user, tc, mediumType, mediaId)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val updateEndpoint = authOnlyEndpoint.put
@@ -117,12 +110,9 @@ private final class TranslationsController[F[_]: Functor](
     .name("UpdateTranslation")
     .summary("Updates translation resource with given ID.")
     .tag(tag)
-    .serverLogic { user => (mediaId, translationId, tc) =>
-      service
-        .update(user, translationIdentity(mediaId, translationId), tc)
-        .map {
-          _.map(TranslationResponse.fromDomain).leftMap(toErrorResponse)
-        }
+    .serverLogic { user => (mediaId, id, tc) =>
+      for result <- service.update(user, translationIdentity(mediaId, id), tc)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val deleteEndpoint = authOnlyEndpoint.delete

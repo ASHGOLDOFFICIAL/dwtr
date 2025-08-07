@@ -45,10 +45,8 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      service.findById(id).map {
-        case Some(value) => Right(AudioPlayResponse.fromDomain(value))
-        case None        => Left(StatusCode.NotFound)
-      }
+      for result <- service.findById(id)
+      yield result.toRight(StatusCode.NotFound)
     }
 
   private val listEndpoint = endpoint.get
@@ -60,10 +58,8 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     .summary("Returns the list of audio play resources.")
     .tag(tag)
     .serverLogic { case (pageSize, pageToken) =>
-      service
-        .listAll(pageToken, pageSize)
-        .map(
-          _.leftMap(toErrorResponse).map(_.map(AudioPlayResponse.fromDomain)))
+      for result <- service.listAll(pageToken, pageSize)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -74,9 +70,8 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     .summary("Creates a new audio play and returns the created resource.")
     .tag(tag)
     .serverLogic { user => ac =>
-      service.create(user, ac).map {
-        _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
-      }
+      for result <- service.create(user, ac)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val updateEndpoint = authOnlyEndpoint.put
@@ -87,9 +82,8 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     .summary("Updates audio play resource with given ID.")
     .tag(tag)
     .serverLogic { user => (id, ac) =>
-      service.update(user, id, ac).map {
-        _.map(AudioPlayResponse.fromDomain).leftMap(toErrorResponse)
-      }
+      for result <- service.update(user, id, ac)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val deleteEndpoint = authOnlyEndpoint.delete
@@ -99,7 +93,8 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     .summary("Deletes audio play resource with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      service.delete(user, id).map(_.leftMap(toErrorResponse))
+      for result <- service.delete(user, id)
+      yield result.leftMap(toErrorResponse)
     }
 
   def endpoints: List[ServerEndpoint[Any, F]] = List(

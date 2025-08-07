@@ -1,11 +1,7 @@
 package org.aulune
 package shared.repositories
 
-
 import shared.errors.RepositoryError
-
-import cats.Monad
-import cats.syntax.all.*
 
 
 /** Repository with basic CRUD operations.
@@ -15,8 +11,7 @@ import cats.syntax.all.*
  *  @tparam Id element identity type
  */
 trait GenericRepository[F[_], E, Id]:
-  /** Check if element exists in repository. No consistency guarantee is implied
-   *  in concurrent environments.
+  /** Check if element exists in repository.
    *  @param id element identity
    *  @return check result
    */
@@ -24,7 +19,7 @@ trait GenericRepository[F[_], E, Id]:
 
   /** Persist element in repository.
    *  @param elem element to persist
-   *  @return element if success, RepositoryError if fail
+   *  @return element if success, otherwise error
    *  @note It doesn't persist element if another element with the same identity
    *    is already persisted.
    */
@@ -38,15 +33,17 @@ trait GenericRepository[F[_], E, Id]:
 
   /** Update element in repository.
    *  @param elem element to update
-   *  @return element if success, Repository if fail
+   *  @return element if success, otherwise error
    *  @note It doesn't create new element if no element with the same identity
    *    is persisted.
+   *  @note This method is idempotent, unless some modification were made in
+   *    between calls.
    */
   def update(elem: E): F[Either[RepositoryError, E]]
 
   /** Delete element in repository.
    *  @note This method is idempotent.
    *  @param id identity of the element to delete
-   *  @return result of operation, Unit if success, string if fail
+   *  @return result of operation, Unit if success, otherwise error
    */
   def delete(id: Id): F[Either[RepositoryError, Unit]]

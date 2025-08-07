@@ -3,13 +3,17 @@ package translations.infrastructure.service
 
 
 import auth.domain.model.AuthenticatedUser
-import shared.errors.{ApplicationServiceError, RepositoryError}
+import shared.errors.{
+  ApplicationServiceError,
+  RepositoryError,
+  toApplicationError,
+}
 import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import shared.repositories.transform
 import shared.service.PermissionService
 import shared.service.PermissionService.requirePermissionOrDeny
 import translations.application.AudioPlayService
-import translations.application.dto.AudioPlayRequest
+import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
 import translations.domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeriesId,
@@ -38,42 +42,42 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
 ) extends AudioPlayService[F]:
   private val repo = summon[AudioPlayRepository[F]]
 
-  override def findById(id: MediaResourceId): F[Option[AudioPlay]] = repo.get(id)
+  override def findById(id: MediaResourceId): F[Option[AudioPlayResponse]] =
+    for result <- repo.get(id)
+    yield result.map(AudioPlayResponse.fromDomain)
 
   override def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, List[AudioPlay]]] =
+  ): F[Either[ApplicationServiceError, List[AudioPlayResponse]]] =
     PaginationParams(pagination.max)(count, token) match
       case Validated.Invalid(_) =>
         ApplicationServiceError.BadRequest.asLeft.pure[F]
-      case Validated.Valid(params) =>
-        val token = params.pageToken.map(_.value)
-        for list <- repo.list(token, params.pageSize)
-        yield list.asRight
+      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
+        for list <- repo.list(pageToken.map(_.value), pageSize)
+        yield list.map(AudioPlayResponse.fromDomain).asRight
 
   override def create(
       user: AuthenticatedUser,
       ac: AudioPlayRequest,
-  ): F[Either[ApplicationServiceError, AudioPlay]] =
+  ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
       for
         id  <- UUIDGen.randomUUID[F].map(MediaResourceId(_))
         now <- Clock[F].realTimeInstant
         audio = ac.toDomain(id, now)
         result <- repo.persist(audio)
-      yield result.leftMap(toAudioPlayError).as(audio)
+      yield result.bimap(toApplicationError, AudioPlayResponse.fromDomain)
     }
 
   override def update(
       user: AuthenticatedUser,
       id: MediaResourceId,
       ac: AudioPlayRequest,
-  ): F[Either[ApplicationServiceError, AudioPlay]] =
+  ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
-      repo
-        .transform(id, old => ac.update(old))
-        .map(_.leftMap(toAudioPlayError))
+      for result <- repo.transform(id, old => ac.update(old))
+      yield result.bimap(toApplicationError, AudioPlayResponse.fromDomain)
     }
 
   override def delete(
@@ -81,16 +85,9 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       id: MediaResourceId,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Write, user) {
-      repo.delete(id).map(_.leftMap(toAudioPlayError))
+      for result <- repo.delete(id)
+      yield result.leftMap(toApplicationError)
     }
-
-  private def toAudioPlayError(err: RepositoryError): ApplicationServiceError =
-    err match
-      case RepositoryError.AlreadyExists =>
-        ApplicationServiceError.AlreadyExists
-      case RepositoryError.NotFound       => ApplicationServiceError.NotFound
-      case RepositoryError.StorageFailure =>
-        ApplicationServiceError.InternalError
 
   extension (ac: AudioPlayRequest)
     private def update(old: AudioPlay): AudioPlay = old.copy(
