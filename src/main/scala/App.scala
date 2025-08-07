@@ -1,18 +1,16 @@
 package org.aulune
 
 
-import auth.api.http.LoginEndpoint
+import auth.api.http.LoginController
 import auth.application.AuthenticationService
-import auth.domain.repositories.UserRepository
-import auth.domain.service.PasswordHashingService
 import auth.infrastructure.memory.UserRepositoryImpl
 import auth.infrastructure.service.{
   Argon2iPasswordHashingService,
-  TokenAuthenticationService,
+  AuthenticationServiceImpl,
 }
 import shared.service.PermissionService
 import translations.api.http.AudioPlaysController
-import translations.application.*
+import translations.application.{AudioPlayService, TranslationService}
 import translations.domain.repositories.{
   AudioPlayRepository,
   TranslationRepository,
@@ -21,24 +19,32 @@ import translations.infrastructure.jdbc.sqlite.{
   AudioPlayRepositoryImpl,
   TranslationRepositoryImpl,
 }
-import translations.infrastructure.service.*
+import translations.infrastructure.service.{
+  AudioPlayPermissionService,
+  AudioPlayServiceImpl,
+  AudioPlayServicePermission,
+  TranslationPermissionService,
+  TranslationServiceImpl,
+  TranslationServicePermission,
+}
 
-import cats.effect.*
+import cats.effect.{Async, IO, IOApp}
 import cats.syntax.all.*
 import doobie.Transactor
 import org.http4s.HttpRoutes
-import org.http4s.ember.server.*
-import org.http4s.implicits.*
+import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
 import sttp.apispec.openapi.Server
-import sttp.apispec.openapi.circe.yaml.*
+import sttp.apispec.openapi.circe.yaml.RichOpenAPI
 import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.SwaggerUI
+
+import scala.concurrent.duration.DurationInt
 
 
 object App extends IOApp.Simple:
@@ -55,12 +61,13 @@ object App extends IOApp.Simple:
     )
 
     for
-      given PasswordHashingService[IO] <-
-        Argon2iPasswordHashingService.build[IO]
-
-      given UserRepository[IO]        <- UserRepositoryImpl.build[IO]
-      given AuthenticationService[IO] <-
-        TokenAuthenticationService.build[IO](config.app.key)
+      passwordHasher <- Argon2iPasswordHashingService.build[IO]
+      userRepo <- UserRepositoryImpl.build[IO]
+      authService = AuthenticationServiceImpl(
+        config.app.key,
+        24.hours,
+        userRepo,
+        passwordHasher)
 
       given PermissionService[IO, TranslationServicePermission] =
         new TranslationPermissionService[IO]
@@ -79,7 +86,7 @@ object App extends IOApp.Simple:
 
       audioPlayEndpoints =
         new AudioPlaysController[IO](config.app.pagination).endpoints
-      endpoints = audioPlayEndpoints :+ new LoginEndpoint[IO].loginEndpoint
+      endpoints = audioPlayEndpoints ++ new LoginController[IO].endpoints
 
       _ <- EmberServerBuilder
         .default[IO]

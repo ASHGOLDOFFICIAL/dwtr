@@ -82,7 +82,7 @@ private final class TranslationsController[F[_]: Functor](
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
     .out(jsonBody[List[TranslationResponse]])
-    .errorOut(statusCode.and(stringBody))
+    .errorOut(statusCode)
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
     .tag(tag)

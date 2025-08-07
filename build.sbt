@@ -18,7 +18,7 @@ scalacOptions ++= Seq(
   "-feature",
   "-deprecation",
   "-unchecked",
-  "-Wnonunit-statement"
+  "-Wnonunit-statement",
 )
 
 

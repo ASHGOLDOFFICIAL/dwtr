@@ -53,7 +53,7 @@ final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
     .out(statusCode(StatusCode.Ok).and(jsonBody[List[AudioPlayResponse]]))
-    .errorOut(statusCode.and(stringBody))
+    .errorOut(statusCode)
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)

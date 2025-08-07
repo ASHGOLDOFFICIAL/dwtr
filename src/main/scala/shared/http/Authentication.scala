@@ -3,7 +3,6 @@ package shared.http
 
 
 import auth.application.AuthenticationService
-import auth.domain.errors.AuthenticationError
 import auth.domain.model.{AuthenticatedUser, AuthenticationToken}
 
 import cats.Functor
@@ -18,16 +17,11 @@ object Authentication:
     .bearer[String]()
     .description("Bearer token identifying the user")
 
-  private def toErrorResponse(err: AuthenticationError): (StatusCode, String) =
-    err match
-      case AuthenticationError.InvalidCredentials =>
-        (StatusCode.BadRequest, "Invalid token")
-
   private def decodeToken[F[_]: Functor](token: String)(using
       service: AuthenticationService[F],
-  ) = service
-    .authenticate(AuthenticationToken(token))
-    .map(_.leftMap(toErrorResponse))
+  ): F[Either[StatusCode, AuthenticatedUser]] =
+    for result <- service.authenticate(AuthenticationToken(token))
+    yield result.toRight(StatusCode.Unauthorized)
 
   def authOnlyEndpoint[F[_]: Functor](using
       AuthenticationService[F],
@@ -35,11 +29,11 @@ object Authentication:
     String,
     AuthenticatedUser,
     Unit,
-    (StatusCode, String),
+    StatusCode,
     Unit,
     Any,
     F,
   ] = endpoint
     .securityIn(tokenAuth)
-    .errorOut(statusCode.and(stringBody))
+    .errorOut(statusCode)
     .serverSecurityLogic(token => decodeToken(token))

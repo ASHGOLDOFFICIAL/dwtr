@@ -2,21 +2,22 @@ package org.aulune
 package auth.application
 
 
+import auth.application.dto.LoginResponse
 import auth.domain.*
-import auth.domain.errors.{AuthenticationError, LoginError}
 import auth.domain.model.{AuthenticatedUser, AuthenticationToken, Credentials}
 
 
+/** Service managing user authentication.
+ *
+ *  @tparam F effect type
+ */
 trait AuthenticationService[F[_]]:
-  private type LoginResult[A] = Either[LoginError, A]
-  private type AuthResult[A]  = Either[AuthenticationError, A]
+  /** Returns access token for user if credentials are correct.
+   *  @param credentials credentials to use
+   */
+  def login(credentials: Credentials): F[Option[LoginResponse]]
 
-  def login(credentials: Credentials): F[LoginResult[AuthenticationToken]]
-
-  def authenticate(token: AuthenticationToken): F[AuthResult[AuthenticatedUser]]
-
-
-object AuthenticationService:
-  /** Alias for `summon` */
-  transparent inline def apply[F[_]: AuthenticationService]
-      : AuthenticationService[F] = summon
+  /** Returns authenticated user's info if token is valid.
+   *  @param token user's token
+   */
+  def authenticate(token: AuthenticationToken): F[Option[AuthenticatedUser]]

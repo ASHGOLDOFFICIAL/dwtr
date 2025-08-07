@@ -8,16 +8,12 @@ import sttp.model.StatusCode
 
 def toErrorResponse(
     err: ApplicationServiceError,
-): (StatusCode, String) = err match
-  case ApplicationServiceError.BadRequest =>
-    (StatusCode.BadRequest, "Bad request")
-  case ApplicationServiceError.AlreadyExists =>
-    (StatusCode.Conflict, "Already exists")
-  case ApplicationServiceError.NotFound => (StatusCode.NotFound, "Not found")
-  case ApplicationServiceError.PermissionDenied =>
-    (StatusCode.Forbidden, "Permission denied")
-  case ApplicationServiceError.InternalError =>
-    (StatusCode.InternalServerError, "Internal error")
+): StatusCode = err match
+  case ApplicationServiceError.BadRequest       => StatusCode.BadRequest
+  case ApplicationServiceError.AlreadyExists    => StatusCode.Conflict
+  case ApplicationServiceError.NotFound         => StatusCode.NotFound
+  case ApplicationServiceError.PermissionDenied => StatusCode.Forbidden
+  case ApplicationServiceError.InternalError => StatusCode.InternalServerError
 
 
 def toApplicationError(
