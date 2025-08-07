@@ -3,8 +3,17 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### IntelliJ IDEA ###
+### IDE ###
 .idea/
+.vscode/
+.metals/
+.bloop/
+.scala-build/
+metals.sbt
 
 ### Scala ###
 .bsp/
+
+
+### Temporary files ###
+temp/
