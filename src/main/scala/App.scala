@@ -11,7 +11,7 @@ import auth.infrastructure.service.{
   TokenAuthenticationService,
 }
 import shared.service.PermissionService
-import translations.api.http.AudioPlaysEndpoint
+import translations.api.http.AudioPlaysController
 import translations.application.*
 import translations.domain.repositories.{
   AudioPlayRepository,
@@ -78,7 +78,7 @@ object App extends IOApp.Simple:
         new AudioPlayServiceImpl[IO](config.app.pagination)
 
       audioPlayEndpoints =
-        new AudioPlaysEndpoint[IO](config.app.pagination).endpoints
+        new AudioPlaysController[IO](config.app.pagination).endpoints
       endpoints = audioPlayEndpoints :+ new LoginEndpoint[IO].loginEndpoint
 
       _ <- EmberServerBuilder

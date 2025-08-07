@@ -22,7 +22,7 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 
 
-final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(
+final class AudioPlaysController[F[_]: Functor](pagination: Config.Pagination)(
     using
     AudioPlayService[F],
     AuthenticationService[F],
@@ -45,7 +45,7 @@ final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      service.getBy(id).map {
+      service.findById(id).map {
         case Some(value) => Right(AudioPlayResponse.fromDomain(value))
         case None        => Left(StatusCode.NotFound)
       }
@@ -61,7 +61,7 @@ final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(
     .tag(tag)
     .serverLogic { case (pageSize, pageToken) =>
       service
-        .getAll(pageToken, pageSize)
+        .listAll(pageToken, pageSize)
         .map(
           _.leftMap(toErrorResponse).map(_.map(AudioPlayResponse.fromDomain)))
     }
@@ -108,6 +108,6 @@ final class AudioPlaysEndpoint[F[_]: Functor](pagination: Config.Pagination)(
     postEndpoint,
     updateEndpoint,
     deleteEndpoint,
-  ) ++ TranslationsEndpoint
+  ) ++ TranslationsController
     .build(MediumType.AudioPlay, elementPath, tag, pagination)
     .endpoints

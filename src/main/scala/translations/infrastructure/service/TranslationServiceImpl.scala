@@ -38,10 +38,10 @@ final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
 ) extends TranslationService[F]:
   private val repo = summon[TranslationRepository[F]]
 
-  override def getBy(id: TranslationIdentity): F[Option[Translation]] =
+  override def findById(id: TranslationIdentity): F[Option[Translation]] =
     repo.get(id)
 
-  override def getAll(
+  override def listAll(
       originalType: MediumType,
       originalId: MediaResourceId,
       token: Option[String],

@@ -24,7 +24,7 @@ trait TranslationService[F[_]]:
    *  @param id translation identity
    *  @return requested translation if found
    */
-  def getBy(id: TranslationIdentity): F[Option[Translation]]
+  def findById(id: TranslationIdentity): F[Option[Translation]]
 
   /** Find all translations of given media resource.
    *
@@ -34,7 +34,7 @@ trait TranslationService[F[_]]:
    *  @param count number of elements
    *  @return list of found translations
    */
-  def getAll(
+  def listAll(
       originalType: MediumType,
       originalId: MediaResourceId,
       token: Option[String],

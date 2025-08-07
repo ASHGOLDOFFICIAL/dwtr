@@ -20,7 +20,7 @@ trait AudioPlayService[F[_]]:
    *  @param id audio play identity
    *  @return requested audio play if found
    */
-  def getBy(id: MediaResourceId): F[Option[AudioPlay]]
+  def findById(id: MediaResourceId): F[Option[AudioPlay]]
 
   /** Get all audio plays.
    *
@@ -29,7 +29,7 @@ trait AudioPlayService[F[_]]:
    *
    *  @return list of all audio plays
    */
-  def getAll(
+  def listAll(
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, List[AudioPlay]]]

@@ -30,7 +30,7 @@ import sttp.tapir.server.ServerEndpoint
 import java.net.URI
 
 
-object TranslationsEndpoint:
+object TranslationsController:
   def build[F[_]: Functor](
       mediumType: MediumType,
       mountPath: EndpointInput[MediaResourceId],
@@ -39,11 +39,11 @@ object TranslationsEndpoint:
   )(using
       TranslationService[F],
       AuthenticationService[F],
-  ): TranslationsEndpoint[F] =
-    new TranslationsEndpoint[F](pagination, mediumType, mountPath, tagPrefix)
+  ): TranslationsController[F] =
+    new TranslationsController[F](pagination, mediumType, mountPath, tagPrefix)
 
 
-private final class TranslationsEndpoint[F[_]: Functor](
+private final class TranslationsController[F[_]: Functor](
     pagination: Pagination,
     mediumType: MediumType,
     rootPath: EndpointInput[MediaResourceId],
@@ -75,7 +75,7 @@ private final class TranslationsEndpoint[F[_]: Functor](
     .tag(tag)
     .serverLogic { case (mediaId, translationId) =>
       service
-        .getBy(translationIdentity(mediaId, translationId))
+        .findById(translationIdentity(mediaId, translationId))
         .map {
           case Some(t) => Right(TranslationResponse.fromDomain(t))
           case None    => Left(StatusCode.NotFound)
@@ -92,7 +92,7 @@ private final class TranslationsEndpoint[F[_]: Functor](
     .tag(tag)
     .serverLogic { case (mediaId, pageSize, pageToken) =>
       service
-        .getAll(mediumType, mediaId, pageToken, pageSize)
+        .listAll(mediumType, mediaId, pageToken, pageSize)
         .map(
           _.leftMap(toErrorResponse).map(_.map(TranslationResponse.fromDomain)))
     }
@@ -145,4 +145,4 @@ private final class TranslationsEndpoint[F[_]: Functor](
     deleteEndpoint,
   )
 
-end TranslationsEndpoint
+end TranslationsController

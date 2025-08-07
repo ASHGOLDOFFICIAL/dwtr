@@ -38,9 +38,9 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
 ) extends AudioPlayService[F]:
   private val repo = summon[AudioPlayRepository[F]]
 
-  override def getBy(id: MediaResourceId): F[Option[AudioPlay]] = repo.get(id)
+  override def findById(id: MediaResourceId): F[Option[AudioPlay]] = repo.get(id)
 
-  override def getAll(
+  override def listAll(
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, List[AudioPlay]]] =
