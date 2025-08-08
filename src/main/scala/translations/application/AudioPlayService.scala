@@ -6,7 +6,6 @@ import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
 import translations.domain.model.shared.MediaResourceId
-import translations.infrastructure.service.AudioPlayServicePermission
 
 
 /** Service managing audio plays.
@@ -38,7 +37,7 @@ trait AudioPlayService[F[_]]:
    *  @param user user who performs this action
    *  @param ac audio play request
    *  @return created audio play if success, otherwise error
-   *  @note user must have [[AudioPlayServicePermission.Write]] permission.
+   *  @note user must have [[AudioPlayPermission.Write]] permission.
    */
   def create(
       user: AuthenticatedUser,
@@ -51,7 +50,7 @@ trait AudioPlayService[F[_]]:
    *  @param id audio play id
    *  @param ac new state
    *  @return updated audio play if success, otherwise error
-   *  @note user must have [[AudioPlayServicePermission.Write]] permission.
+   *  @note user must have [[AudioPlayPermission.Write]] permission.
    */
   def update(
       user: AuthenticatedUser,
@@ -64,7 +63,7 @@ trait AudioPlayService[F[_]]:
    *  @param user user who performs this action
    *  @param id audio play id
    *  @return `Unit` if success, otherwise error
-   *  @note user must have [[AudioPlayServicePermission.Write]] permission.
+   *  @note user must have [[AudioPlayPermission.Write]] permission.
    */
   def delete(
       user: AuthenticatedUser,

@@ -10,14 +10,14 @@ import shared.errors.{
 }
 import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import shared.repositories.transform
-import shared.service.PermissionService
-import shared.service.PermissionService.requirePermissionOrDeny
-import translations.application.TranslationService
+import shared.service.AuthorizationService
+import shared.service.AuthorizationService.requirePermissionOrDeny
+import translations.application.TranslationPermission.*
 import translations.application.dto.{TranslationRequest, TranslationResponse}
+import translations.application.{TranslationPermission, TranslationService}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.*
 import translations.domain.repositories.TranslationRepository
-import translations.infrastructure.service.TranslationServicePermission.*
 
 import cats.Monad
 import cats.data.Validated
@@ -33,10 +33,10 @@ import scala.util.Try
 final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
     repo: TranslationRepository[F],
-    permissionService: PermissionService[F, TranslationServicePermission],
+    authService: AuthorizationService[F, TranslationPermission],
 ) extends TranslationService[F]:
-  given PermissionService[F, TranslationServicePermission] = permissionService
-  
+  given AuthorizationService[F, TranslationPermission] = authService
+
   override def findById(
       id: TranslationIdentity,
   ): F[Option[TranslationResponse]] =

@@ -4,16 +4,17 @@ package translations.infrastructure.service
 
 import auth.domain.model.AuthenticatedUser
 import auth.domain.model.Role.Admin
-import shared.service.PermissionService
+import shared.service.AuthorizationService
+import translations.application.AudioPlayPermission
 
 import cats.Applicative
 import cats.syntax.all.*
 
 
-final class TranslationPermissionService[F[_]: Applicative]
-    extends PermissionService[F, TranslationServicePermission]:
+final class AudioPlayAuthorizationService[F[_]: Applicative]
+    extends AuthorizationService[F, AudioPlayPermission]:
   override def hasPermission(
       user: AuthenticatedUser,
-      permission: TranslationServicePermission,
+      permission: AudioPlayPermission,
   ): F[Boolean] = permission match
     case _ => (user.role == Admin).pure[F]

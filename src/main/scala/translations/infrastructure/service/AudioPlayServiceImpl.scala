@@ -10,10 +10,11 @@ import shared.errors.{
 }
 import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
 import shared.repositories.transform
-import shared.service.PermissionService
-import shared.service.PermissionService.requirePermissionOrDeny
-import translations.application.AudioPlayService
+import shared.service.AuthorizationService
+import shared.service.AuthorizationService.requirePermissionOrDeny
+import translations.application.AudioPlayPermission.Write
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
+import translations.application.{AudioPlayPermission, AudioPlayService}
 import translations.domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeriesId,
@@ -21,7 +22,6 @@ import translations.domain.model.audioplay.{
 }
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.repositories.AudioPlayRepository
-import translations.infrastructure.service.AudioPlayServicePermission.Write
 
 import cats.Monad
 import cats.data.Validated
@@ -37,9 +37,9 @@ import scala.util.Try
 final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
     repo: AudioPlayRepository[F],
-    permissionService: PermissionService[F, AudioPlayServicePermission],
+    authService: AuthorizationService[F, AudioPlayPermission],
 ) extends AudioPlayService[F]:
-  given PermissionService[F, AudioPlayServicePermission] = permissionService
+  given AuthorizationService[F, AudioPlayPermission] = authService
 
   override def findById(id: MediaResourceId): F[Option[AudioPlayResponse]] =
     for result <- repo.get(id)

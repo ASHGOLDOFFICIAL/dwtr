@@ -7,7 +7,6 @@ import shared.errors.ApplicationServiceError
 import translations.application.dto.{TranslationRequest, TranslationResponse}
 import translations.domain.model.shared.MediaResourceId
 import translations.domain.model.translation.{MediumType, TranslationIdentity}
-import translations.infrastructure.service.TranslationServicePermission
 
 
 /** Service managing translations.
@@ -44,7 +43,7 @@ trait TranslationService[F[_]]:
    *  @param originalType type of original medium
    *  @param originalId ID of original
    *  @return created translation if success, otherwise error
-   *  @note user must have [[TranslationServicePermission.Create]] permission.
+   *  @note user must have [[TranslationPermission.Create]] permission.
    */
   def create(
       user: AuthenticatedUser,
@@ -59,7 +58,7 @@ trait TranslationService[F[_]]:
    *  @param id translation identity
    *  @param tc new state
    *  @return updated translation if success, otherwise error
-   *  @note user must have [[TranslationServicePermission.Update]] permission.
+   *  @note user must have [[TranslationPermission.Update]] permission.
    */
   def update(
       user: AuthenticatedUser,
@@ -72,7 +71,7 @@ trait TranslationService[F[_]]:
    *  @param user user who performs this action
    *  @param id translation identity
    *  @return `Unit` if success, otherwise error
-   *  @note user must have [[TranslationServicePermission.Delete]] permission.
+   *  @note user must have [[TranslationPermission.Delete]] permission.
    */
   def delete(
       user: AuthenticatedUser,

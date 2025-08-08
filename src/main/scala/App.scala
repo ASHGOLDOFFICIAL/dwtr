@@ -13,9 +13,9 @@ import translations.infrastructure.jdbc.sqlite.{
   TranslationRepositoryImpl,
 }
 import translations.infrastructure.service.{
-  AudioPlayPermissionService,
+  AudioPlayAuthorizationService,
   AudioPlayServiceImpl,
-  TranslationPermissionService,
+  TranslationAuthorizationService,
   TranslationServiceImpl,
 }
 
@@ -57,19 +57,19 @@ object App extends IOApp.Simple:
       authServ =
         AuthenticationServiceImpl(config.app.key, 24.hours, userRepo, hasher)
 
-      transPerm = new TranslationPermissionService[IO]
       transRepo <- TranslationRepositoryImpl.build[IO](transactor)
+      transAuth = new TranslationAuthorizationService[IO]
       transServ = new TranslationServiceImpl[IO](
         config.app.pagination,
         transRepo,
-        transPerm)
+        transAuth)
 
       audioRepo <- AudioPlayRepositoryImpl.build[IO](transactor)
-      audioPerm = new AudioPlayPermissionService[IO]
+      audioAuth = new AudioPlayAuthorizationService[IO]
       audioServ = new AudioPlayServiceImpl[IO](
         config.app.pagination,
         audioRepo,
-        audioPerm)
+        audioAuth)
 
       audioPlayEndpoints = new AudioPlaysController[IO](
         config.app.pagination,
