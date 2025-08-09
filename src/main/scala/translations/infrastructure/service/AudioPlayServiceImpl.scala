@@ -15,14 +15,14 @@ import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.application.AudioPlayPermission.Write
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
-import translations.application.{AudioPlayPermission, AudioPlayService}
-import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
-import translations.domain.repositories.AudioPlayRepository
-import translations.domain.repositories.AudioPlayRepository.{
+import translations.application.repositories.AudioPlayRepository
+import translations.application.repositories.AudioPlayRepository.{
   AudioPlayToken,
   given,
 }
+import translations.application.{AudioPlayPermission, AudioPlayService}
+import translations.domain.model.audioplay.AudioPlay
+import translations.domain.model.shared.Uuid
 
 import cats.Monad
 import cats.data.Validated

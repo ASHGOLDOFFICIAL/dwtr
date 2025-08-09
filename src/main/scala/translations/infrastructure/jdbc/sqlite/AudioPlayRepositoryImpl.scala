@@ -4,10 +4,10 @@ package translations.infrastructure.jdbc.sqlite
 
 import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
+import translations.application.repositories.AudioPlayRepository
+import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.Uuid
-import translations.domain.repositories.AudioPlayRepository
-import translations.domain.repositories.AudioPlayRepository.AudioPlayToken
 import translations.infrastructure.jdbc.doobie.given
 
 import cats.effect.MonadCancelThrow

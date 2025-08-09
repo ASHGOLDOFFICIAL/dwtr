@@ -1,12 +1,12 @@
 package org.aulune
-package translations.domain.repositories
+package translations.application.repositories
 
 
 import shared.pagination.{TokenDecoder, TokenEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
+import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.model.shared.Uuid
-import translations.domain.repositories.AudioPlayRepository.AudioPlayToken
 
 import java.time.Instant
 import java.util.Base64

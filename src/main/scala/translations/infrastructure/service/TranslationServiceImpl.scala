@@ -15,16 +15,16 @@ import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.application.TranslationPermission.*
 import translations.application.dto.{TranslationRequest, TranslationResponse}
-import translations.application.{TranslationPermission, TranslationService}
-import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
-import translations.domain.model.translation.*
-import translations.domain.repositories.TranslationRepository
-import translations.domain.repositories.TranslationRepository.{
+import translations.application.repositories.TranslationRepository
+import translations.application.repositories.TranslationRepository.{
   TranslationIdentity,
   TranslationToken,
   given,
 }
+import translations.application.{TranslationPermission, TranslationService}
+import translations.domain.model.audioplay.AudioPlay
+import translations.domain.model.shared.Uuid
+import translations.domain.model.translation.*
 
 import cats.Monad
 import cats.data.Validated

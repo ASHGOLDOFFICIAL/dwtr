@@ -1,5 +1,5 @@
 package org.aulune
-package auth.domain.repositories
+package auth.application.repositories
 
 
 import auth.domain.model.User

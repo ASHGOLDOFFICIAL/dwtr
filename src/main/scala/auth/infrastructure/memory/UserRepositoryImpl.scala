@@ -2,9 +2,9 @@ package org.aulune
 package auth.infrastructure.memory
 
 
+import auth.application.repositories.UserRepository
 import auth.domain.model.Role.Admin
 import auth.domain.model.User
-import auth.domain.repositories.UserRepository
 import shared.infrastructure.repositories.memory.GenericRepositoryImpl
 import shared.repositories.EntityIdentity
 

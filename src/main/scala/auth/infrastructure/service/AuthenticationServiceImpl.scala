@@ -4,6 +4,7 @@ package auth.infrastructure.service
 
 import auth.application.AuthenticationService
 import auth.application.dto.{LoginRequest, LoginResponse}
+import auth.application.repositories.UserRepository
 import auth.domain.model.TokenPayload.given
 import auth.domain.model.{
   AuthenticatedUser,
@@ -11,7 +12,6 @@ import auth.domain.model.{
   TokenPayload,
   User,
 }
-import auth.domain.repositories.UserRepository
 import auth.domain.service.PasswordHashingService
 
 import cats.Monad

@@ -4,13 +4,13 @@ package translations.infrastructure.jdbc.sqlite
 
 import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
-import translations.domain.model.shared.Uuid
-import translations.domain.model.translation.Translation
-import translations.domain.repositories.TranslationRepository
-import translations.domain.repositories.TranslationRepository.{
+import translations.application.repositories.TranslationRepository
+import translations.application.repositories.TranslationRepository.{
   TranslationIdentity,
   TranslationToken,
 }
+import translations.domain.model.shared.Uuid
+import translations.domain.model.translation.Translation
 import translations.infrastructure.jdbc.doobie.given
 
 import cats.data.NonEmptyList
