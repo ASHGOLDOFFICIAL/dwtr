@@ -13,12 +13,19 @@ import java.time.Instant
 import java.util.UUID
 
 
+/** Audio play translation representation.
+ * @param originalId original work's ID.
+ * @param id translation ID.
+ * @param title translated title.
+ * @param links publication links.
+ * @param addedAt when translation was added.
+ */
 final case class AudioPlayTranslation private (
+    originalId: Uuid[AudioPlay],
     id: Uuid[AudioPlayTranslation],
     title: TranslatedTitle,
-    originalId: Uuid[AudioPlay],
-    addedAt: Instant,
     links: NonEmptyList[URI],
+    addedAt: Instant,
 )
 
 
@@ -40,11 +47,11 @@ object AudioPlayTranslation:
       addedAt: Instant,
       links: List[URI],
   ): ValidationResult[AudioPlayTranslation] = (
+    Uuid[AudioPlay](id).validNec,
     Uuid[AudioPlayTranslation](id).validNec,
     TranslatedTitle(title).toValidNec(InvalidTitle),
-    Uuid[AudioPlay](id).validNec,
-    addedAt.validNec,
     validateLinks(links),
+    addedAt.validNec,
   ).mapN(new AudioPlayTranslation(_, _, _, _, _))
 
   /** Returns updated translation.
@@ -60,11 +67,11 @@ object AudioPlayTranslation:
       title: String,
       links: List[URI],
   ): ValidationResult[AudioPlayTranslation] = (
+    initial.originalId.validNec,
     initial.id.validNec,
     TranslatedTitle(title).toValidNec(InvalidTitle),
-    initial.originalId.validNec,
-    initial.addedAt.validNec,
     validateLinks(links),
+    initial.addedAt.validNec,
   ).mapN(new AudioPlayTranslation(_, _, _, _, _))
 
   /** Validates links. Non empty list is required.
