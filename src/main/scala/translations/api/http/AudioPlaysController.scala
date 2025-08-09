@@ -9,7 +9,7 @@ import shared.http.QueryParams
 import translations.api.http.circe.given
 import translations.api.http.tapir.given
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
-import translations.application.{AudioPlayService, TranslationService}
+import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
 import cats.Functor
 import cats.syntax.all.*
@@ -22,19 +22,20 @@ import java.util.UUID
 
 
 /** Controller with Tapir endpoints for audio plays.
- *  @param pagination pagination config.
- *  @param service [[AudioPlayService]] to use.
- *  @param authService [[AuthenticationService]] to use for restricted
- *    endpoints.
- *  @param translationService [[TranslationService]] implementation to create
- *    subtree with audio play translations.
+ *
+ * @param pagination         pagination config.
+ * @param service            [[AudioPlayService]] to use.
+ * @param authService        [[AuthenticationService]] to use for restricted
+ *                           endpoints.
+ * @param translationService [[AudioPlayTranslationService]] implementation to create
+ *                           subtree with audio play translations.
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Functor](
-    pagination: Config.Pagination,
-    service: AudioPlayService[F],
-    authService: AuthenticationService[F],
-    translationService: TranslationService[F],
+                                                 pagination: Config.Pagination,
+                                                 service: AudioPlayService[F],
+                                                 authService: AuthenticationService[F],
+                                                 translationService: AudioPlayTranslationService[F],
 ):
   private given AuthenticationService[F] = authService
   private val audioPlayId                = path[UUID]("audio_play_id")

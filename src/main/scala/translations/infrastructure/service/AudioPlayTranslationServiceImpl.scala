@@ -21,10 +21,12 @@ import translations.application.repositories.TranslationRepository.{
   TranslationToken,
   given,
 }
-import translations.application.{TranslationPermission, TranslationService}
-import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
-import translations.domain.model.translation.*
+import translations.application.{
+  AudioPlayTranslationService,
+  TranslationPermission,
+}
+import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import translations.domain.shared.Uuid
 
 import cats.Monad
 import cats.data.Validated
@@ -36,18 +38,18 @@ import java.time.Instant
 import java.util.UUID
 
 
-/** [[TranslationService]] implementation.
+/** [[AudioPlayTranslationService]] implementation.
  *
  *  @param pagination pagination config.
  *  @param repo audio play repository.
  *  @param authService [[AuthorizationService]] for [[TranslationPermission]]s.
  *  @tparam F effect type.
  */
-final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
+final class AudioPlayTranslationServiceImpl[F[_] : Monad : Clock : SecureRandom](
     pagination: Config.Pagination,
     repo: TranslationRepository[F],
     authService: AuthorizationService[F, TranslationPermission],
-) extends TranslationService[F]:
+                                                                                ) extends AudioPlayTranslationService[F]:
   given AuthorizationService[F, TranslationPermission] = authService
 
   override def findById(

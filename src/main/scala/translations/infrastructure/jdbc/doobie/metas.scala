@@ -6,8 +6,7 @@ import translations.domain.model.audioplay.{
   AudioPlaySeriesNumber,
   AudioPlayTitle
 }
-import translations.domain.model.shared.Uuid
-import translations.domain.model.translation.TranslatedTitle
+import translations.domain.shared.{TranslatedTitle, Uuid}
 
 import cats.syntax.all.*
 import doobie.Meta

@@ -6,7 +6,7 @@ import shared.pagination.{TokenDecoder, TokenEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
+import translations.domain.shared.Uuid
 
 import java.time.Instant
 import java.util.Base64

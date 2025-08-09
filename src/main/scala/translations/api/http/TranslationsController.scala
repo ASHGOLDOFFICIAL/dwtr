@@ -9,7 +9,7 @@ import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
 import translations.api.http.circe.given
 import translations.api.http.tapir.given
-import translations.application.TranslationService
+import translations.application.AudioPlayTranslationService
 import translations.application.dto.{TranslationRequest, TranslationResponse}
 
 import cats.Functor
@@ -25,21 +25,22 @@ import java.util.UUID
 /** Controller with Tapir endpoints for translations. */
 object TranslationsController:
   /** Builds controller with endpoints for translations.
-   *  @param mountPath where to mount endpoints.
-   *  @param tagPrefix prefix of tags for documentation without trailing space.
-   *  @param pagination pagination config.
-   *  @param service [[TranslationService]] to use.
+   *
+   * @param mountPath    where to mount endpoints.
+   * @param tagPrefix    prefix of tags for documentation without trailing space.
+   * @param pagination   pagination config.
+   * @param service      [[AudioPlayTranslationService]] to use.
    *  @param authService [[AuthenticationService]] to use for restricted
-   *    endpoints.
+   *                     endpoints.
    *  @tparam F effect type.
    *  @return translations controller.
    */
   def build[F[_]: Functor](
-      mountPath: EndpointInput[UUID],
-      tagPrefix: String,
-      pagination: Pagination,
-      service: TranslationService[F],
-      authService: AuthenticationService[F],
+                            mountPath: EndpointInput[UUID],
+                            tagPrefix: String,
+                            pagination: Pagination,
+                            service: AudioPlayTranslationService[F],
+                            authService: AuthenticationService[F],
   ): TranslationsController[F] = new TranslationsController[F](
     pagination,
     mountPath,
@@ -49,11 +50,11 @@ object TranslationsController:
 
 
 private final class TranslationsController[F[_]: Functor](
-    pagination: Pagination,
-    rootPath: EndpointInput[UUID],
-    tagPrefix: String,
-    service: TranslationService[F],
-    authService: AuthenticationService[F],
+                                                           pagination: Pagination,
+                                                           rootPath: EndpointInput[UUID],
+                                                           tagPrefix: String,
+                                                           service: AudioPlayTranslationService[F],
+                                                           authService: AuthenticationService[F],
 ):
   private given AuthenticationService[F] = authService
 

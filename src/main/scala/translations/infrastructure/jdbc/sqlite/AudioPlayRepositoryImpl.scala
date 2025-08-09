@@ -7,7 +7,7 @@ import shared.infrastructure.doobie.*
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
+import translations.domain.shared.Uuid
 import translations.infrastructure.jdbc.doobie.given
 
 import cats.effect.MonadCancelThrow

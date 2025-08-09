@@ -2,7 +2,7 @@ package org.aulune
 package translations.application.dto
 
 
-import translations.domain.model.translation.AudioPlayTranslation
+import translations.domain.model.audioplay.AudioPlayTranslation
 
 import java.net.URI
 import java.util.UUID

@@ -1,11 +1,9 @@
 package org.aulune
-package translations.domain.model.translation
-
+package translations.domain.model.audioplay
 
 import translations.domain.errors.TranslationValidationError
 import translations.domain.errors.TranslationValidationError.*
-import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
+import translations.domain.shared.{TranslatedTitle, Uuid}
 
 import cats.data.{NonEmptyList, ValidatedNec}
 import cats.syntax.all.*

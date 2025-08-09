@@ -22,7 +22,7 @@ import translations.application.repositories.AudioPlayRepository.{
 }
 import translations.application.{AudioPlayPermission, AudioPlayService}
 import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.Uuid
+import translations.domain.shared.Uuid
 
 import cats.Monad
 import cats.data.Validated

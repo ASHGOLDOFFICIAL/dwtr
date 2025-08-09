@@ -1,5 +1,5 @@
 package org.aulune
-package translations.domain.model.translation
+package translations.domain.shared
 
 /** Original work's translated title. */
 opaque type TranslatedTitle <: String = String

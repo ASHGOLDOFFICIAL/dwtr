@@ -15,8 +15,8 @@ import translations.infrastructure.jdbc.sqlite.{
 import translations.infrastructure.service.{
   AudioPlayAuthorizationService,
   AudioPlayServiceImpl,
+  AudioPlayTranslationServiceImpl,
   TranslationAuthorizationService,
-  TranslationServiceImpl,
 }
 
 import cats.effect.{Async, IO, IOApp}
@@ -59,7 +59,7 @@ object App extends IOApp.Simple:
 
       transRepo <- TranslationRepositoryImpl.build[IO](transactor)
       transAuth = new TranslationAuthorizationService[IO]
-      transServ = new TranslationServiceImpl[IO](
+      transServ = new AudioPlayTranslationServiceImpl[IO](
         config.app.pagination,
         transRepo,
         transAuth)

@@ -9,8 +9,8 @@ import translations.application.repositories.TranslationRepository.{
   TranslationIdentity,
   TranslationToken,
 }
-import translations.domain.model.shared.Uuid
-import translations.domain.model.translation.AudioPlayTranslation
+import translations.domain.model.audioplay.AudioPlayTranslation
+import translations.domain.shared.Uuid
 import translations.infrastructure.jdbc.doobie.given
 
 import cats.data.NonEmptyList

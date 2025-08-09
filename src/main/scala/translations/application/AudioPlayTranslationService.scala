@@ -13,7 +13,7 @@ import java.util.UUID
  *
  *  @tparam F effect type.
  */
-trait TranslationService[F[_]]:
+trait AudioPlayTranslationService[F[_]]:
   /** Find translation by given identity.
    *
    *  @param originalId ID of original.

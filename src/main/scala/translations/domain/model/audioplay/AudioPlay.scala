@@ -4,7 +4,7 @@ package translations.domain.model.audioplay
 
 import translations.domain.errors.AudioPlayValidationError
 import translations.domain.errors.AudioPlayValidationError.*
-import translations.domain.model.shared.Uuid
+import translations.domain.shared.Uuid
 
 import cats.data.ValidatedNec
 import cats.syntax.all.*
