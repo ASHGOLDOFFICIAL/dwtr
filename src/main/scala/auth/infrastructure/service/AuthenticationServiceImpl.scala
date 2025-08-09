@@ -3,12 +3,11 @@ package auth.infrastructure.service
 
 
 import auth.application.AuthenticationService
-import auth.application.dto.LoginResponse
+import auth.application.dto.{LoginRequest, LoginResponse}
 import auth.domain.model.TokenPayload.given
 import auth.domain.model.{
   AuthenticatedUser,
   AuthenticationToken,
-  Credentials,
   TokenPayload,
   User,
 }
@@ -27,11 +26,11 @@ import scala.concurrent.duration.FiniteDuration
 
 
 /** [[AuthenticationService]] implementation.
- *  @param secretKey secret key for token encoding and decoding
- *  @param expiration token expiration time
- *  @param repo repository with users
- *  @param hasher password hasher
- *  @tparam F effect type
+ *  @param secretKey secret key for token encoding and decoding.
+ *  @param expiration token expiration time.
+ *  @param repo repository with users.
+ *  @param hasher password hasher.
+ *  @tparam F effect type.
  */
 final class AuthenticationServiceImpl[F[_]: Monad: Clock](
     secretKey: String,
@@ -41,7 +40,7 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
 ) extends AuthenticationService[F]:
   private val algo = JwtAlgorithm.HS256
 
-  override def login(credentials: Credentials): F[Option[LoginResponse]] = (for
+  override def login(credentials: LoginRequest): F[Option[LoginResponse]] = (for
     user <- OptionT(repo.get(credentials.username))
     passwordsMatch = verifyPassword(user, credentials.password)
     token <- OptionT.whenM(passwordsMatch)(generateToken(user))
@@ -60,14 +59,14 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
   private val options = JwtOptions(expiration = false)
 
   /** Return `true` if given password is user's password.
-   *  @param user user whose password will be checked
-   *  @param password plain password to check
+   *  @param user user whose password will be checked.
+   *  @param password plain password to check.
    */
   private def verifyPassword(user: User, password: String): F[Boolean] =
     hasher.verifyPassword(password, user.hashedPassword)
 
   /** Generates access token for given user.
-   *  @param user user for whom to generate access token
+   *  @param user user for whom to generate access token.
    */
   private def generateToken(user: User): F[AuthenticationToken] =
     Clock[F].realTimeInstant.map { now =>
@@ -78,11 +77,11 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
     }
 
   /** Returns claim if token is successfully decoded.
-   *  @param token token
+   *  @param token token.
    */
   private def decodeClaim(token: AuthenticationToken): Option[JwtClaim] =
     JwtCirce
-      .decode(token.string, secretKey, Seq(algo), options)
+      .decode(token, secretKey, Seq(algo), options)
       .toOption
 
   /** Validates the expiration of a token against the current time.
@@ -93,8 +92,8 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
    *    - its expiration timestamp is not too far in the future, based on given
    *      [[expiration]].
    *
-   *  @param payload the token payload containing the expiration timestamp
-   *  @return `true` if the token is valid, `false` otherwise
+   *  @param payload token payload containing the expiration timestamp.
+   *  @return `true` if the token is valid, `false` otherwise.
    */
   private def validateExpiration(payload: TokenPayload): F[Boolean] =
     Clock[F].realTimeInstant.map { now =>
@@ -104,15 +103,19 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
   /** Pure function to check whether a token's expiration is within the allowed
    *  range.
    *
-   *  @param now the current timestamp
-   *  @param expiration the token's expiration timestamp
+   *  @param now current timestamp.
+   *  @param expiration token's expiration timestamp.
    *  @return `true` if the token expires after `now` and not beyond the
-   *    configured max duration
+   *    configured max duration.
    */
   private def validateExpirationPure(
       now: Instant,
       expiration: Instant,
   ): Boolean = expiration.isAfter(now) && expiration.isBefore(maxAllowed(now))
 
-  private val maxExp                   = expiration.toSeconds
+  private val maxExp = expiration.toSeconds
+
+  /** Maximum allowed instant of time for token `exp` field.
+   *  @param now current timestamp.
+   */
   private def maxAllowed(now: Instant) = now.plusSeconds(maxExp)

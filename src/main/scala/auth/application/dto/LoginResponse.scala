@@ -3,7 +3,7 @@ package auth.application.dto
 
 import auth.domain.model.AuthenticationToken
 
-
-final case class LoginResponse(
-    token: AuthenticationToken,
-)
+/** Login response body.
+ *  @param token access token.
+ */
+final case class LoginResponse(token: AuthenticationToken)

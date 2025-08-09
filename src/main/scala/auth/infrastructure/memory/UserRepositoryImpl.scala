@@ -9,13 +9,13 @@ import shared.infrastructure.repositories.memory.GenericRepositoryImpl
 import shared.repositories.EntityIdentity
 
 import cats.Applicative
-import cats.effect.{Ref, Sync}
+import cats.effect.Ref
 import cats.syntax.all.*
 
 
 // TODO: Fix hardcode
 object UserRepositoryImpl:
-  def build[F[_]: Sync]: F[UserRepository[F]] = Ref
+  def build[F[_]: Applicative: Ref.Make]: F[UserRepository[F]] = Ref
     .of[F, Map[String, User]](
       Map.from(
         Seq(

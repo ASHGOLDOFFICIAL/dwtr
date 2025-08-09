@@ -6,7 +6,13 @@ import shared.errors.RepositoryError
 import shared.errors.RepositoryError.NotFound
 
 import cats.Monad
+import cats.data.EitherT
 import cats.syntax.all.*
+
+import scala.util.control.NoStackTrace
+
+
+object InvalidInput extends NoStackTrace
 
 
 extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
@@ -29,3 +35,26 @@ extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
         else repo.update(updated)
       }
     yield result
+
+  /** Updates element to result of [[f]]. If [[f]] returns `None`, then [[err]]
+   *  wrapped in `Left` will be returned.
+   *
+   *  If function [[f]] results in the same value, the entity is not persisted.
+   *
+   *  @param id ID of entity to be updated.
+   *  @param err error to be returned if [[f]] returns `None`
+   *  @param f function to be applied to element.
+   *  @param g function to transform errors.
+   *  @tparam B new error type.
+   *  @return updated element or error.
+   */
+  def transformIfSome[B](id: Id, err: B)(
+      f: E => Option[E],
+  )(g: RepositoryError => B): M[Either[B, E]] = (for
+    elem    <- EitherT.fromOptionF(repo.get(id), g(RepositoryError.NotFound))
+    updated <- EitherT.fromOption(f(elem), err)
+    result  <- EitherT {
+      if updated == elem then elem.asRight.pure[M]
+      else repo.update(updated)
+    }.leftMap(g)
+  yield result).value

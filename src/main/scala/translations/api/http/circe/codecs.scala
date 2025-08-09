@@ -2,32 +2,24 @@ package org.aulune
 package translations.api.http.circe
 
 
-import auth.domain.model.AuthenticationToken
-import translations.domain.model.audioplay.{AudioPlaySeriesId, AudioPlayTitle}
-import translations.domain.model.translation.{MediumType, TranslationTitle}
-
-import io.circe.{Decoder, Encoder}
-import org.aulune
-
-
-given Encoder[MediumType] =
-  Encoder.encodeInt.contramap { case MediumType.AudioPlay => 1 }
-
-
-given Decoder[MediumType] = Decoder.decodeInt.emap {
-  case 1     => Right(MediumType.AudioPlay)
-  case other => Left(s"Invalid MediumType: $other")
+import translations.application.dto.{
+  AudioPlayRequest,
+  AudioPlayResponse,
+  TranslationRequest,
+  TranslationResponse
 }
 
+import io.circe.{Decoder, Encoder}
 
-given Encoder[TranslationTitle] = Encoder.encodeString.contramap(_.value)
 
-given Decoder[TranslationTitle] = Decoder.decodeString.map(TranslationTitle(_))
+given Encoder[TranslationRequest] = Encoder.derived
+given Decoder[TranslationRequest] = Decoder.derived
 
-given Encoder[AudioPlayTitle] = Encoder.encodeString.contramap(_.value)
+given Encoder[TranslationResponse] = Encoder.derived
+given Decoder[TranslationResponse] = Decoder.derived
 
-given Decoder[AudioPlayTitle] = Decoder.decodeString.map(AudioPlayTitle(_))
+given Encoder[AudioPlayRequest] = Encoder.derived
+given Decoder[AudioPlayRequest] = Decoder.derived
 
-given Encoder[AudioPlaySeriesId] = Encoder.encodeLong.contramap(_.value)
-
-given Decoder[AudioPlaySeriesId] = Decoder.decodeLong.map(AudioPlaySeriesId(_))
+given Encoder[AudioPlayResponse] = Encoder.derived
+given Decoder[AudioPlayResponse] = Decoder.derived

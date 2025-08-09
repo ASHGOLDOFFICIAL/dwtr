@@ -4,6 +4,10 @@ package shared.pagination
 import scala.util.control.NoStackTrace
 
 
-enum PaginationValidationError extends Exception with NoStackTrace:
+/** Errors that can occur during pagination params parsing. */
+enum PaginationValidationError extends NoStackTrace:
+  /** Given page size is not valid. */
   case InvalidPageSize
+
+  /** Given token cannot be decoded. */
   case InvalidPageToken

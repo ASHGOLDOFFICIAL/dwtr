@@ -10,12 +10,19 @@ import cats.effect.Ref
 import cats.syntax.all.*
 
 
+/** [[GenericRepository]] in-memory implementation.
+ *  @param mapR [[Ref]] with [[Map]]
+ *  @tparam F effect type.
+ *  @tparam E element type.
+ *  @tparam Id element identity type.
+ */
 class GenericRepositoryImpl[F[_]: Applicative, E, Id](
     mapR: Ref[F, Map[Id, E]],
 )(using
     EntityIdentity[E, Id],
 ) extends GenericRepository[F, E, Id]:
-  extension (elem: E) private def id: Id = EntityIdentity[E, Id].identity(elem)
+  extension (elem: E)
+    private def id: Id = summon[EntityIdentity[E, Id]].identity(elem)
 
   override def contains(id: Id): F[Boolean] = mapR.get.map(_.contains(id))
 

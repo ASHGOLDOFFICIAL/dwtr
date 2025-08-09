@@ -6,22 +6,30 @@ import auth.application.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
+import translations.api.http.circe.given
 import translations.api.http.tapir.given
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
 import translations.application.{AudioPlayService, TranslationService}
-import translations.domain.model.shared.MediaResourceId
-import translations.domain.model.translation.MediumType
 
 import cats.Functor
 import cats.syntax.all.*
-import io.circe.generic.auto.*
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
-import sttp.tapir.json.circe.*
+import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
 
+import java.util.UUID
 
+
+/** Controller with Tapir endpoints for audio plays.
+ *  @param pagination pagination config.
+ *  @param service [[AudioPlayService]] to use.
+ *  @param authService [[AuthenticationService]] to use for restricted
+ *    endpoints.
+ *  @param translationService [[TranslationService]] implementation to create
+ *    subtree with audio play translations.
+ *  @tparam F effect type.
+ */
 final class AudioPlaysController[F[_]: Functor](
     pagination: Config.Pagination,
     service: AudioPlayService[F],
@@ -29,10 +37,10 @@ final class AudioPlaysController[F[_]: Functor](
     translationService: TranslationService[F],
 ):
   private given AuthenticationService[F] = authService
-  private val audioPlayId = path[MediaResourceId]("audio_play_id")
+  private val audioPlayId                = path[UUID]("audio_play_id")
     .description("ID of the audio play")
 
-  private val collectionPath = AudioPlayResponse.collectionIdentifier
+  private val collectionPath = "audioplays"
   private val elementPath    = collectionPath / audioPlayId
   private val tag            = "Audio Plays"
 
@@ -96,6 +104,7 @@ final class AudioPlaysController[F[_]: Functor](
       yield result.leftMap(toErrorResponse)
     }
 
+  /** Returns Tapir endpoints for audio plays and their translations. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     listEndpoint,
@@ -103,11 +112,5 @@ final class AudioPlaysController[F[_]: Functor](
     updateEndpoint,
     deleteEndpoint,
   ) ++ TranslationsController
-    .build(
-      MediumType.AudioPlay,
-      elementPath,
-      tag,
-      pagination,
-      translationService,
-      authService)
+    .build(elementPath, tag, pagination, translationService, authService)
     .endpoints

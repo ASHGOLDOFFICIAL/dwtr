@@ -11,6 +11,9 @@ import cats.Applicative
 import cats.syntax.all.*
 
 
+/** [[AuthorizationService]] for [[AudioPlayPermission]]s.
+ *  @tparam F effect type.
+ */
 final class AudioPlayAuthorizationService[F[_]: Applicative]
     extends AuthorizationService[F, AudioPlayPermission]:
   override def hasPermission(

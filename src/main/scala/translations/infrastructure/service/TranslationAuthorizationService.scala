@@ -11,6 +11,9 @@ import cats.Applicative
 import cats.syntax.all.*
 
 
+/** [[AuthorizationService]] for [[TranslationPermission]]s.
+ *  @tparam F effect type.
+ */
 final class TranslationAuthorizationService[F[_]: Applicative]
     extends AuthorizationService[F, TranslationPermission]:
   override def hasPermission(

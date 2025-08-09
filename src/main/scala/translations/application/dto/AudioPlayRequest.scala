@@ -1,9 +1,17 @@
 package org.aulune
 package translations.application.dto
 
+import java.util.UUID
 
+
+/** Audio play request body.
+ *
+ *  @param title audio play title.
+ *  @param seriesId audio play series ID.
+ *  @param seriesNumber audio play number in series.
+ */
 case class AudioPlayRequest(
     title: String,
-    seriesId: Option[Long],
-    seriesOrder: Option[Int],
+    seriesId: Option[UUID],
+    seriesNumber: Option[Int],
 )

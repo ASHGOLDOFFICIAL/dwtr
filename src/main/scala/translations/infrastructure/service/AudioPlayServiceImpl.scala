@@ -3,25 +3,26 @@ package translations.infrastructure.service
 
 
 import auth.domain.model.AuthenticatedUser
+import shared.errors.ApplicationServiceError.*
 import shared.errors.{
   ApplicationServiceError,
   RepositoryError,
   toApplicationError,
 }
-import shared.pagination.{PaginationParams, TokenDecoder, TokenEncoder}
-import shared.repositories.transform
+import shared.pagination.PaginationParams
+import shared.repositories.transformIfSome
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.application.AudioPlayPermission.Write
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
 import translations.application.{AudioPlayPermission, AudioPlayService}
-import translations.domain.model.audioplay.{
-  AudioPlay,
-  AudioPlaySeriesId,
-  AudioPlayTitle,
-}
-import translations.domain.model.shared.MediaResourceId
+import translations.domain.model.audioplay.AudioPlay
+import translations.domain.model.shared.Uuid
 import translations.domain.repositories.AudioPlayRepository
+import translations.domain.repositories.AudioPlayRepository.{
+  AudioPlayToken,
+  given,
+}
 
 import cats.Monad
 import cats.data.Validated
@@ -30,10 +31,15 @@ import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
 
 import java.time.Instant
-import java.util.{Base64, UUID}
-import scala.util.Try
+import java.util.UUID
 
 
+/** [[AudioPlayService]] implementation.
+ *  @param pagination pagination config.
+ *  @param repo audio play repository.
+ *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
+ *  @tparam F effect type.
+ */
 final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
     pagination: Config.Pagination,
     repo: AudioPlayRepository[F],
@@ -41,19 +47,18 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
 ) extends AudioPlayService[F]:
   given AuthorizationService[F, AudioPlayPermission] = authService
 
-  override def findById(id: MediaResourceId): F[Option[AudioPlayResponse]] =
-    for result <- repo.get(id)
+  override def findById(id: UUID): F[Option[AudioPlayResponse]] =
+    for result <- repo.get(Uuid[AudioPlay](id))
     yield result.map(AudioPlayResponse.fromDomain)
 
   override def listAll(
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, List[AudioPlayResponse]]] =
-    PaginationParams(pagination.max)(count, token) match
-      case Validated.Invalid(_) =>
-        ApplicationServiceError.BadRequest.asLeft.pure[F]
+    PaginationParams[AudioPlayToken](pagination.max)(count, token) match
+      case Validated.Invalid(_) => BadRequest.asLeft.pure[F]
       case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
-        for list <- repo.list(pageToken.map(_.value), pageSize)
+        for list <- repo.list(pageToken, pageSize)
         yield list.map(AudioPlayResponse.fromDomain).asRight
 
   override def create(
@@ -62,60 +67,52 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
       for
-        id  <- UUIDGen.randomUUID[F].map(MediaResourceId(_))
+        id  <- UUIDGen.randomUUID[F]
         now <- Clock[F].realTimeInstant
-        audio = ac.toDomain(id, now)
-        result <- repo.persist(audio)
-      yield result.bimap(toApplicationError, AudioPlayResponse.fromDomain)
+        audioOpt = ac.toDomain(id, now)
+        result <- audioOpt.fold(BadRequest.asLeft.pure[F]) { audio =>
+          for either <- repo.persist(audio)
+          yield either.bimap(toApplicationError, AudioPlayResponse.fromDomain)
+        }
+      yield result
     }
 
   override def update(
       user: AuthenticatedUser,
-      id: MediaResourceId,
+      id: UUID,
       ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
-      for result <- repo.transform(id, old => ac.update(old))
-      yield result.bimap(toApplicationError, AudioPlayResponse.fromDomain)
+      val uuid = Uuid[AudioPlay](id)
+      for result <- repo.transformIfSome(uuid, BadRequest) { old =>
+          ac.update(old)
+        }(toApplicationError)
+      yield result.map(AudioPlayResponse.fromDomain)
     }
 
   override def delete(
       user: AuthenticatedUser,
-      id: MediaResourceId,
+      id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Write, user) {
-      for result <- repo.delete(id)
+      for result <- repo.delete(Uuid[AudioPlay](id))
       yield result.leftMap(toApplicationError)
     }
 
   extension (ac: AudioPlayRequest)
-    private def update(old: AudioPlay): AudioPlay = old.copy(
-      title = AudioPlayTitle(ac.title),
-      seriesId = ac.seriesId.map(AudioPlaySeriesId(_)),
-      seriesOrder = ac.seriesOrder)
+    private def update(old: AudioPlay): Option[AudioPlay] = AudioPlay
+      .update(
+        initial = old,
+        title = ac.title,
+        seriesId = ac.seriesId,
+        seriesNumber = ac.seriesNumber)
+      .toOption
 
-    private def toDomain(id: MediaResourceId, addedAt: Instant): AudioPlay =
+    private def toDomain(id: UUID, addedAt: Instant): Option[AudioPlay] =
       AudioPlay(
         id = id,
-        title = AudioPlayTitle(ac.title),
-        seriesId = ac.seriesId.map(AudioPlaySeriesId(_)),
-        seriesOrder = ac.seriesOrder,
-        addedAt = addedAt)
-
-  // TODO: Make better
-  private given TokenDecoder[(MediaResourceId, Instant)] = token =>
-    Try {
-      val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
-      val Array(idStr, timeStr) = raw.split('|')
-      val id                    = MediaResourceId(UUID.fromString(idStr))
-      val instant               = Instant.ofEpochMilli(timeStr.toLong)
-      (id, instant)
-    }.toOption
-
-  private given TokenEncoder[(MediaResourceId, Instant)] =
-    case (id, instant) =>
-      val raw = s"${id.string}|" +
-        s"${instant.toEpochMilli}"
-      Try(
-        Base64.getUrlEncoder.withoutPadding.encodeToString(
-          raw.getBytes("UTF-8"))).toOption
+        title = ac.title,
+        seriesId = ac.seriesId,
+        seriesNumber = ac.seriesNumber,
+        addedAt = addedAt,
+      ).toOption

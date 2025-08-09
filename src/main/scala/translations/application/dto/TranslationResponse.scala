@@ -2,37 +2,33 @@ package org.aulune
 package translations.application.dto
 
 
-import translations.domain.model.shared.MediaResourceId
-import translations.domain.model.translation.{MediumType, Translation}
+import translations.domain.model.translation.Translation
 
 import java.net.URI
 import java.util.UUID
 
 
+/** Translation response body.
+ *
+ *  @param id translation ID.
+ *  @param title translated title.
+ *  @param originalId original ID.
+ *  @param links links to translation publications.
+ */
 case class TranslationResponse(
-    name: String,
-    id: String,
+    id: UUID,
     title: String,
-    originalType: MediumType,
-    originalId: String,
+    originalId: UUID,
     links: List[URI],
 )
 
 
 object TranslationResponse:
+  /** Constructs response object from domain [[Translation]]. */
   def fromDomain(domain: Translation): TranslationResponse =
     TranslationResponse(
-      name = name(domain),
-      id = domain.id.string,
-      title = domain.title.value,
-      originalType = domain.originalType,
-      originalId = domain.originalId.string,
-      links = domain.links,
+      id = domain.id,
+      title = domain.title,
+      originalId = domain.originalId,
+      links = domain.links.toList,
     )
-
-  inline val collectionIdentifier: "translations" = "translations"
-
-  def name(domain: Translation): String =
-    val parent: String =
-      s"${AudioPlayResponse.collectionIdentifier}/${domain.originalId}"
-    parent + s"/$collectionIdentifier/${domain.id.string}"

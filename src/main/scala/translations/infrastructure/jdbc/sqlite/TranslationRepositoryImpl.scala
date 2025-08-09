@@ -4,23 +4,37 @@ package translations.infrastructure.jdbc.sqlite
 
 import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
-import translations.domain.model.translation.{Translation, TranslationIdentity}
+import translations.domain.model.shared.Uuid
+import translations.domain.model.translation.Translation
 import translations.domain.repositories.TranslationRepository
+import translations.domain.repositories.TranslationRepository.{
+  TranslationIdentity,
+  TranslationToken,
+}
 import translations.infrastructure.jdbc.doobie.given
 
+import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
-import doobie.*
-import doobie.implicits.*
-import io.circe.*
-import io.circe.parser.*
+import doobie.generic.auto.*
+import doobie.implicits.toSqlInterpolator
+import doobie.syntax.all.*
+import doobie.{Fragment, Meta, Transactor}
+import io.circe.Encoder
+import io.circe.parser.decode
 import io.circe.syntax.*
 
 import java.net.URI
 import java.time.Instant
 
 
+/** [[TranslationRepository]] implementation for SQLite. */
 object TranslationRepositoryImpl:
+  /** Builds an instance.
+   *
+   *  @param transactor [[Transactor]] instance.
+   *  @tparam F effect type.
+   */
   def build[F[_]: MonadCancelThrow](
       transactor: Transactor[F],
   ): F[TranslationRepository[F]] =
@@ -30,18 +44,15 @@ object TranslationRepositoryImpl:
     yield repo
 
   private object ColumnNames:
-    inline val tableName     = "translations"
-    inline val idC           = "id"
-    inline val titleC        = "title"
-    inline val originalTypeC = "original_type"
-    inline val originalIdC   = "original_id"
-    inline val linksC        = "links"
-    inline val addedAtC      = "added_at"
-
+    inline val tableName               = "translations"
+    inline val idC                     = "id"
+    inline val titleC                  = "title"
+    inline val originalIdC             = "original_id"
+    inline val linksC                  = "links"
+    inline val addedAtC                = "added_at"
     inline def allColumns: Seq[String] = Seq(
       idC,
       titleC,
-      originalTypeC,
       originalIdC,
       linksC,
       addedAtC,
@@ -50,12 +61,12 @@ object TranslationRepositoryImpl:
   import ColumnNames.*
   private val createTableSql = s"""
        |CREATE TABLE IF NOT EXISTS $tableName (
-       |  $idC           TEXT    NOT NULL UNIQUE,
-       |  $titleC        TEXT    NOT NULL,
-       |  $originalTypeC INTEGER NOT NULL,
-       |  $originalIdC   TEXT    NOT NULL,
-       |  $linksC        TEXT    NOT NULL,
-       |  $addedAtC      TEXT    NOT NULL
+       |  $idC         TEXT NOT NULL,
+       |  $titleC      TEXT NOT NULL,
+       |  $originalIdC TEXT NOT NULL,
+       |  $linksC      TEXT NOT NULL,
+       |  $addedAtC    TEXT NOT NULL,
+       |  CONSTRAINT identity UNIQUE($idC, $originalIdC)
        |)
     """.stripMargin
   private val createTable: Fragment = Fragment.const(createTableSql)
@@ -70,8 +81,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .existsF(
       selectF(tableName)("1")
         .whereF(idC, fr"= ${id.id}")
-        .andF(originalIdC, fr"= ${id.parent}")
-        .andF(originalTypeC, fr"${id.medium}"))
+        .andF(originalIdC, fr"= ${id.originalId}"))
     .query[Boolean]
     .unique
     .transact(transactor)
@@ -82,7 +92,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     allColumns.head,
     allColumns.tail*)
     .valuesF(
-      fr"${elem.id}, ${elem.title}, ${elem.originalType}, ${elem.originalId}, ${elem.links}, ${elem.addedAt}",
+      fr"${elem.id}, ${elem.title}, ${elem.originalId}, ${elem.links}, ${elem.addedAt}",
     )
     .update
     .run
@@ -97,29 +107,10 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
       id: TranslationIdentity,
   ): F[Option[Translation]] = selectF(tableName)(allColumns*)
     .whereF(idC, fr"= ${id.id}")
-    .andF(originalIdC, fr"= ${id.parent}")
-    .andF(originalTypeC, fr"= ${id.medium}")
+    .andF(originalIdC, fr"= ${id.originalId}")
     .query[Translation]
     .option
     .transact(transactor)
-
-  override def list(
-      startWith: Option[(TranslationIdentity, Instant)],
-      count: Int,
-  ): F[List[Translation]] =
-    val base = selectF(tableName)(allColumns*)
-    val cond = startWith match
-      case Some(s) => base
-          .whereF(addedAtC, fr">= ${s._2}")
-          .andF(originalIdC, fr"= ${s._1.parent}")
-          .andF(originalTypeC, fr"= ${s._1.medium}")
-      case None => base
-    val fullQuery = cond.orderByF(addedAtC).ascF.limitF(count)
-
-    fullQuery
-      .query[Translation]
-      .to[List]
-      .transact(transactor)
 
   override def update(
       elem: Translation,
@@ -127,7 +118,6 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     updateF(tableName)(titleC -> fr"${elem.title}", linksC -> fr"${elem.links}")
       .whereF(idC, fr"= ${elem.id}")
       .andF(originalIdC, fr"= ${elem.originalId}")
-      .andF(originalTypeC, fr"= ${elem.originalType}")
       .update
       .run
       .transact(transactor)
@@ -141,14 +131,34 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
       id: TranslationIdentity,
   ): F[Either[RepositoryError, Unit]] = deleteF(tableName)
     .whereF(idC, fr"= ${id.id}")
-    .andF(originalIdC, fr"= ${id.parent}")
-    .andF(originalTypeC, fr"= ${id.medium}")
+    .andF(originalIdC, fr"= ${id.originalId}")
     .update
     .run
     .transact(transactor)
     .map(_ => ().asRight)
     .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
 
-  private given Meta[List[URI]] = Meta[String].imap { str =>
-    decode[List[URI]](str).getOrElse(Nil)
+  override def list(
+      startWith: Option[TranslationToken],
+      count: Int,
+  ): F[List[Translation]] =
+    val base = selectF(tableName)(allColumns*)
+    val cond = startWith match
+      case Some(s) => base
+          .whereF(addedAtC, fr">= ${s.timestamp}")
+          .andF(originalIdC, fr"= ${s.identity.originalId}")
+          .andF(idC, fr"= ${s.identity.id}")
+      case None => base
+    val fullQuery = cond.orderByF(addedAtC).ascF.limitF(count)
+    fullQuery
+      .query[Translation]
+      .to[List]
+      .transact(transactor)
+
+  /* It should only be used here, since other repositories
+  may want to encode list of URIs differently. */
+  private given Meta[NonEmptyList[URI]] = Meta[String].tiemap { str =>
+    decode[NonEmptyList[URI]](str).leftMap { err =>
+      s"Failed to decode NonEmptyList[URI] from: $str. Error: ${err.getMessage}"
+    }
   }(uris => uris.asJson.noSpaces)

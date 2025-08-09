@@ -13,20 +13,38 @@ import java.time.Instant
 import scala.util.Try
 
 
-final case class TokenPayload(
+/** Payload for access token.
+ *  @param sub user identifier.
+ *  @param iat token issue time in epoch seconds.
+ *  @param exp token expiration date in epoch seconds.
+ *  @param role user role.
+ */
+private[auth] final case class TokenPayload(
     sub: String,
     iat: Instant,
     exp: Instant,
     role: Role,
 ):
+  /** Returns token's owner. */
   def toAuthenticatedUser: AuthenticatedUser = AuthenticatedUser(sub, role)
 
 
 object TokenPayload:
+  /** Tries to parse [[TokenPayload]] from string.
+   *  @param claim string to parse.
+   *  @return [[TokenPayload]] if success, otherwise
+   *    [[TokenValidationError.InvalidPayload]]
+   */
   def fromString(claim: String): Either[TokenValidationError, TokenPayload] =
     decode[TokenPayload](claim)
       .leftMap(_ => TokenValidationError.InvalidPayload)
 
+  /** Creates [[TokenPayload]] for given user.
+   *  @param user user.
+   *  @param iat token issue time in epoch seconds.
+   *  @param exp token expiration date in epoch seconds.
+   *  @return [[TokenPayload]] for given user.
+   */
   def fromUser(user: User, iat: Instant, exp: Instant): TokenPayload =
     TokenPayload(sub = user.username, iat = iat, exp = exp, role = user.role)
 
@@ -37,14 +55,14 @@ object TokenPayload:
     Decoder.decodeLong.emapTry(l => Try(Instant.ofEpochSecond(l)))
 
   private given Encoder[Role] = Encoder.encodeString.contramap {
-    case Role.Normal => "Normal"
-    case Role.Admin  => "Admin"
+    case Role.Normal => "normal"
+    case Role.Admin  => "admin"
   }
 
   private given Decoder[Role] = Decoder.decodeString.emap {
-    case "Admin"  => Role.Admin.asRight
-    case "Normal" => Role.Normal.asRight
-    case _        => "Unknown".asLeft
+    case "normal" => Role.Normal.asRight
+    case "admin"  => Role.Admin.asRight
+    case _        => "Unknown role".asLeft
   }
 
   given Encoder[TokenPayload] = deriveEncoder[TokenPayload]

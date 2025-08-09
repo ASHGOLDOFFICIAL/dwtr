@@ -5,6 +5,10 @@ import sttp.tapir.{EndpointInput, Validator, query}
 
 
 object QueryParams:
+  /** Pagination query parameters for Tapir.
+   *  @param defaultPageSize default page size.
+   *  @param maxPageSize maximum allowed page size.
+   */
   def pagination(
       defaultPageSize: Int,
       maxPageSize: Int,

@@ -12,7 +12,7 @@ import de.mkammerer.argon2.{Argon2, Argon2Factory}
 /** Password hashing service with Argon2i as its hashing algorithm. */
 object Argon2iPasswordHashingService:
   /** Builds the service.
-   *  @tparam F effect type
+   *  @tparam F effect type.
    */
   def build[F[_]: Sync]: F[PasswordHashingService[F]] = Sync[F]
     .delay(Argon2Factory.create())
@@ -32,8 +32,8 @@ private final class Argon2iPasswordHashingService[F[_]: Sync](argon2i: Argon2)
 
   /** Manages the password as a char array in a Resource, ensuring the array is
    *  wiped.
-   *  @param password plain password string
-   *  @return password char array wrapped in a Resource
+   *  @param password plain password string.
+   *  @return password char array wrapped in a Resource.
    *  @note Argon2 does array wiping automatically, but this way we ensure that
    *    it will be done even if operation will be canceled.
    */

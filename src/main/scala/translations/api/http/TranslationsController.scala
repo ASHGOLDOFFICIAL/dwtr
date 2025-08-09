@@ -11,36 +11,37 @@ import translations.api.http.circe.given
 import translations.api.http.tapir.given
 import translations.application.TranslationService
 import translations.application.dto.{TranslationRequest, TranslationResponse}
-import translations.domain.model.shared.MediaResourceId
-import translations.domain.model.translation.{
-  MediumType,
-  TranslationId,
-  TranslationIdentity,
-}
 
 import cats.Functor
 import cats.syntax.all.*
-import io.circe.generic.auto.*
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
-import sttp.tapir.json.circe.*
+import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
 
-import java.net.URI
+import java.util.UUID
 
 
+/** Controller with Tapir endpoints for translations. */
 object TranslationsController:
+  /** Builds controller with endpoints for translations.
+   *  @param mountPath where to mount endpoints.
+   *  @param tagPrefix prefix of tags for documentation without trailing space.
+   *  @param pagination pagination config.
+   *  @param service [[TranslationService]] to use.
+   *  @param authService [[AuthenticationService]] to use for restricted
+   *    endpoints.
+   *  @tparam F effect type.
+   *  @return translations controller.
+   */
   def build[F[_]: Functor](
-      mediumType: MediumType,
-      mountPath: EndpointInput[MediaResourceId],
+      mountPath: EndpointInput[UUID],
       tagPrefix: String,
       pagination: Pagination,
       service: TranslationService[F],
       authService: AuthenticationService[F],
   ): TranslationsController[F] = new TranslationsController[F](
     pagination,
-    mediumType,
     mountPath,
     tagPrefix,
     service,
@@ -49,25 +50,19 @@ object TranslationsController:
 
 private final class TranslationsController[F[_]: Functor](
     pagination: Pagination,
-    mediumType: MediumType,
-    rootPath: EndpointInput[MediaResourceId],
+    rootPath: EndpointInput[UUID],
     tagPrefix: String,
     service: TranslationService[F],
     authService: AuthenticationService[F],
 ):
   private given AuthenticationService[F] = authService
 
-  private val translationId = path[TranslationId]("translation_id")
+  private val translationId = path[UUID]("translation_id")
     .description("ID of the translation")
 
   private val collectionPath = rootPath / "translations"
   private val elementPath    = collectionPath / translationId
   private val tag            = tagPrefix + " Translations"
-
-  private inline def translationIdentity(
-      parent: MediaResourceId,
-      id: TranslationId,
-  ) = TranslationIdentity(mediumType, parent, id)
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
@@ -77,7 +72,7 @@ private final class TranslationsController[F[_]: Functor](
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
     .serverLogic { case (mediaId, id) =>
-      for result <- service.findById(translationIdentity(mediaId, id))
+      for result <- service.findById(mediaId, id)
       yield result.toRight(StatusCode.NotFound)
     }
 
@@ -90,7 +85,7 @@ private final class TranslationsController[F[_]: Functor](
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
     .serverLogic { case (mediaId, pageSize, pageToken) =>
-      for result <- service.listAll(mediumType, mediaId, pageToken, pageSize)
+      for result <- service.listAll(pageToken, pageSize)
       yield result.leftMap(toErrorResponse)
     }
 
@@ -102,7 +97,7 @@ private final class TranslationsController[F[_]: Functor](
     .summary("Creates a new translation for parent resource and returns it.")
     .tag(tag)
     .serverLogic { user => (mediaId, tc) =>
-      for result <- service.create(user, tc, mediumType, mediaId)
+      for result <- service.create(user, tc, mediaId)
       yield result.leftMap(toErrorResponse)
     }
 
@@ -114,7 +109,7 @@ private final class TranslationsController[F[_]: Functor](
     .summary("Updates translation resource with given ID.")
     .tag(tag)
     .serverLogic { user => (mediaId, id, tc) =>
-      for result <- service.update(user, translationIdentity(mediaId, id), tc)
+      for result <- service.update(user, mediaId, id, tc)
       yield result.leftMap(toErrorResponse)
     }
 
@@ -126,10 +121,11 @@ private final class TranslationsController[F[_]: Functor](
     .tag(tag)
     .serverLogic { user => (mediaId, translationId) =>
       service
-        .delete(user, translationIdentity(mediaId, translationId))
+        .delete(user, mediaId, translationId)
         .map(_.leftMap(toErrorResponse))
     }
 
+  /** Returns Tapir endpoints for translations. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     listEndpoint,

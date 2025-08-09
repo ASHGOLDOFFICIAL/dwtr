@@ -3,29 +3,29 @@ package translations.application.dto
 
 
 import translations.domain.model.audioplay.AudioPlay
-import translations.domain.model.shared.MediaResourceId
 
 import java.util.UUID
 
 
+/** Audio play response body.
+ *  @param id audio play ID.
+ *  @param title audio play title.
+ *  @param seriesId audio play series ID.
+ *  @param seriesNumber audio play number in series.
+ */
 case class AudioPlayResponse(
-    name: String,
-    id: String,
+    id: UUID,
     title: String,
-    seriesId: Option[Long],
-    seriesOrder: Option[Int],
+    seriesId: Option[UUID],
+    seriesNumber: Option[Int],
 )
 
 
 object AudioPlayResponse:
+  /** Constructs response object from domain [[AudioPlay]]. */
   def fromDomain(domain: AudioPlay): AudioPlayResponse = AudioPlayResponse(
-    name = name(domain),
-    id = domain.id.string,
-    title = domain.title.value,
-    seriesId = domain.seriesId.map(_.value),
-    seriesOrder = domain.seriesOrder,
+    id = domain.id,
+    title = domain.title,
+    seriesId = domain.seriesId,
+    seriesNumber = domain.seriesNumber,
   )
-
-  inline val collectionIdentifier: "audioplays" = "audioplays"
-
-  def name(domain: AudioPlay): String = s"$collectionIdentifier/${domain.id}"

@@ -23,6 +23,10 @@ object Authentication:
     for result <- service.authenticate(AuthenticationToken(token))
     yield result.toRight(StatusCode.Unauthorized)
 
+  /** Endpoint with authentication check.
+   *  @tparam F effect type.
+   *  @return endpoint accessible only to authenticated users.
+   */
   def authOnlyEndpoint[F[_]: Functor](using
       AuthenticationService[F],
   ): PartialServerEndpoint[

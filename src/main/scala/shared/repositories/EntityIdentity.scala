@@ -2,12 +2,13 @@ package org.aulune
 package shared.repositories
 
 
+/** Type [[E]] has identity of type [[Id]]
+ *  @tparam E element type.
+ *  @tparam Id identity type.
+ */
 trait EntityIdentity[E, Id]:
+  /** Returns identity of given element.
+   *  @param elem element.
+   *  @return element's identity.
+   */
   def identity(elem: E): Id
-
-
-object EntityIdentity:
-  /** Alias for `summon` */
-  transparent inline def apply[E, Id](using
-      inline ev: EntityIdentity[E, Id],
-  ): EntityIdentity[E, Id] = ev
