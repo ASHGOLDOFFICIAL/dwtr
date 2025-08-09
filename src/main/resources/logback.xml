@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+
+<configuration>
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
+
+    <appender name="STDOUT" class="ConsoleAppender">
+        <withJansi>false</withJansi>
+        <encoder class="PatternLayoutEncoder">
+            <pattern>
+                %d{HH:mm:ss.SSS} %highlight(%-5level) [%-16.16thread] %-32.32logger -%kvp- %highlight(%msg) %n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
