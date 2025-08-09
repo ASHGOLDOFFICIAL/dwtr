@@ -15,8 +15,8 @@ import java.time.Instant
 import java.util.UUID
 
 
-final case class Translation private (
-    id: Uuid[Translation],
+final case class AudioPlayTranslation private (
+    id: Uuid[AudioPlayTranslation],
     title: TranslatedTitle,
     originalId: Uuid[AudioPlay],
     addedAt: Instant,
@@ -24,7 +24,7 @@ final case class Translation private (
 )
 
 
-object Translation:
+object AudioPlayTranslation:
   private type ValidationResult[A] = ValidatedNec[TranslationValidationError, A]
 
   /** Creates an audio play with state validation.
@@ -41,13 +41,13 @@ object Translation:
       originalId: UUID,
       addedAt: Instant,
       links: List[URI],
-  ): ValidationResult[Translation] = (
-    Uuid[Translation](id).validNec,
+  ): ValidationResult[AudioPlayTranslation] = (
+    Uuid[AudioPlayTranslation](id).validNec,
     TranslatedTitle(title).toValidNec(InvalidTitle),
     Uuid[AudioPlay](id).validNec,
     addedAt.validNec,
     validateLinks(links),
-  ).mapN(new Translation(_, _, _, _, _))
+  ).mapN(new AudioPlayTranslation(_, _, _, _, _))
 
   /** Returns updated translation.
    *  @param initial initial state.
@@ -58,16 +58,16 @@ object Translation:
    *    to create new instance.
    */
   def update(
-      initial: Translation,
+      initial: AudioPlayTranslation,
       title: String,
       links: List[URI],
-  ): ValidationResult[Translation] = (
+  ): ValidationResult[AudioPlayTranslation] = (
     initial.id.validNec,
     TranslatedTitle(title).toValidNec(InvalidTitle),
     initial.originalId.validNec,
     initial.addedAt.validNec,
     validateLinks(links),
-  ).mapN(new Translation(_, _, _, _, _))
+  ).mapN(new AudioPlayTranslation(_, _, _, _, _))
 
   /** Validates links. Non empty list is required.
    *  @param links publications.

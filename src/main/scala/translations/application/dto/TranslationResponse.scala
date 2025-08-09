@@ -2,7 +2,7 @@ package org.aulune
 package translations.application.dto
 
 
-import translations.domain.model.translation.Translation
+import translations.domain.model.translation.AudioPlayTranslation
 
 import java.net.URI
 import java.util.UUID
@@ -24,8 +24,8 @@ case class TranslationResponse(
 
 
 object TranslationResponse:
-  /** Constructs response object from domain [[Translation]]. */
-  def fromDomain(domain: Translation): TranslationResponse =
+  /** Constructs response object from domain [[AudioPlayTranslation]]. */
+  def fromDomain(domain: AudioPlayTranslation): TranslationResponse =
     TranslationResponse(
       id = domain.id,
       title = domain.title,

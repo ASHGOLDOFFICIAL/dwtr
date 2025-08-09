@@ -75,7 +75,7 @@ final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
   ): F[Either[ApplicationServiceError, TranslationResponse]] =
     requirePermissionOrDeny(Create, user) {
       for
-        id  <- UUIDGen.randomUUID[F].map(Uuid[Translation])
+        id  <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
         now <- Clock[F].realTimeInstant
         translationOpt = tc.toDomain(originalId, id, now)
         result <- translationOpt.fold(BadRequest.asLeft.pure[F]) { translation =>
@@ -115,11 +115,13 @@ final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
    */
   private def identity(originalId: UUID, id: UUID): TranslationIdentity =
     val originalUuid    = Uuid[AudioPlay](originalId)
-    val translationUuid = Uuid[Translation](id)
+    val translationUuid = Uuid[AudioPlayTranslation](id)
     TranslationIdentity(originalUuid, translationUuid)
 
   extension (tc: TranslationRequest)
-    private def update(old: Translation): Option[Translation] = Translation
+    private def update(
+        old: AudioPlayTranslation,
+    ): Option[AudioPlayTranslation] = AudioPlayTranslation
       .update(
         initial = old,
         title = tc.title,
@@ -131,7 +133,7 @@ final class TranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
         originalId: UUID,
         id: UUID,
         addedAt: Instant,
-    ): Option[Translation] = Translation(
+    ): Option[AudioPlayTranslation] = AudioPlayTranslation(
       id = id,
       title = tc.title,
       originalId = originalId,

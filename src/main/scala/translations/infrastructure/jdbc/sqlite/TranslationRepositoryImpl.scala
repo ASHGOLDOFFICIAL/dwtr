@@ -10,7 +10,7 @@ import translations.application.repositories.TranslationRepository.{
   TranslationToken,
 }
 import translations.domain.model.shared.Uuid
-import translations.domain.model.translation.Translation
+import translations.domain.model.translation.AudioPlayTranslation
 import translations.infrastructure.jdbc.doobie.given
 
 import cats.data.NonEmptyList
@@ -87,8 +87,8 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
 
   override def persist(
-      elem: Translation,
-  ): F[Either[RepositoryError, Translation]] = insertF(tableName)(
+      elem: AudioPlayTranslation,
+  ): F[Either[RepositoryError, AudioPlayTranslation]] = insertF(tableName)(
     allColumns.head,
     allColumns.tail*)
     .valuesF(
@@ -105,16 +105,16 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def get(
       id: TranslationIdentity,
-  ): F[Option[Translation]] = selectF(tableName)(allColumns*)
+  ): F[Option[AudioPlayTranslation]] = selectF(tableName)(allColumns*)
     .whereF(idC, fr"= ${id.id}")
     .andF(originalIdC, fr"= ${id.originalId}")
-    .query[Translation]
+    .query[AudioPlayTranslation]
     .option
     .transact(transactor)
 
   override def update(
-      elem: Translation,
-  ): F[Either[RepositoryError, Translation]] =
+      elem: AudioPlayTranslation,
+  ): F[Either[RepositoryError, AudioPlayTranslation]] =
     updateF(tableName)(titleC -> fr"${elem.title}", linksC -> fr"${elem.links}")
       .whereF(idC, fr"= ${elem.id}")
       .andF(originalIdC, fr"= ${elem.originalId}")
@@ -141,7 +141,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
   override def list(
       startWith: Option[TranslationToken],
       count: Int,
-  ): F[List[Translation]] =
+  ): F[List[AudioPlayTranslation]] =
     val base = selectF(tableName)(allColumns*)
     val cond = startWith match
       case Some(s) => base
@@ -151,7 +151,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
       case None => base
     val fullQuery = cond.orderByF(addedAtC).ascF.limitF(count)
     fullQuery
-      .query[Translation]
+      .query[AudioPlayTranslation]
       .to[List]
       .transact(transactor)
 
