@@ -4,7 +4,8 @@ package translations.infrastructure.jdbc.doobie
 
 import translations.domain.model.audioplay.{
   AudioPlaySeriesNumber,
-  AudioPlayTitle
+  AudioPlayTitle,
+  TranslationType
 }
 import translations.domain.shared.{TranslatedTitle, Uuid}
 
@@ -41,3 +42,15 @@ given Meta[AudioPlaySeriesNumber] = Meta[Int].tiemap { str =>
 given Meta[TranslatedTitle] = Meta[String].tiemap { str =>
   TranslatedTitle(str).toRight(s"Failed to decode TranslatedTitle from: $str.")
 }(identity)
+
+
+// Potentially unsafe
+given Meta[TranslationType] = Meta[Int].timap {
+  case 1 => TranslationType.Transcript
+  case 2 => TranslationType.Subtitles
+  case 3 => TranslationType.VoiceOver
+} {
+  case TranslationType.Transcript => 1
+  case TranslationType.Subtitles  => 2
+  case TranslationType.VoiceOver  => 3
+}

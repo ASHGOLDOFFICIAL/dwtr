@@ -10,7 +10,10 @@ import shared.http.QueryParams
 import translations.api.http.circe.given
 import translations.api.http.tapir.given
 import translations.application.AudioPlayTranslationService
-import translations.application.dto.{TranslationRequest, TranslationResponse}
+import translations.application.dto.{
+  AudioPlayTranslationRequest,
+  AudioPlayTranslationResponse,
+}
 
 import cats.Functor
 import cats.syntax.all.*
@@ -26,21 +29,21 @@ import java.util.UUID
 object TranslationsController:
   /** Builds controller with endpoints for translations.
    *
-   * @param mountPath    where to mount endpoints.
-   * @param tagPrefix    prefix of tags for documentation without trailing space.
-   * @param pagination   pagination config.
-   * @param service      [[AudioPlayTranslationService]] to use.
+   *  @param mountPath where to mount endpoints.
+   *  @param tagPrefix prefix of tags for documentation without trailing space.
+   *  @param pagination pagination config.
+   *  @param service [[AudioPlayTranslationService]] to use.
    *  @param authService [[AuthenticationService]] to use for restricted
-   *                     endpoints.
+   *    endpoints.
    *  @tparam F effect type.
    *  @return translations controller.
    */
   def build[F[_]: Functor](
-                            mountPath: EndpointInput[UUID],
-                            tagPrefix: String,
-                            pagination: Pagination,
-                            service: AudioPlayTranslationService[F],
-                            authService: AuthenticationService[F],
+      mountPath: EndpointInput[UUID],
+      tagPrefix: String,
+      pagination: Pagination,
+      service: AudioPlayTranslationService[F],
+      authService: AuthenticationService[F],
   ): TranslationsController[F] = new TranslationsController[F](
     pagination,
     mountPath,
@@ -50,11 +53,11 @@ object TranslationsController:
 
 
 private final class TranslationsController[F[_]: Functor](
-                                                           pagination: Pagination,
-                                                           rootPath: EndpointInput[UUID],
-                                                           tagPrefix: String,
-                                                           service: AudioPlayTranslationService[F],
-                                                           authService: AuthenticationService[F],
+    pagination: Pagination,
+    rootPath: EndpointInput[UUID],
+    tagPrefix: String,
+    service: AudioPlayTranslationService[F],
+    authService: AuthenticationService[F],
 ):
   private given AuthenticationService[F] = authService
 
@@ -62,12 +65,12 @@ private final class TranslationsController[F[_]: Functor](
     .description("ID of the translation")
 
   private val collectionPath = rootPath / "translations"
-  private val elementPath    = collectionPath / translationId
-  private val tag            = tagPrefix + " Translations"
+  private val elementPath = collectionPath / translationId
+  private val tag = tagPrefix + " Translations"
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(jsonBody[TranslationResponse])
+    .out(jsonBody[AudioPlayTranslationResponse])
     .errorOut(statusCode)
     .name("GetTranslation")
     .summary("Returns a translation with given ID for given parent.")
@@ -80,7 +83,7 @@ private final class TranslationsController[F[_]: Functor](
   private val listEndpoint = endpoint.get
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
-    .out(jsonBody[List[TranslationResponse]])
+    .out(jsonBody[List[AudioPlayTranslationResponse]])
     .errorOut(statusCode)
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
@@ -92,8 +95,10 @@ private final class TranslationsController[F[_]: Functor](
 
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
-    .in(jsonBody[TranslationRequest].description("Translation to create"))
-    .out(statusCode(StatusCode.Created).and(jsonBody[TranslationResponse]))
+    .in(jsonBody[AudioPlayTranslationRequest].description(
+      "Translation to create"))
+    .out(statusCode(StatusCode.Created).and(
+      jsonBody[AudioPlayTranslationResponse]))
     .name("CreateTranslation")
     .summary("Creates a new translation for parent resource and returns it.")
     .tag(tag)
@@ -104,8 +109,8 @@ private final class TranslationsController[F[_]: Functor](
 
   private val updateEndpoint = authOnlyEndpoint.put
     .in(elementPath)
-    .in(jsonBody[TranslationRequest].description("New state"))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[TranslationResponse]))
+    .in(jsonBody[AudioPlayTranslationRequest].description("New state"))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResponse]))
     .name("UpdateTranslation")
     .summary("Updates translation resource with given ID.")
     .tag(tag)

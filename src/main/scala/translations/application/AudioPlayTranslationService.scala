@@ -4,7 +4,10 @@ package translations.application
 
 import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
-import translations.application.dto.{TranslationRequest, TranslationResponse}
+import translations.application.dto.{
+  AudioPlayTranslationRequest,
+  AudioPlayTranslationResponse,
+}
 
 import java.util.UUID
 
@@ -20,7 +23,10 @@ trait AudioPlayTranslationService[F[_]]:
    *  @param id translation identity.
    *  @return requested translation if found.
    */
-  def findById(originalId: UUID, id: UUID): F[Option[TranslationResponse]]
+  def findById(
+      originalId: UUID,
+      id: UUID,
+  ): F[Option[AudioPlayTranslationResponse]]
 
   /** Find all translations of given media resource.
    *
@@ -31,7 +37,7 @@ trait AudioPlayTranslationService[F[_]]:
   def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, List[TranslationResponse]]]
+  ): F[Either[ApplicationServiceError, List[AudioPlayTranslationResponse]]]
 
   /** Create new translation.
    *
@@ -43,9 +49,9 @@ trait AudioPlayTranslationService[F[_]]:
    */
   def create(
       user: AuthenticatedUser,
-      tc: TranslationRequest,
+      tc: AudioPlayTranslationRequest,
       originalId: UUID,
-  ): F[Either[ApplicationServiceError, TranslationResponse]]
+  ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]]
 
   /** Updates existing translation.
    *
@@ -60,8 +66,8 @@ trait AudioPlayTranslationService[F[_]]:
       user: AuthenticatedUser,
       originalId: UUID,
       id: UUID,
-      tc: TranslationRequest,
-  ): F[Either[ApplicationServiceError, TranslationResponse]]
+      tc: AudioPlayTranslationRequest,
+  ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]]
 
   /** Deletes existing translation.
    *

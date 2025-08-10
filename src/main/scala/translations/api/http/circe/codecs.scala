@@ -2,21 +2,34 @@ package org.aulune
 package translations.api.http.circe
 
 
+import translations.api.mappers.AudioPlayTranslationTypeMapper
 import translations.application.dto.{
   AudioPlayRequest,
   AudioPlayResponse,
-  TranslationRequest,
-  TranslationResponse
+  AudioPlayTranslationRequest,
+  AudioPlayTranslationResponse,
+  AudioPlayTranslationTypeDto,
 }
 
 import io.circe.{Decoder, Encoder}
 
 
-given Encoder[TranslationRequest] = Encoder.derived
-given Decoder[TranslationRequest] = Decoder.derived
+given Encoder[AudioPlayTranslationTypeDto] =
+  Encoder.encodeString.contramap(AudioPlayTranslationTypeMapper.toString)
 
-given Encoder[TranslationResponse] = Encoder.derived
-given Decoder[TranslationResponse] = Decoder.derived
+
+given Decoder[AudioPlayTranslationTypeDto] = Decoder.decodeString.emap { str =>
+  AudioPlayTranslationTypeMapper
+    .fromString(str)
+    .toRight(s"Invalid TranslationType: $str")
+}
+
+
+given Encoder[AudioPlayTranslationRequest] = Encoder.derived
+given Decoder[AudioPlayTranslationRequest] = Decoder.derived
+
+given Encoder[AudioPlayTranslationResponse] = Encoder.derived
+given Decoder[AudioPlayTranslationResponse] = Decoder.derived
 
 given Encoder[AudioPlayRequest] = Encoder.derived
 given Decoder[AudioPlayRequest] = Decoder.derived

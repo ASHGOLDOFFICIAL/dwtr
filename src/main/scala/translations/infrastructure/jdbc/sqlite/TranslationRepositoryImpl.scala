@@ -44,16 +44,18 @@ object TranslationRepositoryImpl:
     yield repo
 
   private object ColumnNames:
-    inline val tableName               = "translations"
-    inline val idC                     = "id"
-    inline val titleC                  = "title"
-    inline val originalIdC             = "original_id"
-    inline val linksC                  = "links"
-    inline val addedAtC                = "added_at"
+    inline val tableName = "translations"
+    inline val originalIdC = "original_id"
+    inline val idC = "id"
+    inline val titleC = "title"
+    inline val typeC = "type"
+    inline val linksC = "links"
+    inline val addedAtC = "added_at"
     inline def allColumns: Seq[String] = Seq(
+      originalIdC,
       idC,
       titleC,
-      originalIdC,
+      typeC,
       linksC,
       addedAtC,
     )
@@ -61,11 +63,12 @@ object TranslationRepositoryImpl:
   import ColumnNames.*
   private val createTableSql = s"""
        |CREATE TABLE IF NOT EXISTS $tableName (
-       |  $idC         TEXT NOT NULL,
-       |  $titleC      TEXT NOT NULL,
-       |  $originalIdC TEXT NOT NULL,
-       |  $linksC      TEXT NOT NULL,
-       |  $addedAtC    TEXT NOT NULL,
+       |  $originalIdC TEXT    NOT NULL,
+       |  $idC         TEXT    NOT NULL,
+       |  $titleC      TEXT    NOT NULL,
+       |  $typeC       INTEGER NOT NULL,
+       |  $linksC      TEXT    NOT NULL,
+       |  $addedAtC    TEXT    NOT NULL,
        |  CONSTRAINT identity UNIQUE($idC, $originalIdC)
        |)
     """.stripMargin
@@ -92,7 +95,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     allColumns.head,
     allColumns.tail*)
     .valuesF(
-      fr"${elem.id}, ${elem.title}, ${elem.originalId}, ${elem.links}, ${elem.addedAt}",
+      fr"${elem.originalId}, ${elem.id}, ${elem.title}, ${elem.translationType}, ${elem.links}, ${elem.addedAt}",
     )
     .update
     .run
@@ -100,7 +103,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .attempt
     .map {
       case Right(_) => elem.asRight
-      case Left(e)  => RepositoryError.StorageFailure.asLeft
+      case Left(e)  => println(e); RepositoryError.StorageFailure.asLeft
     }
 
   override def get(
@@ -114,18 +117,20 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def update(
       elem: AudioPlayTranslation,
-  ): F[Either[RepositoryError, AudioPlayTranslation]] =
-    updateF(tableName)(titleC -> fr"${elem.title}", linksC -> fr"${elem.links}")
-      .whereF(idC, fr"= ${elem.id}")
-      .andF(originalIdC, fr"= ${elem.originalId}")
-      .update
-      .run
-      .transact(transactor)
-      .map {
-        case 0 => RepositoryError.NotFound.asLeft
-        case _ => elem.asRight
-      }
-      .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
+  ): F[Either[RepositoryError, AudioPlayTranslation]] = updateF(tableName)(
+    titleC -> fr"${elem.title}",
+    typeC -> fr"${elem.translationType}",
+    linksC -> fr"${elem.links}")
+    .whereF(idC, fr"= ${elem.id}")
+    .andF(originalIdC, fr"= ${elem.originalId}")
+    .update
+    .run
+    .transact(transactor)
+    .map {
+      case 0 => RepositoryError.NotFound.asLeft
+      case _ => elem.asRight
+    }
+    .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
 
   override def delete(
       id: TranslationIdentity,
