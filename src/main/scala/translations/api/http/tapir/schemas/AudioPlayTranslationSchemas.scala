@@ -8,12 +8,13 @@ import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{
   requestExample,
   responseExample,
 }
-import translations.api.mappers.AudioPlayTranslationTypeMapper
+import translations.api.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
   AudioPlayTranslationTypeDto,
+  LanguageDto,
 }
 
 import io.circe.syntax.*
@@ -32,6 +33,7 @@ object AudioPlayTranslationSchemas:
   private val titleDescription = "Translated version of audio play's title."
   private val translationTypeDescription = "Type of translation: one of " +
     AudioPlayTranslationTypeMapper.stringValues.mkString(", ")
+  private val languageDescription = "Language of translation."
   private val linksDescription = "Links to where translation is published."
   private val nextPageDescription = "Token to retrieve next page."
 
@@ -46,6 +48,18 @@ object AudioPlayTranslationSchemas:
         .asJson
         .toString)
     .description(translationTypeDescription)
+
+  private given Schema[LanguageDto] = Schema.string
+    .validate(
+      Validator
+        .enumeration(LanguageDto.values.toList)
+        .encode(LanguageMapper.toString))
+    .encodedExample(
+      LanguageMapper
+        .toString(responseExample.language)
+        .asJson
+        .toString)
+    .description(languageDescription)
 
   given Schema[AudioPlayTranslationRequest] = Schema
     .derived[AudioPlayTranslationRequest]

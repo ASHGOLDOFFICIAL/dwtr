@@ -49,6 +49,7 @@ object TranslationRepositoryImpl:
     inline val idC = "id"
     inline val titleC = "title"
     inline val typeC = "type"
+    inline val languageC = "language"
     inline val linksC = "links"
     inline val addedAtC = "added_at"
     inline def allColumns: Seq[String] = Seq(
@@ -56,6 +57,7 @@ object TranslationRepositoryImpl:
       idC,
       titleC,
       typeC,
+      languageC,
       linksC,
       addedAtC,
     )
@@ -67,6 +69,7 @@ object TranslationRepositoryImpl:
        |  $idC         TEXT    NOT NULL,
        |  $titleC      TEXT    NOT NULL,
        |  $typeC       INTEGER NOT NULL,
+       |  $languageC   TEXT    NOT NULL,
        |  $linksC      TEXT    NOT NULL,
        |  $addedAtC    TEXT    NOT NULL,
        |  CONSTRAINT identity UNIQUE($idC, $originalIdC)
@@ -95,7 +98,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     allColumns.head,
     allColumns.tail*)
     .valuesF(
-      fr"${elem.originalId}, ${elem.id}, ${elem.title}, ${elem.translationType}, ${elem.links}, ${elem.addedAt}",
+      fr"${elem.originalId}, ${elem.id}, ${elem.title}, ${elem.translationType}, ${elem.language}, ${elem.links}, ${elem.addedAt}",
     )
     .update
     .run
@@ -120,6 +123,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[Either[RepositoryError, AudioPlayTranslation]] = updateF(tableName)(
     titleC -> fr"${elem.title}",
     typeC -> fr"${elem.translationType}",
+    languageC -> fr"${elem.language}",
     linksC -> fr"${elem.links}")
     .whereF(idC, fr"= ${elem.id}")
     .andF(originalIdC, fr"= ${elem.originalId}")

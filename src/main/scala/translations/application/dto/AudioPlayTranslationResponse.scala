@@ -2,6 +2,8 @@ package org.aulune
 package translations.application.dto
 
 
+import translations.application.dto.LanguageDto
+
 import java.net.URI
 import java.util.UUID
 
@@ -19,5 +21,6 @@ final case class AudioPlayTranslationResponse(
     id: UUID,
     title: String,
     translationType: AudioPlayTranslationTypeDto,
+    language: LanguageDto,
     links: List[URI],
 )

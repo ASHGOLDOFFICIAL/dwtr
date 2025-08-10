@@ -4,7 +4,7 @@ package translations.domain.model.audioplay
 
 import translations.domain.errors.TranslationValidationError
 import translations.domain.errors.TranslationValidationError.*
-import translations.domain.shared.{TranslatedTitle, Uuid}
+import translations.domain.shared.{Language, TranslatedTitle, Uuid}
 
 import cats.data.{NonEmptyList, ValidatedNec}
 import cats.syntax.all.*
@@ -20,16 +20,18 @@ import java.util.UUID
  *  @param id translation ID.
  *  @param title translated title.
  *  @param translationType translation type.
+ *  @param language translation language.
  *  @param links publication links.
  *  @param addedAt when translation was added.
  */
 final case class AudioPlayTranslation private (
-                                                originalId: Uuid[AudioPlay],
-                                                id: Uuid[AudioPlayTranslation],
-                                                title: TranslatedTitle,
-                                                translationType: AudioPlayTranslationType,
-                                                links: NonEmptyList[URI],
-                                                addedAt: Instant,
+    originalId: Uuid[AudioPlay],
+    id: Uuid[AudioPlayTranslation],
+    title: TranslatedTitle,
+    translationType: AudioPlayTranslationType,
+    language: Language,
+    links: NonEmptyList[URI],
+    addedAt: Instant,
 )
 
 
@@ -42,49 +44,55 @@ object AudioPlayTranslation:
    *  @param id ID.
    *  @param title translated title.
    *  @param translationType translation type.
+   *  @param language translation language.
    *  @param links publications.
    *  @param addedAt when it was added.
    *  @return translation validation result.
    */
   def apply(
-             id: UUID,
-             title: String,
-             originalId: UUID,
-             translationType: AudioPlayTranslationType,
-             links: List[URI],
-             addedAt: Instant,
+      id: UUID,
+      title: String,
+      originalId: UUID,
+      translationType: AudioPlayTranslationType,
+      language: Language,
+      links: List[URI],
+      addedAt: Instant,
   ): ValidationResult[AudioPlayTranslation] = (
     Uuid[AudioPlay](id).validNec,
     Uuid[AudioPlayTranslation](id).validNec,
     TranslatedTitle(title).toValidNec(InvalidTitle),
     translationType.validNec,
+    language.validNec,
     validateLinks(links),
     addedAt.validNec,
-  ).mapN(new AudioPlayTranslation(_, _, _, _, _, _))
+  ).mapN(new AudioPlayTranslation(_, _, _, _, _, _, _))
 
   /** Returns updated translation.
    *
    *  @param initial initial state.
    *  @param title new title.
    *  @param translationType translation type.
+   *  @param language translation language.
    *  @param links publications.
    *  @return new state validation result.
    *  @note Other fields are not supposed to be updated, use [[apply]] instead
    *    to create new instance.
    */
   def update(
-              initial: AudioPlayTranslation,
-              title: String,
-              translationType: AudioPlayTranslationType,
-              links: List[URI],
+      initial: AudioPlayTranslation,
+      title: String,
+      translationType: AudioPlayTranslationType,
+      language: Language,
+      links: List[URI],
   ): ValidationResult[AudioPlayTranslation] = (
     initial.originalId.validNec,
     initial.id.validNec,
     TranslatedTitle(title).toValidNec(InvalidTitle),
     translationType.validNec,
+    language.validNec,
     validateLinks(links),
     initial.addedAt.validNec,
-  ).mapN(new AudioPlayTranslation(_, _, _, _, _, _))
+  ).mapN(new AudioPlayTranslation(_, _, _, _, _, _, _))
 
   /** Validates links. Non empty list is required.
    *  @param links publications.

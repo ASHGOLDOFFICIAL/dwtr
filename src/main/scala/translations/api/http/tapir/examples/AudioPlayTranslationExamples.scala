@@ -3,6 +3,7 @@ package translations.api.http.tapir.examples
 
 
 import translations.application.dto.AudioPlayTranslationTypeDto.Subtitles
+import translations.application.dto.LanguageDto.Russian
 import translations.application.dto.{
   AudioPlayListResponse,
   AudioPlayTranslationListResponse,
@@ -17,6 +18,7 @@ import java.util.{Base64, UUID}
 object AudioPlayTranslationExamples:
   private val titleExample = "Но негодяи были пойманы"
   private val translationTypeExample = Subtitles
+  private val languageExample = Russian
   private val linksExample = List(
     URI.create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605"),
     URI.create("https://www.bigfinish.com/releases/v/cicero-series-01-1777"),
@@ -26,8 +28,9 @@ object AudioPlayTranslationExamples:
 
   val requestExample: AudioPlayTranslationRequest = AudioPlayTranslationRequest(
     title = titleExample,
-    links = linksExample,
-    translationType = translationTypeExample)
+    translationType = translationTypeExample,
+    language = languageExample,
+    links = linksExample)
 
   val responseExample: AudioPlayTranslationResponse =
     AudioPlayTranslationResponse(
@@ -35,6 +38,7 @@ object AudioPlayTranslationExamples:
       id = UUID.fromString("8f7c586f-7043-4e47-9021-45e41a9e6f9c"),
       title = titleExample,
       translationType = translationTypeExample,
+      language = languageExample,
       links = linksExample,
     )
 

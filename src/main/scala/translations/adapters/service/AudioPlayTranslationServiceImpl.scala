@@ -13,7 +13,10 @@ import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformIfSome
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
-import translations.adapters.service.mappers.AudioPlayTranslationTypeMapper
+import translations.adapters.service.mappers.{
+  AudioPlayTranslationTypeMapper,
+  LanguageMapper,
+}
 import translations.application.TranslationPermission.*
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
@@ -153,6 +156,7 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
           title = tc.title,
           translationType = AudioPlayTranslationTypeMapper
             .toDomain(tc.translationType),
+          language = LanguageMapper.toDomain(tc.language),
           links = tc.links,
         )
 
@@ -173,6 +177,7 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
         title = tc.title,
         translationType = AudioPlayTranslationTypeMapper
           .toDomain(tc.translationType),
+        language = LanguageMapper.toDomain(tc.language),
         links = tc.links,
         addedAt = addedAt,
       )
@@ -186,5 +191,6 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
         title = domain.title,
         translationType = AudioPlayTranslationTypeMapper
           .fromDomain(domain.translationType),
+        language = LanguageMapper.fromDomain(domain.language),
         links = domain.links.toList,
       )

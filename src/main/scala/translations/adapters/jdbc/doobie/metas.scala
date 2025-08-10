@@ -7,7 +7,7 @@ import translations.domain.model.audioplay.{
   AudioPlayTitle,
   AudioPlayTranslationType
 }
-import translations.domain.shared.{TranslatedTitle, Uuid}
+import translations.domain.shared.{Language, TranslatedTitle, Uuid}
 
 import cats.syntax.all.*
 import doobie.Meta
@@ -51,6 +51,15 @@ given Meta[AudioPlayTranslationType] = Meta[Int].timap {
   case 3 => AudioPlayTranslationType.VoiceOver
 } {
   case AudioPlayTranslationType.Transcript => 1
-  case AudioPlayTranslationType.Subtitles => 2
-  case AudioPlayTranslationType.VoiceOver => 3
+  case AudioPlayTranslationType.Subtitles  => 2
+  case AudioPlayTranslationType.VoiceOver  => 3
+}
+
+
+given Meta[Language] = Meta[String].timap {
+  case "rus" => Language.Russian
+  case "urk" => Language.Ukrainian
+} {
+  case Language.Russian   => "rus"
+  case Language.Ukrainian => "urk"
 }
