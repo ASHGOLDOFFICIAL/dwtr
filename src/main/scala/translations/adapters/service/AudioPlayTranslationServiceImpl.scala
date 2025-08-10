@@ -155,7 +155,7 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
       )
       .toOption
 
-    /** Converts request to domain object and verifies it
+    /** Converts request to domain object and verifies it.
      *  @param originalId original work's ID.
      *  @param id ID assigned to this translation.
      *  @param addedAt timestamp of when was this resource added.

@@ -19,13 +19,3 @@ final case class AudioPlayResponse(
     seriesId: Option[UUID],
     seriesNumber: Option[Int],
 )
-
-
-object AudioPlayResponse:
-  /** Constructs response object from domain [[AudioPlay]]. */
-  def fromDomain(domain: AudioPlay): AudioPlayResponse = AudioPlayResponse(
-    id = domain.id,
-    title = domain.title,
-    seriesId = domain.seriesId,
-    seriesNumber = domain.seriesNumber,
-  )

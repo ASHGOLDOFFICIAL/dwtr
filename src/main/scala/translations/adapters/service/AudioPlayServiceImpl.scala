@@ -54,7 +54,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
 
   override def findById(id: UUID): F[Option[AudioPlayResponse]] =
     for result <- repo.get(Uuid[AudioPlay](id))
-    yield result.map(AudioPlayResponse.fromDomain)
+    yield result.map(_.toResponse)
 
   override def listAll(
       token: Option[String],
@@ -69,7 +69,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
               val token = AudioPlayToken(elem.id, elem.addedAt)
               CursorToken[AudioPlayToken](token).encode
             }
-            val elements = list.map(AudioPlayResponse.fromDomain)
+            val elements = list.map(_.toResponse)
             AudioPlayListResponse(elements, nextPageToken).asRight
           }
 
@@ -84,7 +84,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
         audioOpt = ac.toDomain(id, now)
         result <- audioOpt.fold(BadRequest.asLeft.pure[F]) { audio =>
           for either <- repo.persist(audio)
-          yield either.bimap(toApplicationError, AudioPlayResponse.fromDomain)
+          yield either.bimap(toApplicationError, _.toResponse)
         }
       yield result
     }
@@ -99,7 +99,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       for result <- repo.transformIfSome(uuid, BadRequest) { old =>
           ac.update(old)
         }(toApplicationError)
-      yield result.map(AudioPlayResponse.fromDomain)
+      yield result.map(_.toResponse)
     }
 
   override def delete(
@@ -112,6 +112,10 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
     }
 
   extension (ac: AudioPlayRequest)
+    /** Updates old domain object with fields from request.
+     *  @param old old domain object.
+     *  @return updated domain object if valid.
+     */
     private def update(old: AudioPlay): Option[AudioPlay] = AudioPlay
       .update(
         initial = old,
@@ -120,6 +124,11 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
         seriesNumber = ac.seriesNumber)
       .toOption
 
+    /** Converts request to domain object and verifies it.
+     *  @param id ID assigned to this audio play.
+     *  @param addedAt timestamp of when was this resource added.
+     *  @return created domain object if valid.
+     */
     private def toDomain(id: UUID, addedAt: Instant): Option[AudioPlay] =
       AudioPlay(
         id = id,
@@ -128,3 +137,12 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
         seriesNumber = ac.seriesNumber,
         addedAt = addedAt,
       ).toOption
+
+  extension (domain: AudioPlay)
+    /** Converts domain object to response object. */
+    private def toResponse: AudioPlayResponse = AudioPlayResponse(
+      id = domain.id,
+      title = domain.title,
+      seriesId = domain.seriesId,
+      seriesNumber = domain.seriesNumber,
+    )
