@@ -4,6 +4,7 @@ package translations.api.http.circe
 
 import translations.api.mappers.AudioPlayTranslationTypeMapper
 import translations.application.dto.{
+  AudioPlayListResponse,
   AudioPlayRequest,
   AudioPlayResponse,
   AudioPlayTranslationRequest,
@@ -36,3 +37,6 @@ given Decoder[AudioPlayRequest] = Decoder.derived
 
 given Encoder[AudioPlayResponse] = Encoder.derived
 given Decoder[AudioPlayResponse] = Decoder.derived
+
+given Encoder[AudioPlayListResponse] = Encoder.derived
+given Decoder[AudioPlayListResponse] = Decoder.derived

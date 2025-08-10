@@ -9,12 +9,17 @@ import shared.errors.{
   RepositoryError,
   toApplicationError,
 }
-import shared.pagination.PaginationParams
+import shared.pagination.CursorToken.encode
+import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformIfSome
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.application.AudioPlayPermission.Write
-import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
+import translations.application.dto.{
+  AudioPlayListResponse,
+  AudioPlayRequest,
+  AudioPlayResponse,
+}
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.{
   AudioPlayToken,
@@ -54,12 +59,18 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
   override def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, List[AudioPlayResponse]]] =
+  ): F[Either[ApplicationServiceError, AudioPlayListResponse]] =
     PaginationParams[AudioPlayToken](pagination.max)(count, token) match
       case Validated.Invalid(_) => BadRequest.asLeft.pure[F]
-      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
-        for list <- repo.list(pageToken, pageSize)
-        yield list.map(AudioPlayResponse.fromDomain).asRight
+      case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
+          .list(pageToken, pageSize)
+          .map(list =>
+            val nextPageToken = list.lastOption.flatMap { elem =>
+              val token = AudioPlayToken(elem.id, elem.addedAt)
+              CursorToken[AudioPlayToken](token).encode
+            }
+            val elements = list.map(AudioPlayResponse.fromDomain)
+            AudioPlayListResponse(elements, nextPageToken).asRight)
 
   override def create(
       user: AuthenticatedUser,

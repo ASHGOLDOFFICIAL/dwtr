@@ -8,11 +8,16 @@ import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
 import translations.api.http.circe.given
 import translations.api.http.tapir.examples.AudioPlayExamples.{
+  listResponseExample,
   requestExample,
   responseExample,
 }
 import translations.api.http.tapir.schemas.AudioPlaySchemas.given
-import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
+import translations.application.dto.{
+  AudioPlayListResponse,
+  AudioPlayRequest,
+  AudioPlayResponse,
+}
 import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
 import cats.Functor
@@ -27,19 +32,19 @@ import java.util.UUID
 
 /** Controller with Tapir endpoints for audio plays.
  *
- * @param pagination         pagination config.
- * @param service            [[AudioPlayService]] to use.
- * @param authService        [[AuthenticationService]] to use for restricted
- *                           endpoints.
- * @param translationService [[AudioPlayTranslationService]] implementation to
- *                           create subtree with audio play translations.
+ *  @param pagination pagination config.
+ *  @param service [[AudioPlayService]] to use.
+ *  @param authService [[AuthenticationService]] to use for restricted
+ *    endpoints.
+ *  @param translationService [[AudioPlayTranslationService]] implementation to
+ *    create subtree with audio play translations.
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Functor](
-                                                 pagination: Config.Pagination,
-                                                 service: AudioPlayService[F],
-                                                 authService: AuthenticationService[F],
-                                                 translationService: AudioPlayTranslationService[F],
+    pagination: Config.Pagination,
+    service: AudioPlayService[F],
+    authService: AuthenticationService[F],
+    translationService: AudioPlayTranslationService[F],
 ):
   private given AuthenticationService[F] = authService
 
@@ -66,7 +71,8 @@ final class AudioPlaysController[F[_]: Functor](
   private val listEndpoint = endpoint.get
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[List[AudioPlayResponse]]))
+    .out(statusCode(StatusCode.Ok).and(
+      jsonBody[AudioPlayListResponse].example(listResponseExample)))
     .errorOut(statusCode)
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")

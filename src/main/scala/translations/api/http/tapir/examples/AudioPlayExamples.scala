@@ -2,9 +2,13 @@ package org.aulune
 package translations.api.http.tapir.examples
 
 
-import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
+import translations.application.dto.{
+  AudioPlayListResponse,
+  AudioPlayRequest,
+  AudioPlayResponse
+}
 
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 
 object AudioPlayExamples:
@@ -12,6 +16,8 @@ object AudioPlayExamples:
   private val seriesIdExample =
     Some(UUID.fromString("3cb893bf-5382-49ef-b881-2f07e75bfcdd"))
   private val seriesNumberExample = Some(1)
+  private val nextPageTokenExample =
+    Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 
   val requestExample: AudioPlayRequest = AudioPlayRequest(
     title = titleExample,
@@ -23,3 +29,8 @@ object AudioPlayExamples:
     title = titleExample,
     seriesId = seriesIdExample,
     seriesNumber = seriesNumberExample)
+
+  val listResponseExample: AudioPlayListResponse = AudioPlayListResponse(
+    audioPlays = List(responseExample),
+    nextPageToken = nextPageTokenExample,
+  )

@@ -4,7 +4,11 @@ package translations.application
 
 import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
-import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
+import translations.application.dto.{
+  AudioPlayListResponse,
+  AudioPlayRequest,
+  AudioPlayResponse,
+}
 
 import java.util.UUID
 
@@ -31,7 +35,7 @@ trait AudioPlayService[F[_]]:
   def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, List[AudioPlayResponse]]]
+  ): F[Either[ApplicationServiceError, AudioPlayListResponse]]
 
   /** Create new audio play.
    *
