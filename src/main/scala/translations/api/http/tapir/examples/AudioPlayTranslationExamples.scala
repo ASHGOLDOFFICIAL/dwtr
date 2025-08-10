@@ -4,12 +4,14 @@ package translations.api.http.tapir.examples
 
 import translations.application.dto.AudioPlayTranslationTypeDto.Subtitles
 import translations.application.dto.{
+  AudioPlayListResponse,
+  AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
 }
 
 import java.net.URI
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 
 object AudioPlayTranslationExamples:
@@ -19,6 +21,8 @@ object AudioPlayTranslationExamples:
     URI.create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605"),
     URI.create("https://www.bigfinish.com/releases/v/cicero-series-01-1777"),
   )
+  private val nextTokenExample =
+    Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 
   val requestExample: AudioPlayTranslationRequest = AudioPlayTranslationRequest(
     title = titleExample,
@@ -32,4 +36,10 @@ object AudioPlayTranslationExamples:
       title = titleExample,
       translationType = translationTypeExample,
       links = linksExample,
+    )
+
+  val listResponseExample: AudioPlayTranslationListResponse =
+    AudioPlayTranslationListResponse(
+      translations = List(responseExample),
+      nextPageToken = nextTokenExample,
     )

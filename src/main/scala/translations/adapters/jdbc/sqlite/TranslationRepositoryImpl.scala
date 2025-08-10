@@ -7,8 +7,8 @@ import shared.infrastructure.doobie.*
 import translations.adapters.jdbc.doobie.given
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
-  TranslationIdentity,
-  TranslationToken,
+  AudioPlayTranslationIdentity,
+  AudioPlayTranslationToken,
 }
 import translations.domain.model.audioplay.AudioPlayTranslation
 import translations.domain.shared.Uuid
@@ -80,7 +80,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
 ) extends TranslationRepository[F]:
   import TranslationRepositoryImpl.ColumnNames.*
 
-  override def contains(id: TranslationIdentity): F[Boolean] = selectF
+  override def contains(id: AudioPlayTranslationIdentity): F[Boolean] = selectF
     .existsF(
       selectF(tableName)("1")
         .whereF(idC, fr"= ${id.id}")
@@ -107,7 +107,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     }
 
   override def get(
-      id: TranslationIdentity,
+      id: AudioPlayTranslationIdentity,
   ): F[Option[AudioPlayTranslation]] = selectF(tableName)(allColumns*)
     .whereF(idC, fr"= ${id.id}")
     .andF(originalIdC, fr"= ${id.originalId}")
@@ -133,7 +133,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
 
   override def delete(
-      id: TranslationIdentity,
+      id: AudioPlayTranslationIdentity,
   ): F[Either[RepositoryError, Unit]] = deleteF(tableName)
     .whereF(idC, fr"= ${id.id}")
     .andF(originalIdC, fr"= ${id.originalId}")
@@ -144,7 +144,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
 
   override def list(
-      startWith: Option[TranslationToken],
+      startWith: Option[AudioPlayTranslationToken],
       count: Int,
   ): F[List[AudioPlayTranslation]] =
     val base = selectF(tableName)(allColumns*)

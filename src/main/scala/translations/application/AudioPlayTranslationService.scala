@@ -5,6 +5,7 @@ package translations.application
 import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
 import translations.application.dto.{
+  AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
 }
@@ -37,7 +38,7 @@ trait AudioPlayTranslationService[F[_]]:
   def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, List[AudioPlayTranslationResponse]]]
+  ): F[Either[ApplicationServiceError, AudioPlayTranslationListResponse]]
 
   /** Create new translation.
    *

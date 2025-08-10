@@ -4,11 +4,13 @@ package translations.api.http.tapir.schemas
 
 import translations.api.http.tapir.examples.AudioPlayExamples
 import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{
+  listResponseExample,
   requestExample,
   responseExample,
 }
 import translations.api.mappers.AudioPlayTranslationTypeMapper
 import translations.application.dto.{
+  AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
   AudioPlayTranslationTypeDto,
@@ -31,6 +33,7 @@ object AudioPlayTranslationSchemas:
   private val translationTypeDescription = "Type of translation: one of " +
     AudioPlayTranslationTypeMapper.stringValues.mkString(", ")
   private val linksDescription = "Links to where translation is published."
+  private val nextPageDescription = "Token to retrieve next page."
 
   private given Schema[AudioPlayTranslationTypeDto] = Schema.string
     .validate(
@@ -69,3 +72,10 @@ object AudioPlayTranslationSchemas:
     }
     .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
       .description(linksDescription))
+
+  given Schema[AudioPlayTranslationListResponse] = Schema
+    .derived[AudioPlayTranslationListResponse]
+    .modify(_.nextPageToken) {
+      _.encodedExample(listResponseExample.nextPageToken)
+        .description(nextPageDescription)
+    }

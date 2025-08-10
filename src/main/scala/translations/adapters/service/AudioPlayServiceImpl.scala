@@ -64,13 +64,14 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       case Validated.Invalid(_) => BadRequest.asLeft.pure[F]
       case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
           .list(pageToken, pageSize)
-          .map(list =>
+          .map { list =>
             val nextPageToken = list.lastOption.flatMap { elem =>
               val token = AudioPlayToken(elem.id, elem.addedAt)
               CursorToken[AudioPlayToken](token).encode
             }
             val elements = list.map(AudioPlayResponse.fromDomain)
-            AudioPlayListResponse(elements, nextPageToken).asRight)
+            AudioPlayListResponse(elements, nextPageToken).asRight
+          }
 
   override def create(
       user: AuthenticatedUser,

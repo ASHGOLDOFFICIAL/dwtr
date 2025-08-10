@@ -5,8 +5,8 @@ package translations.application.repositories
 import shared.pagination.{TokenDecoder, TokenEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
 import translations.application.repositories.TranslationRepository.{
-  TranslationIdentity,
-  TranslationToken,
+  AudioPlayTranslationIdentity,
+  AudioPlayTranslationToken,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import translations.domain.shared.Uuid
@@ -21,8 +21,11 @@ import scala.util.Try
  *  @tparam F effect type.
  */
 trait TranslationRepository[F[_]]
-    extends GenericRepository[F, AudioPlayTranslation, TranslationIdentity]
-    with PaginatedList[F, AudioPlayTranslation, TranslationToken]
+    extends GenericRepository[
+      F,
+      AudioPlayTranslation,
+      AudioPlayTranslationIdentity]
+    with PaginatedList[F, AudioPlayTranslation, AudioPlayTranslationToken]
 
 
 object TranslationRepository:
@@ -30,7 +33,7 @@ object TranslationRepository:
    *  @param originalId original work ID.
    *  @param id translation ID.
    */
-  final case class TranslationIdentity(
+  final case class AudioPlayTranslationIdentity(
       originalId: Uuid[AudioPlay],
       id: Uuid[AudioPlayTranslation],
   )
@@ -40,24 +43,24 @@ object TranslationRepository:
    *  @param identity identity of [[AudioPlayTranslation]].
    *  @param timestamp when translation was added.
    */
-  final case class TranslationToken(
-      identity: TranslationIdentity,
+  final case class AudioPlayTranslationToken(
+      identity: AudioPlayTranslationIdentity,
       timestamp: Instant,
   )
 
   // TODO: Make better
-  given TokenDecoder[TranslationToken] = token =>
+  given TokenDecoder[AudioPlayTranslationToken] = token =>
     Try {
       val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
       val Array(originalStr, idStr, timeStr) = raw.split('|')
-      val orig                               = Uuid[AudioPlay](originalStr).get
-      val id       = Uuid[AudioPlayTranslation](idStr).get
-      val instant  = Instant.ofEpochMilli(timeStr.toLong)
-      val identity = TranslationIdentity(orig, id)
-      TranslationToken(identity, instant)
+      val orig = Uuid[AudioPlay](originalStr).get
+      val id = Uuid[AudioPlayTranslation](idStr).get
+      val instant = Instant.ofEpochMilli(timeStr.toLong)
+      val identity = AudioPlayTranslationIdentity(orig, id)
+      AudioPlayTranslationToken(identity, instant)
     }.toOption
 
-  given TokenEncoder[TranslationToken] = token =>
+  given TokenEncoder[AudioPlayTranslationToken] = token =>
     val raw = s"${token.identity.originalId}|" +
       s"${token.identity.id}|" +
       s"${token.timestamp.toEpochMilli}"

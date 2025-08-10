@@ -9,20 +9,21 @@ import shared.errors.{
   RepositoryError,
   toApplicationError,
 }
-import shared.pagination.PaginationParams
+import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformIfSome
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayTranslationTypeMapper
 import translations.application.TranslationPermission.*
 import translations.application.dto.{
+  AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
 }
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
-  TranslationIdentity,
-  TranslationToken,
+  AudioPlayTranslationIdentity,
+  AudioPlayTranslationToken,
   given,
 }
 import translations.application.{
@@ -66,13 +67,22 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
   override def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, List[AudioPlayTranslationResponse]]] =
+  ): F[Either[ApplicationServiceError, AudioPlayTranslationListResponse]] =
     PaginationParams(pagination.max)(count, token) match
       case Validated.Invalid(_) =>
         ApplicationServiceError.BadRequest.asLeft.pure
-      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
-        for list <- repo.list(pageToken, pageSize)
-        yield list.map(_.toResponse).asRight
+      case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
+          .list(pageToken, pageSize)
+          .map { list =>
+            val nextPageToken = list.lastOption.flatMap { elem =>
+              val identity =
+                AudioPlayTranslationIdentity(elem.originalId, elem.id)
+              val token = AudioPlayTranslationToken(identity, elem.addedAt)
+              CursorToken[AudioPlayTranslationToken](token).encode
+            }
+            val elements = list.map(_.toResponse)
+            AudioPlayTranslationListResponse(elements, nextPageToken).asRight
+          }
 
   override def create(
       user: AuthenticatedUser,
@@ -115,14 +125,18 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
       yield result.leftMap(toApplicationError)
     }
 
-  /** Returns [[TranslationIdentity]] for given [[UUID]]s.
+  /** Returns [[AudioPlayTranslationIdentity]] for given [[UUID]]s.
+   *
    *  @param originalId original work's UUID.
    *  @param id translation UUID.
    */
-  private def identity(originalId: UUID, id: UUID): TranslationIdentity =
+  private def identity(
+      originalId: UUID,
+      id: UUID,
+  ): AudioPlayTranslationIdentity =
     val originalUuid = Uuid[AudioPlay](originalId)
     val translationUuid = Uuid[AudioPlayTranslation](id)
-    TranslationIdentity(originalUuid, translationUuid)
+    AudioPlayTranslationIdentity(originalUuid, translationUuid)
 
   extension (tc: AudioPlayTranslationRequest)
     /** Updates old domain object with fields from request.
