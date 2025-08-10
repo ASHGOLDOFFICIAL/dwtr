@@ -60,17 +60,18 @@ object TokenPayload:
   }
 
   private given Decoder[Role] = Decoder.decodeString.emap {
-    case "normal" => Role.Normal.asRight
-    case "admin"  => Role.Admin.asRight
-    case _        => "Unknown role".asLeft
+    case "normal"  => Role.Normal.asRight
+    case "trusted" => Role.Trusted.asRight
+    case "admin"   => Role.Admin.asRight
+    case _         => "Unknown role".asLeft
   }
 
-  given Encoder[TokenPayload] = deriveEncoder[TokenPayload]
+  given Encoder[TokenPayload] = Encoder.derived
 
   given Decoder[TokenPayload] = (c: HCursor) =>
     for
-      sub  <- c.downField("sub").as[String]
-      iss  <- c.downField("iat").as[Instant]
-      exp  <- c.downField("exp").as[Instant]
+      sub <- c.downField("sub").as[String]
+      iss <- c.downField("iat").as[Instant]
+      exp <- c.downField("exp").as[Instant]
       role <- c.downField("role").as[Role]
     yield TokenPayload(sub, iss, exp, role)
