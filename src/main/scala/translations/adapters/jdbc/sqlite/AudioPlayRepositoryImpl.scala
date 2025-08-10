@@ -2,8 +2,9 @@ package org.aulune
 package translations.adapters.jdbc.sqlite
 
 
-import shared.errors.RepositoryError
 import shared.adapters.doobie.*
+import shared.adapters.doobie.sqlite.fromSqlite
+import shared.errors.RepositoryError
 import translations.adapters.jdbc.doobie.given
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
@@ -65,12 +66,14 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   import AudioPlayRepositoryImpl.ColumnNames.*
 
   override def contains(id: Uuid[AudioPlay]): F[Boolean] = selectF
-    .existsF(
-      selectF(tableName)("1")
-        .whereF(idC, fr"= $id"))
+    .existsF(selectF(tableName)("1")
+      .whereF(idC, fr"= $id"))
     .query[Boolean]
     .unique
     .transact(transactor)
+//    .attemptSql
+//    .map(_.leftMap(fromSqlite))
+//    .handleError(_ => RepositoryError.StorageFailure.asLeft)
 
   override def persist(
       elem: AudioPlay,
@@ -82,11 +85,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     .update
     .run
     .transact(transactor)
-    .attempt
-    .map {
-      case Right(_) => elem.asRight
-      case Left(e)  => RepositoryError.StorageFailure.asLeft
-    }
+    .attemptSql
+    .map(_.as(elem).leftMap(fromSqlite))
+    .handleError(_ => RepositoryError.StorageFailure.asLeft)
 
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] = selectF(
     tableName)(allColumns*)
@@ -94,6 +95,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     .query[AudioPlay]
     .option
     .transact(transactor)
+//    .attemptSql
+//    .map(_.leftMap(fromSqlite))
+//    .handleError(_ => RepositoryError.StorageFailure.asLeft)
 
   override def update(
       elem: AudioPlay,
@@ -105,11 +109,12 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     .update
     .run
     .transact(transactor)
-    .map {
+    .attemptSql
+    .map(_.flatMap {
       case 0 => RepositoryError.NotFound.asLeft
       case _ => elem.asRight
-    }
-    .handleErrorWith(_ => RepositoryError.StorageFailure.asLeft.pure[F])
+    }.leftMap(fromSqlite))
+    .handleError(_ => RepositoryError.StorageFailure.asLeft)
 
   override def delete(id: Uuid[AudioPlay]): F[Either[RepositoryError, Unit]] =
     deleteF(tableName)
@@ -117,8 +122,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .update
       .run
       .transact(transactor)
-      .map(_ => ().asRight)
-      .handleErrorWith(_ => RepositoryError.StorageFailure.asLeft.pure[F])
+      .attemptSql
+      .map(_.void.leftMap(fromSqlite))
+      .handleError(_ => RepositoryError.StorageFailure.asLeft)
 
   override def list(
       startWith: Option[AudioPlayToken],
