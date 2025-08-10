@@ -3,7 +3,7 @@ package translations.adapters.jdbc.sqlite
 
 
 import shared.errors.RepositoryError
-import shared.infrastructure.doobie.*
+import shared.adapters.doobie.*
 import translations.adapters.jdbc.doobie.given
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken

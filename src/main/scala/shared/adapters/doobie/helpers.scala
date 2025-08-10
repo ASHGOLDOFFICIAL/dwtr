@@ -1,5 +1,5 @@
 package org.aulune
-package shared.infrastructure.doobie
+package shared.adapters.doobie
 
 
 import doobie.Fragment

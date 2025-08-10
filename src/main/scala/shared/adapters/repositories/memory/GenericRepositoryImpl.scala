@@ -1,5 +1,5 @@
 package org.aulune
-package shared.infrastructure.repositories.memory
+package shared.adapters.repositories.memory
 
 
 import shared.errors.RepositoryError

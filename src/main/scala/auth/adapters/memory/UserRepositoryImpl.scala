@@ -5,7 +5,7 @@ package auth.adapters.memory
 import auth.application.repositories.UserRepository
 import auth.domain.model.Role.Admin
 import auth.domain.model.User
-import shared.infrastructure.repositories.memory.GenericRepositoryImpl
+import shared.adapters.repositories.memory.GenericRepositoryImpl
 import shared.repositories.EntityIdentity
 
 import cats.Applicative
