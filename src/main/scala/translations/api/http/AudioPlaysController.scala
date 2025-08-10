@@ -49,7 +49,7 @@ final class AudioPlaysController[F[_]: Functor](
   private given AuthenticationService[F] = authService
 
   private val audioPlayId = path[UUID]("audio_play_id")
-    .description("ID of the audio play")
+    .description("ID of the audio play.")
 
   private val collectionPath = "audioplays"
   private val elementPath = collectionPath / audioPlayId
@@ -57,8 +57,9 @@ final class AudioPlaysController[F[_]: Functor](
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(statusCode(StatusCode.Ok).and(
-      jsonBody[AudioPlayResponse].example(responseExample)))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
+      .description("Requested audio play if found.")
+      .example(responseExample)))
     .errorOut(statusCode)
     .name("GetAudioPlay")
     .summary("Returns an audio play with given ID.")
@@ -71,8 +72,9 @@ final class AudioPlaysController[F[_]: Functor](
   private val listEndpoint = endpoint.get
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
-    .out(statusCode(StatusCode.Ok).and(
-      jsonBody[AudioPlayListResponse].example(listResponseExample)))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayListResponse]
+      .description("List of audio plays with token to get next page.")
+      .example(listResponseExample)))
     .errorOut(statusCode)
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
@@ -85,10 +87,11 @@ final class AudioPlaysController[F[_]: Functor](
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
     .in(jsonBody[AudioPlayRequest]
-      .description("Audio play to create")
+      .description("Audio play to create.")
       .example(requestExample))
-    .out(statusCode(StatusCode.Created).and(
-      jsonBody[AudioPlayResponse].example(responseExample)))
+    .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResponse]
+      .description("Created audio play.")
+      .example(responseExample)))
     .name("CreateAudioPlay")
     .summary("Creates a new audio play and returns the created resource.")
     .tag(tag)
@@ -100,10 +103,11 @@ final class AudioPlaysController[F[_]: Functor](
   private val updateEndpoint = authOnlyEndpoint.put
     .in(elementPath)
     .in(jsonBody[AudioPlayRequest]
-      .description("New state")
+      .description("Audio play's new state.")
       .example(requestExample))
-    .out(statusCode(StatusCode.Ok).and(
-      jsonBody[AudioPlayResponse].example(responseExample)))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
+      .description("Updated audio play.")
+      .example(responseExample)))
     .name("UpdateAudioPlay")
     .summary("Updates audio play resource with given ID.")
     .tag(tag)
