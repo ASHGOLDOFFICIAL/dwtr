@@ -10,7 +10,7 @@ import java.net.URI
  *  @param links links to where translation is published.
  *  @param translationType type of translation.
  */
-case class AudioPlayTranslationRequest(
+final case class AudioPlayTranslationRequest(
     title: String,
     links: List[URI],
     translationType: AudioPlayTranslationTypeDto,

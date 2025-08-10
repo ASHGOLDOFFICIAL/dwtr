@@ -13,7 +13,7 @@ import java.util.UUID
  *  @param seriesId audio play series ID.
  *  @param seriesNumber audio play number in series.
  */
-case class AudioPlayResponse(
+final case class AudioPlayResponse(
     id: UUID,
     title: String,
     seriesId: Option[UUID],

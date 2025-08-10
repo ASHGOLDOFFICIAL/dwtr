@@ -14,7 +14,7 @@ import java.util.UUID
  *  @param translationType type of translation.
  *  @param links links to translation publications.
  */
-case class AudioPlayTranslationResponse(
+final case class AudioPlayTranslationResponse(
     originalId: UUID,
     id: UUID,
     title: String,

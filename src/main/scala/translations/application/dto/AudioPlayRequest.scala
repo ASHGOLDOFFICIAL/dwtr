@@ -10,7 +10,7 @@ import java.util.UUID
  *  @param seriesId audio play series ID.
  *  @param seriesNumber audio play number in series.
  */
-case class AudioPlayRequest(
+final case class AudioPlayRequest(
     title: String,
     seriesId: Option[UUID],
     seriesNumber: Option[Int],
