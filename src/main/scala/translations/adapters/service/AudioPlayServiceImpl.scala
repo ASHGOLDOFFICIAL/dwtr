@@ -26,11 +26,12 @@ import translations.application.repositories.AudioPlayRepository.{
   given,
 }
 import translations.application.{AudioPlayPermission, AudioPlayService}
+import translations.domain.errors.AudioPlayValidationError
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.shared.Uuid
 
 import cats.Monad
-import cats.data.Validated
+import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
@@ -81,7 +82,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       for
         id <- UUIDGen.randomUUID[F]
         now <- Clock[F].realTimeInstant
-        audioOpt = ac.toDomain(id, now)
+        audioOpt = ac.toDomain(id, now).toOption
         result <- audioOpt.fold(BadRequest.asLeft.pure[F]) { audio =>
           for either <- repo.persist(audio)
           yield either.bimap(toApplicationError, _.toResponse)
@@ -97,7 +98,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
     requirePermissionOrDeny(Write, user) {
       val uuid = Uuid[AudioPlay](id)
       for result <- repo.transformIfSome(uuid, BadRequest) { old =>
-          ac.update(old)
+          ac.update(old).toOption
         }(toApplicationError)
       yield result.map(_.toResponse)
     }
@@ -116,27 +117,29 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
      *  @param old old domain object.
      *  @return updated domain object if valid.
      */
-    private def update(old: AudioPlay): Option[AudioPlay] = AudioPlay
+    private def update(
+        old: AudioPlay,
+    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = AudioPlay
       .update(
         initial = old,
         title = ac.title,
         seriesId = ac.seriesId,
         seriesNumber = ac.seriesNumber)
-      .toOption
 
     /** Converts request to domain object and verifies it.
      *  @param id ID assigned to this audio play.
      *  @param addedAt timestamp of when was this resource added.
      *  @return created domain object if valid.
      */
-    private def toDomain(id: UUID, addedAt: Instant): Option[AudioPlay] =
-      AudioPlay(
-        id = id,
-        title = ac.title,
-        seriesId = ac.seriesId,
-        seriesNumber = ac.seriesNumber,
-        addedAt = addedAt,
-      ).toOption
+    private def toDomain(
+        id: UUID,
+        addedAt: Instant,
+    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = AudioPlay(
+      id = id,
+      title = ac.title,
+      seriesId = ac.seriesId,
+      seriesNumber = ac.seriesNumber,
+      addedAt = addedAt)
 
   extension (domain: AudioPlay)
     /** Converts domain object to response object. */

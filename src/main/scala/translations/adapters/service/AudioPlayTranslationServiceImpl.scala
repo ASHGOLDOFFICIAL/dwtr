@@ -30,11 +30,12 @@ import translations.application.{
   AudioPlayTranslationService,
   TranslationPermission,
 }
+import translations.domain.errors.TranslationValidationError
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import translations.domain.shared.Uuid
 
 import cats.Monad
-import cats.data.Validated
+import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
@@ -93,7 +94,7 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
       for
         id <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
         now <- Clock[F].realTimeInstant
-        translationOpt = tc.toDomain(originalId, id, now)
+        translationOpt = tc.toDomain(originalId, id, now).toOption
         result <- translationOpt.fold(BadRequest.asLeft.pure[F]) { translation =>
           for either <- repo.persist(translation)
           yield either.bimap(toApplicationError, _.toResponse)
@@ -110,7 +111,7 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
     requirePermissionOrDeny(Update, user) {
       val trIdentity = identity(originalId, id)
       for result <- repo.transformIfSome(trIdentity, BadRequest) { old =>
-          tc.update(old)
+          tc.update(old).toOption
         }(toApplicationError)
       yield result.map(_.toResponse)
     }
@@ -145,15 +146,15 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
      */
     private def update(
         old: AudioPlayTranslation,
-    ): Option[AudioPlayTranslation] = AudioPlayTranslation
-      .update(
-        initial = old,
-        title = tc.title,
-        translationType = AudioPlayTranslationTypeMapper
-          .toDomain(tc.translationType),
-        links = tc.links,
-      )
-      .toOption
+    ): ValidatedNec[TranslationValidationError, AudioPlayTranslation] =
+      AudioPlayTranslation
+        .update(
+          initial = old,
+          title = tc.title,
+          translationType = AudioPlayTranslationTypeMapper
+            .toDomain(tc.translationType),
+          links = tc.links,
+        )
 
     /** Converts request to domain object and verifies it.
      *  @param originalId original work's ID.
@@ -165,15 +166,16 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
         originalId: UUID,
         id: UUID,
         addedAt: Instant,
-    ): Option[AudioPlayTranslation] = AudioPlayTranslation(
-      originalId = originalId,
-      id = id,
-      title = tc.title,
-      translationType = AudioPlayTranslationTypeMapper
-        .toDomain(tc.translationType),
-      links = tc.links,
-      addedAt = addedAt,
-    ).toOption
+    ): ValidatedNec[TranslationValidationError, AudioPlayTranslation] =
+      AudioPlayTranslation(
+        originalId = originalId,
+        id = id,
+        title = tc.title,
+        translationType = AudioPlayTranslationTypeMapper
+          .toDomain(tc.translationType),
+        links = tc.links,
+        addedAt = addedAt,
+      )
 
   extension (domain: AudioPlayTranslation)
     /** Converts domain object to response object. */
