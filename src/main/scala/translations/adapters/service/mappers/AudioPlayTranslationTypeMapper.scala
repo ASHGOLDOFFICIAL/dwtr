@@ -1,5 +1,5 @@
 package org.aulune
-package translations.infrastructure.service.mappers
+package translations.adapters.service.mappers
 
 
 import translations.application.dto.AudioPlayTranslationTypeDto

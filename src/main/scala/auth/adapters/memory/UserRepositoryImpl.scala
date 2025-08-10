@@ -1,5 +1,5 @@
 package org.aulune
-package auth.infrastructure.memory
+package auth.adapters.memory
 
 
 import auth.application.repositories.UserRepository

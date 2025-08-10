@@ -1,5 +1,5 @@
 package org.aulune
-package translations.infrastructure.service
+package translations.adapters.service
 
 
 import auth.domain.model.AuthenticatedUser
@@ -13,6 +13,7 @@ import shared.pagination.PaginationParams
 import shared.repositories.transformIfSome
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
+import translations.adapters.service.mappers.AudioPlayTranslationTypeMapper
 import translations.application.TranslationPermission.*
 import translations.application.dto.{
   AudioPlayTranslationRequest,
@@ -30,7 +31,6 @@ import translations.application.{
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import translations.domain.shared.Uuid
-import translations.infrastructure.service.mappers.AudioPlayTranslationTypeMapper
 
 import cats.Monad
 import cats.data.Validated

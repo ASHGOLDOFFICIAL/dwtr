@@ -1,5 +1,5 @@
 package org.aulune
-package translations.infrastructure.jdbc.doobie
+package translations.adapters.jdbc.doobie
 
 
 import translations.domain.model.audioplay.{

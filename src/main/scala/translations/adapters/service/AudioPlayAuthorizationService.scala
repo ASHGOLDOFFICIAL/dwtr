@@ -1,23 +1,23 @@
 package org.aulune
-package translations.infrastructure.service
+package translations.adapters.service
 
 
 import auth.domain.model.AuthenticatedUser
 import auth.domain.model.Role.Admin
 import shared.service.AuthorizationService
-import translations.application.TranslationPermission
+import translations.application.AudioPlayPermission
 
 import cats.Applicative
 import cats.syntax.all.*
 
 
-/** [[AuthorizationService]] for [[TranslationPermission]]s.
+/** [[AuthorizationService]] for [[AudioPlayPermission]]s.
  *  @tparam F effect type.
  */
-final class TranslationAuthorizationService[F[_]: Applicative]
-    extends AuthorizationService[F, TranslationPermission]:
+final class AudioPlayAuthorizationService[F[_]: Applicative]
+    extends AuthorizationService[F, AudioPlayPermission]:
   override def hasPermission(
       user: AuthenticatedUser,
-      permission: TranslationPermission,
+      permission: AudioPlayPermission,
   ): F[Boolean] = permission match
     case _ => (user.role == Admin).pure[F]

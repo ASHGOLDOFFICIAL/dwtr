@@ -1,23 +1,23 @@
 package org.aulune
 
 
-import auth.api.http.LoginController
-import auth.infrastructure.memory.UserRepositoryImpl
-import auth.infrastructure.service.{
+import auth.adapters.memory.UserRepositoryImpl
+import auth.adapters.service.{
   Argon2iPasswordHashingService,
   AuthenticationServiceImpl,
 }
-import translations.api.http.AudioPlaysController
-import translations.infrastructure.jdbc.sqlite.{
+import auth.api.http.LoginController
+import translations.adapters.jdbc.sqlite.{
   AudioPlayRepositoryImpl,
   TranslationRepositoryImpl,
 }
-import translations.infrastructure.service.{
+import translations.adapters.service.{
   AudioPlayAuthorizationService,
   AudioPlayServiceImpl,
   AudioPlayTranslationServiceImpl,
   TranslationAuthorizationService,
 }
+import translations.api.http.AudioPlaysController
 
 import cats.effect.{Async, IO, IOApp}
 import cats.syntax.all.*
@@ -42,7 +42,7 @@ object App extends IOApp.Simple:
   given loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
 
   override def run: IO[Unit] =
-    val config     = ConfigSource.defaultReference.loadOrThrow[Config]
+    val config = ConfigSource.defaultReference.loadOrThrow[Config]
     val transactor = Transactor.fromDriverManager[IO](
       driver = classOf[org.sqlite.JDBC].getName,
       url = config.sqlite.uri,
@@ -52,7 +52,7 @@ object App extends IOApp.Simple:
     )
 
     for
-      hasher   <- Argon2iPasswordHashingService.build[IO]
+      hasher <- Argon2iPasswordHashingService.build[IO]
       userRepo <- UserRepositoryImpl.build[IO]
       authServ =
         AuthenticationServiceImpl(config.app.key, 24.hours, userRepo, hasher)
@@ -93,7 +93,7 @@ object App extends IOApp.Simple:
       endpoints: List[ServerEndpoint[Any, F]],
       config: Config,
   ) =
-    val appRoutes  = Http4sServerInterpreter[F]().toRoutes(endpoints)
+    val appRoutes = Http4sServerInterpreter[F]().toRoutes(endpoints)
     val docsRoutes = makeSwaggerRoutes(mountPoint, endpoints, config)
     Router("/" + mountPoint.mkString("/") -> (appRoutes <+> docsRoutes))
 

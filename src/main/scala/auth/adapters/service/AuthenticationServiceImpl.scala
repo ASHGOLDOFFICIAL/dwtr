@@ -1,5 +1,5 @@
 package org.aulune
-package auth.infrastructure.service
+package auth.adapters.service
 
 
 import auth.application.AuthenticationService
@@ -49,8 +49,8 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
   override def authenticate(
       token: AuthenticationToken,
   ): F[Option[AuthenticatedUser]] = (for
-    claim           <- decodeClaim(token).toOptionT
-    payload         <- TokenPayload.fromString(claim.toJson).toOption.toOptionT
+    claim <- decodeClaim(token).toOptionT
+    payload <- TokenPayload.fromString(claim.toJson).toOption.toOptionT
     expirationValid <- OptionT.liftF(validateExpiration(payload))
     user <- OptionT.when(expirationValid)(payload.toAuthenticatedUser)
   yield user).value
@@ -70,9 +70,9 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
    */
   private def generateToken(user: User): F[AuthenticationToken] =
     Clock[F].realTimeInstant.map { now =>
-      val exp     = now.plusSeconds(maxExp)
+      val exp = now.plusSeconds(maxExp)
       val payload = TokenPayload.fromUser(user, iat = now, exp = exp)
-      val claim   = JwtCirce.encode(payload.asJson, secretKey, algo)
+      val claim = JwtCirce.encode(payload.asJson, secretKey, algo)
       AuthenticationToken(claim)
     }
 

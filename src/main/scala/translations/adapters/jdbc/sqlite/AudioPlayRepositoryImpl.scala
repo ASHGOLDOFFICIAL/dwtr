@@ -1,14 +1,14 @@
 package org.aulune
-package translations.infrastructure.jdbc.sqlite
+package translations.adapters.jdbc.sqlite
 
 
 import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
+import translations.adapters.jdbc.doobie.given
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.shared.Uuid
-import translations.infrastructure.jdbc.doobie.given
 
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
@@ -33,12 +33,12 @@ object AudioPlayRepositoryImpl:
     yield repo
 
   private object ColumnNames:
-    inline val tableName               = "audio_plays"
-    inline val idC                     = "id"
-    inline val titleC                  = "title"
-    inline val seriesIdC               = "series_id"
-    inline val seriesNumberC           = "series_number"
-    inline val addedAtC                = "added_at"
+    inline val tableName = "audio_plays"
+    inline val idC = "id"
+    inline val titleC = "title"
+    inline val seriesIdC = "series_id"
+    inline val seriesNumberC = "series_number"
+    inline val addedAtC = "added_at"
     inline def allColumns: Seq[String] = Seq(
       idC,
       titleC,
@@ -98,8 +98,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   override def update(
       elem: AudioPlay,
   ): F[Either[RepositoryError, AudioPlay]] = updateF(tableName)(
-    titleC        -> fr"${elem.title}",
-    seriesIdC     -> fr"${elem.seriesId}",
+    titleC -> fr"${elem.title}",
+    seriesIdC -> fr"${elem.seriesId}",
     seriesNumberC -> fr"${elem.seriesNumber}")
     .whereF(idC, fr"= ${elem.id}")
     .update

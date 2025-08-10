@@ -1,5 +1,5 @@
 package org.aulune
-package translations.infrastructure.service
+package translations.adapters.service
 
 
 import auth.domain.model.AuthenticatedUser
@@ -67,7 +67,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
       for
-        id  <- UUIDGen.randomUUID[F]
+        id <- UUIDGen.randomUUID[F]
         now <- Clock[F].realTimeInstant
         audioOpt = ac.toDomain(id, now)
         result <- audioOpt.fold(BadRequest.asLeft.pure[F]) { audio =>

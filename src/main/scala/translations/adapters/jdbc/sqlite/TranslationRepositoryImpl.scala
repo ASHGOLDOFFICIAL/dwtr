@@ -1,9 +1,10 @@
 package org.aulune
-package translations.infrastructure.jdbc.sqlite
+package translations.adapters.jdbc.sqlite
 
 
 import shared.errors.RepositoryError
 import shared.infrastructure.doobie.*
+import translations.adapters.jdbc.doobie.given
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
   TranslationIdentity,
@@ -11,7 +12,6 @@ import translations.application.repositories.TranslationRepository.{
 }
 import translations.domain.model.audioplay.AudioPlayTranslation
 import translations.domain.shared.Uuid
-import translations.infrastructure.jdbc.doobie.given
 
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow

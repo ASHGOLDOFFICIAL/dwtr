@@ -1,5 +1,5 @@
 package org.aulune
-package auth.infrastructure.service
+package auth.adapters.service
 
 
 import auth.domain.service.PasswordHashingService
