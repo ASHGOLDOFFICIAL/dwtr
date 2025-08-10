@@ -3,7 +3,7 @@ package translations.domain.model.audioplay
 
 
 /** Possible audio translation types. */
-enum TranslationType:
+enum AudioPlayTranslationType:
   /** Translated as document. */
   case Transcript
 

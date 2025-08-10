@@ -4,18 +4,34 @@ package translations.adapters.service.mappers
 
 import translations.application.dto.AudioPlayTranslationTypeDto
 import translations.application.dto.AudioPlayTranslationTypeDto.*
-import translations.domain.model.audioplay.TranslationType
+import translations.domain.model.audioplay.AudioPlayTranslationType
 
 
+/** Mapper between external [[AudioPlayTranslationTypeDto]] and domain's
+ * [[AudioPlayTranslationType]].
+ *
+ * @note Should not be used outside `service` package to not expose domain
+ *       type.
+ */
 private[service] object AudioPlayTranslationTypeMapper:
   private val toType = Map(
-    Transcript -> TranslationType.Transcript,
-    Subtitles -> TranslationType.Subtitles,
-    VoiceOver -> TranslationType.VoiceOver,
+    Transcript -> AudioPlayTranslationType.Transcript,
+    Subtitles -> AudioPlayTranslationType.Subtitles,
+    VoiceOver -> AudioPlayTranslationType.VoiceOver,
   )
   private val fromType = toType.map(_.swap)
 
-  def toDomain(dto: AudioPlayTranslationTypeDto): TranslationType = toType(dto)
+  /** Convert [[AudioPlayTranslationTypeDto]] to [[AudioPlayTranslationType]].
+   *
+   * @param dto external layer object.
+   * @return mapped domain object.
+   */
+  def toDomain(dto: AudioPlayTranslationTypeDto): AudioPlayTranslationType = toType(dto)
 
-  def fromDomain(domain: TranslationType): AudioPlayTranslationTypeDto =
+  /** Convert [[AudioPlayTranslationType]] to [[AudioPlayTranslationTypeDto]].
+   *
+   * @param domain inner domain object.
+   * @return mapped external object.
+   */
+  def fromDomain(domain: AudioPlayTranslationType): AudioPlayTranslationTypeDto =
     fromType(domain)

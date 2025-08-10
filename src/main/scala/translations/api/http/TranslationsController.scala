@@ -8,7 +8,11 @@ import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
 import translations.api.http.circe.given
-import translations.api.http.tapir.given
+import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{
+  requestExample,
+  responseExample,
+}
+import translations.api.http.tapir.schemas.AudioPlayTranslationSchemas.given
 import translations.application.AudioPlayTranslationService
 import translations.application.dto.{
   AudioPlayTranslationRequest,
@@ -66,11 +70,11 @@ private final class TranslationsController[F[_]: Functor](
 
   private val collectionPath = rootPath / "translations"
   private val elementPath = collectionPath / translationId
-  private val tag = tagPrefix + " Translations"
+  private val tag = tagPrefix + "Translations"
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(jsonBody[AudioPlayTranslationResponse])
+    .out(jsonBody[AudioPlayTranslationResponse].example(responseExample))
     .errorOut(statusCode)
     .name("GetTranslation")
     .summary("Returns a translation with given ID for given parent.")
@@ -95,8 +99,9 @@ private final class TranslationsController[F[_]: Functor](
 
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
-    .in(jsonBody[AudioPlayTranslationRequest].description(
-      "Translation to create"))
+    .in(jsonBody[AudioPlayTranslationRequest]
+      .description("Translation to create")
+      .example(requestExample))
     .out(statusCode(StatusCode.Created).and(
       jsonBody[AudioPlayTranslationResponse]))
     .name("CreateTranslation")
@@ -109,7 +114,9 @@ private final class TranslationsController[F[_]: Functor](
 
   private val updateEndpoint = authOnlyEndpoint.put
     .in(elementPath)
-    .in(jsonBody[AudioPlayTranslationRequest].description("New state"))
+    .in(jsonBody[AudioPlayTranslationRequest]
+      .description("New state")
+      .example(requestExample))
     .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResponse]))
     .name("UpdateTranslation")
     .summary("Updates translation resource with given ID.")

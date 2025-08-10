@@ -1,0 +1,71 @@
+package org.aulune
+package translations.api.http.tapir.schemas
+
+
+import translations.api.http.tapir.examples.AudioPlayExamples
+import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{
+  requestExample,
+  responseExample,
+}
+import translations.api.mappers.AudioPlayTranslationTypeMapper
+import translations.application.dto.{
+  AudioPlayTranslationRequest,
+  AudioPlayTranslationResponse,
+  AudioPlayTranslationTypeDto,
+}
+
+import io.circe.syntax.*
+import sttp.tapir.{Schema, Validator}
+
+import java.net.URI
+import java.util.UUID
+
+
+object AudioPlayTranslationSchemas:
+  private given Schema[URI] = Schema.string[URI]
+
+  private val idDescription = "UUID of the translation."
+  private val originalIdDescription =
+    "UUID of the original audio play for which this is a translation."
+  private val titleDescription = "Translated version of audio play's title."
+  private val translationTypeDescription = "Type of translation: one of " +
+    AudioPlayTranslationTypeMapper.stringValues.mkString(", ")
+  private val linksDescription = "Links to where translation is published."
+
+  private given Schema[AudioPlayTranslationTypeDto] = Schema.string
+    .validate(
+      Validator
+        .enumeration(AudioPlayTranslationTypeDto.values.toList)
+        .encode(AudioPlayTranslationTypeMapper.toString))
+    .encodedExample(
+      AudioPlayTranslationTypeMapper
+        .toString(responseExample.translationType)
+        .asJson
+        .toString)
+    .description(translationTypeDescription)
+
+  given Schema[AudioPlayTranslationRequest] = Schema
+    .derived[AudioPlayTranslationRequest]
+    .modify(_.title) {
+      _.encodedExample(requestExample.title.asJson.toString)
+        .description(titleDescription)
+    }
+    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
+      .description(linksDescription))
+
+  given Schema[AudioPlayTranslationResponse] = Schema
+    .derived[AudioPlayTranslationResponse]
+    .modify(_.id) {
+      _.encodedExample(responseExample.id.asJson.toString)
+        .description(idDescription)
+    }
+    .modify(_.originalId) {
+      _.encodedExample(AudioPlayExamples.responseExample.id.asJson.toString)
+        .description(originalIdDescription)
+    }
+    .modify(_.title) {
+      _.encodedExample(responseExample.title.asJson.toString)
+        .description(titleDescription)
+    }
+    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
+      .description(linksDescription))

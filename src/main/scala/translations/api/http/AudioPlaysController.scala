@@ -7,7 +7,11 @@ import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
 import translations.api.http.circe.given
-import translations.api.http.tapir.given
+import translations.api.http.tapir.examples.AudioPlayExamples.{
+  requestExample,
+  responseExample,
+}
+import translations.api.http.tapir.schemas.AudioPlaySchemas.given
 import translations.application.dto.{AudioPlayRequest, AudioPlayResponse}
 import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
@@ -27,8 +31,8 @@ import java.util.UUID
  * @param service            [[AudioPlayService]] to use.
  * @param authService        [[AuthenticationService]] to use for restricted
  *                           endpoints.
- * @param translationService [[AudioPlayTranslationService]] implementation to create
- *                           subtree with audio play translations.
+ * @param translationService [[AudioPlayTranslationService]] implementation to
+ *                           create subtree with audio play translations.
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Functor](
@@ -38,16 +42,18 @@ final class AudioPlaysController[F[_]: Functor](
                                                  translationService: AudioPlayTranslationService[F],
 ):
   private given AuthenticationService[F] = authService
-  private val audioPlayId                = path[UUID]("audio_play_id")
+
+  private val audioPlayId = path[UUID]("audio_play_id")
     .description("ID of the audio play")
 
   private val collectionPath = "audioplays"
-  private val elementPath    = collectionPath / audioPlayId
-  private val tag            = "Audio Plays"
+  private val elementPath = collectionPath / audioPlayId
+  private val tag = "AudioPlays"
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]))
+    .out(statusCode(StatusCode.Ok).and(
+      jsonBody[AudioPlayResponse].example(responseExample)))
     .errorOut(statusCode)
     .name("GetAudioPlay")
     .summary("Returns an audio play with given ID.")
@@ -72,8 +78,11 @@ final class AudioPlaysController[F[_]: Functor](
 
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
-    .in(jsonBody[AudioPlayRequest].description("Audio play to create"))
-    .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResponse]))
+    .in(jsonBody[AudioPlayRequest]
+      .description("Audio play to create")
+      .example(requestExample))
+    .out(statusCode(StatusCode.Created).and(
+      jsonBody[AudioPlayResponse].example(responseExample)))
     .name("CreateAudioPlay")
     .summary("Creates a new audio play and returns the created resource.")
     .tag(tag)
@@ -84,8 +93,11 @@ final class AudioPlaysController[F[_]: Functor](
 
   private val updateEndpoint = authOnlyEndpoint.put
     .in(elementPath)
-    .in(jsonBody[AudioPlayRequest].description("New state"))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]))
+    .in(jsonBody[AudioPlayRequest]
+      .description("New state")
+      .example(requestExample))
+    .out(statusCode(StatusCode.Ok).and(
+      jsonBody[AudioPlayResponse].example(responseExample)))
     .name("UpdateAudioPlay")
     .summary("Updates audio play resource with given ID.")
     .tag(tag)

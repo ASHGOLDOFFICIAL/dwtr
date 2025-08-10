@@ -24,12 +24,12 @@ import java.util.UUID
  *  @param addedAt when translation was added.
  */
 final case class AudioPlayTranslation private (
-    originalId: Uuid[AudioPlay],
-    id: Uuid[AudioPlayTranslation],
-    title: TranslatedTitle,
-    translationType: TranslationType,
-    links: NonEmptyList[URI],
-    addedAt: Instant,
+                                                originalId: Uuid[AudioPlay],
+                                                id: Uuid[AudioPlayTranslation],
+                                                title: TranslatedTitle,
+                                                translationType: AudioPlayTranslationType,
+                                                links: NonEmptyList[URI],
+                                                addedAt: Instant,
 )
 
 
@@ -47,12 +47,12 @@ object AudioPlayTranslation:
    *  @return translation validation result.
    */
   def apply(
-      id: UUID,
-      title: String,
-      originalId: UUID,
-      translationType: TranslationType,
-      links: List[URI],
-      addedAt: Instant,
+             id: UUID,
+             title: String,
+             originalId: UUID,
+             translationType: AudioPlayTranslationType,
+             links: List[URI],
+             addedAt: Instant,
   ): ValidationResult[AudioPlayTranslation] = (
     Uuid[AudioPlay](id).validNec,
     Uuid[AudioPlayTranslation](id).validNec,
@@ -73,10 +73,10 @@ object AudioPlayTranslation:
    *    to create new instance.
    */
   def update(
-      initial: AudioPlayTranslation,
-      title: String,
-      translationType: TranslationType,
-      links: List[URI],
+              initial: AudioPlayTranslation,
+              title: String,
+              translationType: AudioPlayTranslationType,
+              links: List[URI],
   ): ValidationResult[AudioPlayTranslation] = (
     initial.originalId.validNec,
     initial.id.validNec,

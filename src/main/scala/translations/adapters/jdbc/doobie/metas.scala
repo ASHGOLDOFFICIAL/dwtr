@@ -5,7 +5,7 @@ package translations.adapters.jdbc.doobie
 import translations.domain.model.audioplay.{
   AudioPlaySeriesNumber,
   AudioPlayTitle,
-  TranslationType
+  AudioPlayTranslationType
 }
 import translations.domain.shared.{TranslatedTitle, Uuid}
 
@@ -45,12 +45,12 @@ given Meta[TranslatedTitle] = Meta[String].tiemap { str =>
 
 
 // Potentially unsafe
-given Meta[TranslationType] = Meta[Int].timap {
-  case 1 => TranslationType.Transcript
-  case 2 => TranslationType.Subtitles
-  case 3 => TranslationType.VoiceOver
+given Meta[AudioPlayTranslationType] = Meta[Int].timap {
+  case 1 => AudioPlayTranslationType.Transcript
+  case 2 => AudioPlayTranslationType.Subtitles
+  case 3 => AudioPlayTranslationType.VoiceOver
 } {
-  case TranslationType.Transcript => 1
-  case TranslationType.Subtitles  => 2
-  case TranslationType.VoiceOver  => 3
+  case AudioPlayTranslationType.Transcript => 1
+  case AudioPlayTranslationType.Subtitles => 2
+  case AudioPlayTranslationType.VoiceOver => 3
 }
