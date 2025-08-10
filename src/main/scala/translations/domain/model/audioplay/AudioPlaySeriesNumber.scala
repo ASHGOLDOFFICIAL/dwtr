@@ -10,4 +10,4 @@ object AudioPlaySeriesNumber:
    *  @param number series number.
    */
   def apply(number: Int): Option[AudioPlaySeriesNumber] =
-    Option.when(number > 1)(number)
+    Option.when(number > 0)(number)
