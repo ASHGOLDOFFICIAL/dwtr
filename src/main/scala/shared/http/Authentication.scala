@@ -3,7 +3,7 @@ package shared.http
 
 
 import auth.application.AuthenticationService
-import auth.domain.model.{AuthenticatedUser, AuthenticationToken}
+import auth.domain.model.AuthenticatedUser
 
 import cats.syntax.all.*
 import cats.{Applicative, Functor}
@@ -30,7 +30,7 @@ object Authentication:
   private def decodeToken[F[_]: Functor](token: String)(using
       service: AuthenticationService[F],
   ): F[Either[StatusCode, AuthenticatedUser]] =
-    for result <- service.authenticate(AuthenticationToken(token))
+    for result <- service.authenticate(token)
     yield result.toRight(StatusCode.Unauthorized)
 
   /** Decode token to [[AuthenticatedUser]] if present. Otherwise, `None`.

@@ -12,12 +12,12 @@ import cats.syntax.all.*
 /** User representation.
  *  @param username unique username.
  *  @param hashedPassword password hash.
- *  @param role user role.
+ *  @param groups set of groups this user belongs to.
  */
 final case class User private (
     username: Username,
     hashedPassword: String,
-    role: Role,
+    groups: Set[Group],
 )
 
 
@@ -27,30 +27,15 @@ object User:
   /** Returns a user if all given arguments are valid.
    *  @param username unique username.
    *  @param hashedPassword password hash.
-   *  @param role user role.
+   *  @param groups user groups.
    *  @return user validation result.
    */
   def apply(
       username: String,
       hashedPassword: String,
-      role: Role,
+      groups: Set[Group],
   ): ValidationResult[User] = (
     Username(username).toValidNec(UserValidationError.InvalidUsername),
     hashedPassword.validNec,
-    role.validNec,
+    groups.validNec,
   ).mapN(new User(_, _, _))
-
-  /** Creates new user without argument validation.
-   *
-   *  Should only be used within always-valid boundary (persistence layer for
-   *  example).
-   *  @param username username.
-   *  @param hashedPassword password hash.
-   *  @param role user's role.
-   *  @return a user.
-   */
-  def unsafeApply(
-      username: String,
-      hashedPassword: String,
-      role: Role,
-  ): User = new User(Username.unsafeApply(username), hashedPassword, role)

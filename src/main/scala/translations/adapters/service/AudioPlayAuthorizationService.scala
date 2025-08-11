@@ -3,7 +3,7 @@ package translations.adapters.service
 
 
 import auth.domain.model.AuthenticatedUser
-import auth.domain.model.Role.Admin
+import auth.domain.model.Group.Admin
 import shared.service.AuthorizationService
 import translations.application.AudioPlayPermission
 
@@ -20,4 +20,4 @@ final class AudioPlayAuthorizationService[F[_]: Applicative]
       user: AuthenticatedUser,
       permission: AudioPlayPermission,
   ): F[Boolean] = permission match
-    case _ => (user.role == Admin).pure[F]
+    case _ => user.groups.contains(Admin).pure[F]

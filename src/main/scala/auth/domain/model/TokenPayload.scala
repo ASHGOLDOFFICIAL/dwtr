@@ -17,16 +17,16 @@ import scala.util.Try
  *  @param sub user identifier.
  *  @param iat token issue time in epoch seconds.
  *  @param exp token expiration date in epoch seconds.
- *  @param role user role.
+ *  @param groups user groups.
  */
 private[auth] final case class TokenPayload(
     sub: String,
     iat: Instant,
     exp: Instant,
-    role: Role,
+    groups: Set[Group],
 ):
   /** Returns token's owner. */
-  def toAuthenticatedUser: AuthenticatedUser = AuthenticatedUser(sub, role)
+  def toAuthenticatedUser: AuthenticatedUser = AuthenticatedUser(sub, groups)
 
 
 object TokenPayload:
@@ -46,7 +46,11 @@ object TokenPayload:
    *  @return [[TokenPayload]] for given user.
    */
   def fromUser(user: User, iat: Instant, exp: Instant): TokenPayload =
-    TokenPayload(sub = user.username, iat = iat, exp = exp, role = user.role)
+    TokenPayload(
+      sub = user.username,
+      iat = iat,
+      exp = exp,
+      groups = user.groups)
 
   private given Encoder[Instant] =
     Encoder.encodeLong.contramap(_.getEpochSecond)
@@ -54,24 +58,16 @@ object TokenPayload:
   private given Decoder[Instant] =
     Decoder.decodeLong.emapTry(l => Try(Instant.ofEpochSecond(l)))
 
-  private given Encoder[Role] = Encoder.encodeString.contramap {
-    case Role.Normal => "normal"
-    case Role.Admin  => "admin"
+  private given Encoder[Group] = Encoder.encodeString.contramap {
+    case Group.Trusted => "trusted"
+    case Group.Admin   => "admin"
   }
 
-  private given Decoder[Role] = Decoder.decodeString.emap {
-    case "normal"  => Role.Normal.asRight
-    case "trusted" => Role.Trusted.asRight
-    case "admin"   => Role.Admin.asRight
+  private given Decoder[Group] = Decoder.decodeString.emap {
+    case "trusted" => Group.Trusted.asRight
+    case "admin"   => Group.Admin.asRight
     case _         => "Unknown role".asLeft
   }
 
   given Encoder[TokenPayload] = Encoder.derived
-
-  given Decoder[TokenPayload] = (c: HCursor) =>
-    for
-      sub <- c.downField("sub").as[String]
-      iss <- c.downField("iat").as[Instant]
-      exp <- c.downField("exp").as[Instant]
-      role <- c.downField("role").as[Role]
-    yield TokenPayload(sub, iss, exp, role)
+  given Decoder[TokenPayload] = Decoder.derived

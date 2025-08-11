@@ -3,7 +3,7 @@ package auth.application
 
 
 import auth.application.dto.{LoginRequest, LoginResponse}
-import auth.domain.model.{AuthenticatedUser, AuthenticationToken}
+import auth.domain.model.AuthenticatedUser
 
 
 /** Service managing user authentication.
@@ -19,4 +19,4 @@ trait AuthenticationService[F[_]]:
   /** Returns authenticated user's info if token is valid.
    *  @param token user's token.
    */
-  def authenticate(token: AuthenticationToken): F[Option[AuthenticatedUser]]
+  def authenticate(token: String): F[Option[AuthenticatedUser]]

@@ -2,11 +2,8 @@ package org.aulune
 package auth.domain.model
 
 
-/** User roles to perform permission checks. */
-enum Role:
-  /** Base role given to all new authenticated users. */
-  case Normal
-
+/** User groups to perform permission checks. */
+enum Group:
   /** Admin verified user. */
   case Trusted
 

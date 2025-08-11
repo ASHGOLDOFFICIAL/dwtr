@@ -46,10 +46,8 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
     token <- OptionT.whenM(passwordsMatch)(generateToken(user))
   yield LoginResponse(token)).value
 
-  override def authenticate(
-      token: AuthenticationToken,
-  ): F[Option[AuthenticatedUser]] = (for
-    claim <- decodeClaim(token).toOptionT
+  override def authenticate(token: String): F[Option[AuthenticatedUser]] = (for
+    claim <- decodeClaim(AuthenticationToken(token)).toOptionT
     payload <- TokenPayload.fromString(claim.toJson).toOption.toOptionT
     expirationValid <- OptionT.liftF(validateExpiration(payload))
     user <- OptionT.when(expirationValid)(payload.toAuthenticatedUser)

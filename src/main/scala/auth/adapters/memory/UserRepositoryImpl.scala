@@ -3,7 +3,7 @@ package auth.adapters.memory
 
 
 import auth.application.repositories.UserRepository
-import auth.domain.model.Role.Admin
+import auth.domain.model.Group.Admin
 import auth.domain.model.User
 import shared.adapters.repositories.memory.GenericRepositoryImpl
 import shared.repositories.EntityIdentity
@@ -19,10 +19,10 @@ object UserRepositoryImpl:
     .of[F, Map[String, User]](
       Map.from(
         Seq(
-          "admin" -> User.unsafeApply(
-            "admin",
+          "adminadmin" -> User(
+            "adminadmin",
             "$argon2i$v=19$m=65536,t=10,p=1$0kddhyj8EtkoWH7yxD6fYg$/YLsg0BdvD/mC7xFFV0ekSvBTEainYPicbBwSDU2ZAA",
-            Admin)),
+            Set(Admin)).toOption.get),
       ))
     .map(mapR => new UserRepositoryImpl[F](mapR))
 
