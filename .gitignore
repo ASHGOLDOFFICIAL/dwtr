@@ -14,6 +14,8 @@ metals.sbt
 ### Scala ###
 .bsp/
 
-
 ### Temporary files ###
 temp/
+
+### Secrets ###
+.env
