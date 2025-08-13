@@ -11,7 +11,7 @@ COPY project ./project
 COPY build.sbt .
 RUN sbt update
 
-COPY src ./src
+COPY core/src ./src
 RUN sbt assembly
 
 

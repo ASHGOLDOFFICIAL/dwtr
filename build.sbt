@@ -3,10 +3,12 @@ import sbtassembly.MergeStrategy
 
 inThisBuild {
   List(
-    version := "0.1.0-SNAPSHOT",
+    idePackagePrefix := Some("org.aulune"),
+    name := "dwtr",
     organization := "org.aulune",
     scalaVersion := "3.3.6",
     semanticdbEnabled := true,
+    version := "0.1.0-SNAPSHOT",
   )
 }
 
@@ -24,18 +26,37 @@ assembly / assemblyMergeStrategy := {
   case PathList("META-INF", _*) => MergeStrategy.discard
 
   case "module-info.class" => MergeStrategy.discard
-  case x => (assembly / assemblyMergeStrategy).value.apply(x)
+  case x                   => (assembly / assemblyMergeStrategy).value.apply(x)
 }
 
 
-Compile / mainClass := Some("org.aulune.App")
+lazy val root = (project in file(".")).aggregate(core, integration)
 
 
-lazy val root = (project in file("."))
+lazy val core = (project in file("core"))
   .settings(
     assembly / mainClass := Some("org.aulune.App"),
-    name := "dwtr",
-    idePackagePrefix := Some("org.aulune"),
+    name := "core",
+    libraryDependencies ++= http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+      "ch.qos.logback"         % "logback-classic" % logbackVersion,
+      "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion,
+      "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
+      "de.mkammerer"           % "argon2-jvm"      % argon2Version,
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+      "org.xerial"     % "sqlite-jdbc"    % sqliteVersion,
+    ),
+  )
+
+
+lazy val integration = (project in file("integration"))
+  .dependsOn(core)
+  .settings(
+    publish / skip := true,
+    libraryDependencies ++= Seq(
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion % Test,
+    ),
   )
 
 
@@ -61,11 +82,12 @@ val pureconfigVersion = "0.17.9"
 val scalatestVersion = "3.2.19"
 val sqliteVersion = "3.50.3.0"
 val tapirVersion = "1.11.40"
+val testcontainersVersion = "0.43.0"
 
 resolvers += Resolver.sonatypeCentralSnapshots
 
 
-libraryDependencies ++= Seq(
+val http4sDeps = Seq(
   "org.http4s" %% "http4s-ember-client",
   "org.http4s" %% "http4s-ember-server",
   "org.http4s" %% "http4s-dsl",
@@ -73,14 +95,14 @@ libraryDependencies ++= Seq(
 ).map(_ % http4sVersion)
 
 
-libraryDependencies ++= Seq(
+val circeDeps = Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-generic",
   "io.circe" %% "circe-parser",
 ).map(_ % circeVersion)
 
 
-libraryDependencies ++= Seq(
+val tapirDeps = Seq(
   "com.softwaremill.sttp.tapir" %% "tapir-core",
   "com.softwaremill.sttp.tapir" %% "tapir-http4s-server",
   "com.softwaremill.sttp.tapir" %% "tapir-json-circe",
@@ -90,23 +112,11 @@ libraryDependencies ++= Seq(
 ).map(_ % tapirVersion)
 
 
-libraryDependencies ++= Seq(
+val doobieDeps = Seq(
   "org.tpolecat" %% "doobie-core",
   "org.tpolecat" %% "doobie-hikari",
   "org.tpolecat" %% "doobie-postgres",
 ).map(_ % doobieVersion)
-
-
-libraryDependencies ++= Seq(
-  "org.xerial"     % "sqlite-jdbc"    % sqliteVersion,
-  "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
-  "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
-  "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-  "ch.qos.logback"         % "logback-classic" % logbackVersion,
-  "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
-  "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion,
-  "de.mkammerer"           % "argon2-jvm"      % argon2Version,
-)
 
 
 libraryDependencies ++= Seq(
