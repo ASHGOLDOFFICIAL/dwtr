@@ -14,6 +14,7 @@ import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformIfSome
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
+import translations.adapters.service.mappers.ExternalResourceMapper
 import translations.application.AudioPlayPermission.Write
 import translations.application.dto.{
   AudioPlayListResponse,
@@ -124,7 +125,10 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
         initial = old,
         title = ac.title,
         seriesId = ac.seriesId,
-        seriesNumber = ac.seriesNumber)
+        seriesNumber = ac.seriesNumber,
+        externalResources =
+          ac.externalResources.map(ExternalResourceMapper.toDomain),
+      )
 
     /** Converts request to domain object and verifies it.
      *  @param id ID assigned to this audio play.
@@ -139,7 +143,10 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       title = ac.title,
       seriesId = ac.seriesId,
       seriesNumber = ac.seriesNumber,
-      addedAt = addedAt)
+      externalResources =
+        ac.externalResources.map(ExternalResourceMapper.toDomain),
+      addedAt = addedAt,
+    )
 
   extension (domain: AudioPlay)
     /** Converts domain object to response object. */
@@ -148,4 +155,6 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       title = domain.title,
       seriesId = domain.seriesId,
       seriesNumber = domain.seriesNumber,
+      externalResources =
+        domain.externalResources.map(ExternalResourceMapper.fromDomain),
     )

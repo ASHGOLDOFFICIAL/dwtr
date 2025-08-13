@@ -2,7 +2,11 @@ package org.aulune
 package translations.api.http.circe
 
 
-import translations.api.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
+import translations.api.mappers.{
+  AudioPlayTranslationTypeMapper,
+  ExternalResourceTypeMapper,
+  LanguageMapper
+}
 import translations.application.dto.{
   AudioPlayListResponse,
   AudioPlayRequest,
@@ -11,10 +15,15 @@ import translations.application.dto.{
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
   AudioPlayTranslationTypeDto,
+  ExternalResourceDto,
+  ExternalResourceTypeDto,
   LanguageDto,
 }
 
 import io.circe.{Decoder, Encoder}
+
+import java.net.{URI, URL}
+import scala.util.Try
 
 
 given Encoder[AudioPlayTranslationTypeDto] =
@@ -56,3 +65,24 @@ given Decoder[LanguageDto] = Decoder.decodeString.emap { str =>
     .fromString(str)
     .toRight(s"Invalid TranslationType: $str")
 }
+
+
+given Encoder[ExternalResourceTypeDto] =
+  Encoder.encodeString.contramap(ExternalResourceTypeMapper.toString)
+
+
+given Decoder[ExternalResourceTypeDto] = Decoder.decodeString.emap { str =>
+  ExternalResourceTypeMapper
+    .fromString(str)
+    .toRight(s"Invalid ExternalResourceType: $str")
+}
+
+
+given Encoder[ExternalResourceDto] = Encoder.derived
+given Decoder[ExternalResourceDto] = Decoder.derived
+
+given Encoder[URL] = Encoder.encodeString.contramap(_.toString)
+
+
+given Decoder[URL] =
+  Decoder.decodeString.emapTry(str => Try(URI.create(str).toURL))
