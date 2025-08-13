@@ -1,6 +1,5 @@
 package org.aulune
-package translations.adapters.jdbc.doobie
-
+package translations.adapters.jdbc.postgres.doobie
 
 import translations.domain.model.audioplay.{
   AudioPlaySeriesNumber,
