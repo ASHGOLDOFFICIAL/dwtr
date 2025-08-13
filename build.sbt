@@ -1,14 +1,29 @@
+import sbtassembly.MergeStrategy
+
+
 inThisBuild {
   List(
     version := "0.1.0-SNAPSHOT",
+    organization := "org.aulune",
     scalaVersion := "3.3.6",
     semanticdbEnabled := true,
   )
 }
 
 
+assembly / assemblyMergeStrategy := {
+  case "module-info.class"                     => MergeStrategy.discard
+  case "META-INF/versions/9/module-info.class" => MergeStrategy.discard
+  case x => (assembly / assemblyMergeStrategy).value.apply(x)
+}
+
+
+Compile / mainClass := Some("org.aulune.App")
+
+
 lazy val root = (project in file("."))
   .settings(
+    assembly / mainClass := Some("org.aulune.App"),
     name := "dwtr",
     idePackagePrefix := Some("org.aulune"),
   )
@@ -68,6 +83,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-core",
   "org.tpolecat" %% "doobie-hikari",
+  "org.tpolecat" %% "doobie-postgres",
 ).map(_ % doobieVersion)
 
 
