@@ -1,14 +1,14 @@
 package org.aulune
 
 
-import com.comcast.ip4s.*
-import org.http4s.*
+import com.comcast.ip4s.{Host, Port}
+import org.http4s.Uri
 import pureconfig.*
 import pureconfig.error.ExceptionThrown
 
 
 case class Config(
-    sqlite: Config.Sqlite,
+    postgres: Config.Postgres,
     app: Config.App,
 ) derives ConfigReader
 
@@ -25,7 +25,7 @@ object Config:
 
   case class Pagination(max: Int, default: Int)
 
-  case class Sqlite(uri: String, user: String, password: String)
+  case class Postgres(uri: String, user: String, password: String)
 
   given ConfigReader[Uri] = ConfigReader.fromString { str =>
     Uri.fromString(str) match
