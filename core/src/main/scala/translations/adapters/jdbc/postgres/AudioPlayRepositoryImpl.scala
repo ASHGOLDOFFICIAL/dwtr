@@ -40,7 +40,7 @@ object AudioPlayRepositoryImpl:
 
   private val createAudioPlayTable = sql"""
     |CREATE TABLE IF NOT EXISTS audio_plays (
-    |  id            UUID        PRIMARY,
+    |  id            UUID        PRIMARY KEY,
     |  title         TEXT        NOT NULL,
     |  series_id     UUID,
     |  series_number INTEGER,
@@ -149,8 +149,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |       ap.series_id,
     |       ap.series_number,
     |       ap.added_at,
-    |       ARRAY_AGG(DISTINCT r.type),
-    |       ARRAY_AGG(DISTINCT r.url)
+    |       ARRAY_AGG(r.type),
+    |       ARRAY_AGG(r.url)
     |FROM audio_plays ap
     |LEFT JOIN audio_play_resources r ON r.audio_play_id = ap.id"""
 
