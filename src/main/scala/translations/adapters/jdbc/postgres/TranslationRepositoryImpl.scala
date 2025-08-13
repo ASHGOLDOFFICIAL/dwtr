@@ -4,7 +4,8 @@ package translations.adapters.jdbc.postgres
 
 import shared.adapters.doobie.*
 import shared.errors.RepositoryError
-import translations.adapters.jdbc.doobie.given
+import translations.adapters.jdbc.postgres.metas.SharedMetas.given
+import translations.adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
   AudioPlayTranslationIdentity,
