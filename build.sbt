@@ -12,8 +12,18 @@ inThisBuild {
 
 
 assembly / assemblyMergeStrategy := {
-  case "module-info.class"                     => MergeStrategy.discard
-  case "META-INF/versions/9/module-info.class" => MergeStrategy.discard
+  case PathList("META-INF", "services", _*) => MergeStrategy.concat
+  case PathList(
+         "META-INF",
+         "maven",
+         "org.webjars",
+         "swagger-ui",
+         "pom.properties") => MergeStrategy.singleOrError
+  case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
+    MergeStrategy.singleOrError
+  case PathList("META-INF", _*) => MergeStrategy.discard
+
+  case "module-info.class" => MergeStrategy.discard
   case x => (assembly / assemblyMergeStrategy).value.apply(x)
 }
 

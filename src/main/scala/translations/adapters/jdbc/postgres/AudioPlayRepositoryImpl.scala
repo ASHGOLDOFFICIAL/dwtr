@@ -1,5 +1,5 @@
 package org.aulune
-package translations.adapters.jdbc.sqlite
+package translations.adapters.jdbc.postgres
 
 
 import shared.adapters.doobie.*
@@ -15,6 +15,7 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
 import doobie.generic.auto.*
 import doobie.implicits.toSqlInterpolator
+import doobie.postgres.implicits.*
 import doobie.syntax.all.*
 import doobie.{Fragment, Transactor}
 
@@ -51,11 +52,11 @@ object AudioPlayRepositoryImpl:
   import ColumnNames.*
   private val createTableQuery: Fragment = Fragment.const(s"""
     |CREATE TABLE IF NOT EXISTS $tableName (
-    |  $idC           TEXT    NOT NULL UNIQUE,
-    |  $titleC        TEXT    NOT NULL,
-    |  $seriesIdC     TEXT,
+    |  $idC           UUID        PRIMARY KEY,
+    |  $titleC        TEXT        NOT NULL,
+    |  $seriesIdC     UUID,
     |  $seriesNumberC INTEGER,
-    |  $addedAtC      TEXT    NOT NULL
+    |  $addedAtC      TIMESTAMPTZ NOT NULL
     |)
   """.stripMargin)
 
@@ -66,8 +67,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   import AudioPlayRepositoryImpl.ColumnNames.*
 
   override def contains(id: Uuid[AudioPlay]): F[Boolean] = selectF
-    .existsF(selectF(tableName)("1")
-      .whereF(idC, fr"= $id"))
+    .existsF(
+      selectF(tableName)("1")
+        .whereF(idC, fr"= $id"))
     .query[Boolean]
     .unique
     .transact(transactor)

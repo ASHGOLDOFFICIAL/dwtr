@@ -1,9 +1,9 @@
 package org.aulune
-package translations.adapters.jdbc.sqlite
+package translations.adapters.jdbc.postgres
 
 
-import shared.errors.RepositoryError
 import shared.adapters.doobie.*
+import shared.errors.RepositoryError
 import translations.adapters.jdbc.doobie.given
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
@@ -18,6 +18,7 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
 import doobie.generic.auto.*
 import doobie.implicits.toSqlInterpolator
+import doobie.postgres.implicits.*
 import doobie.syntax.all.*
 import doobie.{Fragment, Meta, Transactor}
 import io.circe.Encoder
@@ -64,17 +65,16 @@ object TranslationRepositoryImpl:
 
   import ColumnNames.*
   private val createTableSql = s"""
-       |CREATE TABLE IF NOT EXISTS $tableName (
-       |  $originalIdC TEXT    NOT NULL,
-       |  $idC         TEXT    NOT NULL,
-       |  $titleC      TEXT    NOT NULL,
-       |  $typeC       INTEGER NOT NULL,
-       |  $languageC   TEXT    NOT NULL,
-       |  $linksC      TEXT    NOT NULL,
-       |  $addedAtC    TEXT    NOT NULL,
-       |  CONSTRAINT identity UNIQUE($idC, $originalIdC)
-       |)
-    """.stripMargin
+    |CREATE TABLE IF NOT EXISTS $tableName (
+    |  $originalIdC UUID        NOT NULL,
+    |  $idC         UUID        NOT NULL,
+    |  $titleC      TEXT        NOT NULL,
+    |  $typeC       INTEGER     NOT NULL,
+    |  $languageC   TEXT        NOT NULL,
+    |  $linksC      TEXT        NOT NULL,
+    |  $addedAtC    TIMESTAMPTZ NOT NULL,
+    |  CONSTRAINT identity PRIMARY KEY($idC, $originalIdC)
+    |)""".stripMargin
   private val createTable: Fragment = Fragment.const(createTableSql)
 
 

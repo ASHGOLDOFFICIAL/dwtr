@@ -7,7 +7,7 @@ import auth.adapters.service.{
   AuthenticationServiceImpl,
 }
 import auth.api.http.LoginController
-import translations.adapters.jdbc.sqlite.{
+import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   TranslationRepositoryImpl,
 }
@@ -44,10 +44,10 @@ object App extends IOApp.Simple:
   override def run: IO[Unit] =
     val config = ConfigSource.defaultReference.loadOrThrow[Config]
     val transactor = Transactor.fromDriverManager[IO](
-      driver = classOf[org.sqlite.JDBC].getName,
-      url = config.sqlite.uri,
-      user = config.sqlite.user,
-      password = config.sqlite.password,
+      driver = classOf[org.postgresql.Driver].getName,
+      url = config.postgres.uri,
+      user = config.postgres.user,
+      password = config.postgres.password,
       logHandler = None,
     )
 
@@ -109,7 +109,7 @@ object App extends IOApp.Simple:
         version = config.app.version,
       )
       .addServer(Server(
-        s"http://localhost:${config.app.port.value}/${mountPoint.mkString("/")}")
+        s"http://${config.app.host}:${config.app.port}/${mountPoint.mkString("/")}")
         .description("Local development server"))
       .toYaml
     Http4sServerInterpreter[F]().toRoutes(SwaggerUI[F](openApiYaml))

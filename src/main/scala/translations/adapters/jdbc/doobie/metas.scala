@@ -9,17 +9,7 @@ import translations.domain.model.audioplay.{
 }
 import translations.domain.shared.{Language, TranslatedTitle, Uuid}
 
-import cats.syntax.all.*
 import doobie.Meta
-
-import java.time.Instant
-import scala.util.Try
-
-
-given Meta[Instant] = Meta[String].tiemap { str =>
-  Try(Instant.parse(str)).toEither.leftMap(_ =>
-    s"Failed to decode Instant from: $str.")
-}(_.toString)
 
 
 given [A]: Meta[Uuid[A]] = Meta[String].tiemap { str =>
