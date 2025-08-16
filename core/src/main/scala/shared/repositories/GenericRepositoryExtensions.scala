@@ -3,7 +3,7 @@ package shared.repositories
 
 
 import shared.errors.RepositoryError
-import shared.errors.RepositoryError.NotFound
+import shared.errors.RepositoryError.NothingToUpdate
 
 import cats.data.OptionT
 import cats.syntax.all.*

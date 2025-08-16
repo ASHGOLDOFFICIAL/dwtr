@@ -42,7 +42,7 @@ class GenericRepositoryImpl[F[_]: MonadThrow, E, Id](
     currentMap =>
       if currentMap.contains(elem.id)
       then (currentMap.updated(elem.id, elem), Right(elem))
-      else (currentMap, Left(RepositoryError.NotFound))
+      else (currentMap, Left(RepositoryError.NothingToUpdate))
   }.flatMap {
     case Left(error) => error.raiseError[F, E]
     case Right(value) => value.pure[F]

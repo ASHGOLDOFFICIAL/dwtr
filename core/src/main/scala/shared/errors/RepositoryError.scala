@@ -9,8 +9,8 @@ enum RepositoryError extends NoStackTrace:
   /** Element with this identity already exists. */
   case AlreadyExists
 
-  /** Element is not found. */
-  case NotFound
+  /** No element was found to update. */
+  case NothingToUpdate
 
   /** Unexpected repository error. */
-  case StorageFailure
+  case Unexpected(cause: Throwable)
