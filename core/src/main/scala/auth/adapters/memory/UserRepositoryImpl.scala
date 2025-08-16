@@ -8,14 +8,14 @@ import auth.domain.model.User
 import shared.adapters.repositories.memory.GenericRepositoryImpl
 import shared.repositories.EntityIdentity
 
-import cats.Applicative
+import cats.{Applicative, MonadThrow}
 import cats.effect.Ref
 import cats.syntax.all.*
 
 
 // TODO: Fix hardcode
 object UserRepositoryImpl:
-  def build[F[_]: Applicative: Ref.Make]: F[UserRepository[F]] = Ref
+  def build[F[_]: MonadThrow: Ref.Make]: F[UserRepository[F]] = Ref
     .of[F, Map[String, User]](
       Map.from(
         Seq(
@@ -28,7 +28,7 @@ object UserRepositoryImpl:
 
   private given EntityIdentity[User, String] = u => u.username
 
-  private final class UserRepositoryImpl[F[_]: Applicative](
+  private final class UserRepositoryImpl[F[_]: MonadThrow](
       mapR: Ref[F, Map[String, User]],
   ) extends GenericRepositoryImpl[F, User, String](mapR)
       with UserRepository[F]

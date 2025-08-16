@@ -4,13 +4,9 @@ package translations.adapters.service
 
 import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError.BadRequest
-import shared.errors.{
-  ApplicationServiceError,
-  RepositoryError,
-  toApplicationError,
-}
+import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.pagination.{CursorToken, PaginationParams}
-import shared.repositories.transformIfSome
+import shared.repositories.transformF
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.adapters.service.mappers.{
@@ -37,10 +33,12 @@ import translations.domain.errors.TranslationValidationError
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import translations.domain.shared.Uuid
 
-import cats.Monad
+import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
+import cats.mtl.Handle
+import cats.mtl.syntax.all.*
 import cats.syntax.all.*
 
 import java.time.Instant
@@ -54,7 +52,9 @@ import java.util.UUID
  *  @param authService [[AuthorizationService]] for [[TranslationPermission]]s.
  *  @tparam F effect type.
  */
-final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
+final class AudioPlayTranslationServiceImpl[F[
+    _,
+]: MonadThrow: Clock: SecureRandom](
     pagination: Config.Pagination,
     repo: TranslationRepository[F],
     authService: AuthorizationService[F, TranslationPermission],
@@ -65,7 +65,8 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
       originalId: UUID,
       id: UUID,
   ): F[Option[AudioPlayTranslationResponse]] =
-    for result <- repo.get(identity(originalId, id))
+    val tId = identity(originalId, id)
+    for result <- repo.get(tId)
     yield result.map(_.toResponse)
 
   override def listAll(
@@ -99,7 +100,7 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
         now <- Clock[F].realTimeInstant
         translationOpt = tc.toDomain(originalId, id, now).toOption
         result <- translationOpt.fold(BadRequest.asLeft.pure[F]) { translation =>
-          for either <- repo.persist(translation)
+          for either <- repo.persist(translation).attemptHandle
           yield either.bimap(toApplicationError, _.toResponse)
         }
       yield result
@@ -112,11 +113,9 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
       tc: AudioPlayTranslationRequest,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
     requirePermissionOrDeny(Update, user) {
-      val trIdentity = identity(originalId, id)
-      for result <- repo.transformIfSome(trIdentity, BadRequest) { old =>
-          tc.update(old).toOption
-        }(toApplicationError)
-      yield result.map(_.toResponse)
+      val tId = identity(originalId, id)
+      for result <- repo.transformF(tId)(tc.update(_).toOption)
+      yield result.toRight(BadRequest).map(_.toResponse)
     }
 
   override def delete(
@@ -125,7 +124,8 @@ final class AudioPlayTranslationServiceImpl[F[_]: Monad: Clock: SecureRandom](
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Delete, user) {
-      for result <- repo.delete(identity(originalId, id))
+      val tId = identity(originalId, id)
+      for result <- repo.delete(tId).attemptHandle
       yield result.leftMap(toApplicationError)
     }
 

@@ -23,7 +23,7 @@ trait GenericRepository[F[_], E, Id]:
    *  @note It doesn't persist element if another element with the same identity
    *    is already persisted.
    */
-  def persist(elem: E): F[Either[RepositoryError, E]]
+  def persist(elem: E): F[E]
 
   /** Retrieve element by its identity.
    *  @param id element identity.
@@ -39,11 +39,11 @@ trait GenericRepository[F[_], E, Id]:
    *  @note This method is idempotent, unless some modification were made in
    *    between calls.
    */
-  def update(elem: E): F[Either[RepositoryError, E]]
+  def update(elem: E): F[E]
 
   /** Delete element in repository.
    *  @param id identity of the element to delete.
    *  @return result of operation, Unit if success, otherwise error.
    *  @note This method is idempotent.
    */
-  def delete(id: Id): F[Either[RepositoryError, Unit]]
+  def delete(id: Id): F[Unit]

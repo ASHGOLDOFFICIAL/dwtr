@@ -7,6 +7,7 @@ import auth.adapters.service.{
   AuthenticationServiceImpl,
 }
 import auth.api.http.LoginController
+import shared.errors.RepositoryError
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   TranslationRepositoryImpl,
@@ -19,7 +20,9 @@ import translations.adapters.service.{
 }
 import translations.api.http.AudioPlaysController
 
+import cats.data.EitherT
 import cats.effect.{Async, IO, IOApp}
+import cats.mtl.implicits.*
 import cats.syntax.all.*
 import doobie.Transactor
 import org.http4s.HttpRoutes
@@ -41,16 +44,16 @@ import scala.concurrent.duration.DurationInt
 object App extends IOApp.Simple:
   given loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
 
-  override def run: IO[Unit] =
-    val config = ConfigSource.defaultReference.loadOrThrow[Config]
-    val transactor = Transactor.fromDriverManager[IO](
-      driver = classOf[org.postgresql.Driver].getName,
-      url = config.postgres.uri,
-      user = config.postgres.user,
-      password = config.postgres.password,
-      logHandler = None,
-    )
+  private val config = ConfigSource.defaultReference.loadOrThrow[Config]
+  private val transactor = Transactor.fromDriverManager[IO](
+    driver = classOf[org.postgresql.Driver].getName,
+    url = config.postgres.uri,
+    user = config.postgres.user,
+    password = config.postgres.password,
+    logHandler = None,
+  )
 
+  override def run: IO[Unit] =
     for
       hasher <- Argon2iPasswordHashingService.build[IO]
       userRepo <- UserRepositoryImpl.build[IO]

@@ -67,7 +67,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .unique
       .transact(transactor) // TODO: Error handling
 
-  override def persist(elem: AudioPlay): F[Either[RepositoryError, AudioPlay]] =
+  override def persist(elem: AudioPlay): F[AudioPlay] =
     val insertAudioPlay = sql"""
       |INSERT INTO audio_plays (id, title, series_id, series_number, added_at)
       |VALUES (${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesNumber}, ${elem.addedAt})
@@ -76,8 +76,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     transaction
       .as(elem)
       .transact(transactor)
-      .attemptSql
-      .map(_ => RepositoryError.StorageFailure.asLeft)
 
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val query = selectBase ++ sql"""
@@ -90,7 +88,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .option
       .transact(transactor)
 
-  override def update(elem: AudioPlay): F[Either[RepositoryError, AudioPlay]] =
+  override def update(elem: AudioPlay): F[AudioPlay] =
     val updateAudioPlay = sql"""
       |UPDATE audio_plays
       |SET title         = ${elem.title},
@@ -104,14 +102,11 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     transaction
       .as(elem)
       .transact(transactor)
-      .attemptSql
-      .map(_ => RepositoryError.StorageFailure.asLeft)
 
-  override def delete(id: Uuid[AudioPlay]): F[Either[RepositoryError, Unit]] =
+  override def delete(id: Uuid[AudioPlay]): F[Unit] =
     sql"DELETE FROM audio_plays WHERE id = $id".update.run
       .transact(transactor)
-      .attemptSql
-      .map(_ => RepositoryError.StorageFailure.asLeft)
+      .void
 
   override def list(
       startWith: Option[AudioPlayToken],

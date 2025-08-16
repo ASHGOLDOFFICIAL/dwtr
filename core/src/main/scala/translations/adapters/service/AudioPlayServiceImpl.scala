@@ -4,34 +4,23 @@ package translations.adapters.service
 
 import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError.*
-import shared.errors.{
-  ApplicationServiceError,
-  RepositoryError,
-  toApplicationError,
-}
+import shared.errors.{ApplicationServiceError, RepositoryError, toApplicationError}
 import shared.pagination.CursorToken.encode
 import shared.pagination.{CursorToken, PaginationParams}
-import shared.repositories.transformIfSome
+import shared.repositories.transformF
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.adapters.service.mappers.ExternalResourceMapper
 import translations.application.AudioPlayPermission.Write
-import translations.application.dto.{
-  AudioPlayListResponse,
-  AudioPlayRequest,
-  AudioPlayResponse,
-}
+import translations.application.dto.{AudioPlayListResponse, AudioPlayRequest, AudioPlayResponse}
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.{
-  AudioPlayToken,
-  given,
-}
+import translations.application.repositories.AudioPlayRepository.{AudioPlayToken, given}
 import translations.application.{AudioPlayPermission, AudioPlayService}
 import translations.domain.errors.AudioPlayValidationError
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.shared.Uuid
 
-import cats.Monad
+import cats.{Monad, MonadThrow}
 import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
@@ -47,7 +36,7 @@ import java.util.UUID
  *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
  *  @tparam F effect type.
  */
-final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
+final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
     pagination: Config.Pagination,
     repo: AudioPlayRepository[F],
     authService: AuthorizationService[F, AudioPlayPermission],
@@ -85,7 +74,7 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
         now <- Clock[F].realTimeInstant
         audioOpt = ac.toDomain(id, now).toOption
         result <- audioOpt.fold(BadRequest.asLeft.pure[F]) { audio =>
-          for either <- repo.persist(audio)
+          for either <- repo.persist(audio).attempt
           yield either.bimap(toApplicationError, _.toResponse)
         }
       yield result
@@ -98,10 +87,8 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
       val uuid = Uuid[AudioPlay](id)
-      for result <- repo.transformIfSome(uuid, BadRequest) { old =>
-          ac.update(old).toOption
-        }(toApplicationError)
-      yield result.map(_.toResponse)
+      for result <- repo.transformF(uuid)(ac.update(_).toOption)
+      yield result.toRight(BadRequest).map(_.toResponse)
     }
 
   override def delete(
@@ -109,7 +96,8 @@ final class AudioPlayServiceImpl[F[_]: Monad: Clock: SecureRandom](
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Write, user) {
-      for result <- repo.delete(Uuid[AudioPlay](id))
+      val uuid = Uuid[AudioPlay](id)
+      for result <- repo.delete(uuid).attempt
       yield result.leftMap(toApplicationError)
     }
 

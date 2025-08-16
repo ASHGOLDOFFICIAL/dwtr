@@ -95,7 +95,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def persist(
       elem: AudioPlayTranslation,
-  ): F[Either[RepositoryError, AudioPlayTranslation]] = insertF(tableName)(
+  ): F[AudioPlayTranslation] = insertF(tableName)(
     allColumns.head,
     allColumns.tail*)
     .valuesF(
@@ -104,11 +104,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .update
     .run
     .transact(transactor)
-    .attempt
-    .map {
-      case Right(_) => elem.asRight
-      case Left(e)  => println(e); RepositoryError.StorageFailure.asLeft
-    }
+    .as(elem)
 
   override def get(
       id: AudioPlayTranslationIdentity,
@@ -121,7 +117,7 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def update(
       elem: AudioPlayTranslation,
-  ): F[Either[RepositoryError, AudioPlayTranslation]] = updateF(tableName)(
+  ): F[AudioPlayTranslation] = updateF(tableName)(
     titleC -> fr"${elem.title}",
     typeC -> fr"${elem.translationType}",
     languageC -> fr"${elem.language}",
@@ -131,22 +127,20 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .update
     .run
     .transact(transactor)
-    .map {
-      case 0 => RepositoryError.NotFound.asLeft
-      case _ => elem.asRight
+    .flatMap {
+      case 0 => RepositoryError.NotFound.raiseError[F, AudioPlayTranslation]
+      case _ => elem.pure[F]
     }
-    .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
 
   override def delete(
       id: AudioPlayTranslationIdentity,
-  ): F[Either[RepositoryError, Unit]] = deleteF(tableName)
+  ): F[Unit] = deleteF(tableName)
     .whereF(idC, fr"= ${id.id}")
     .andF(originalIdC, fr"= ${id.originalId}")
     .update
     .run
     .transact(transactor)
-    .map(_ => ().asRight)
-    .handleErrorWith(e => RepositoryError.StorageFailure.asLeft.pure[F])
+    .void
 
   override def list(
       startWith: Option[AudioPlayTranslationToken],

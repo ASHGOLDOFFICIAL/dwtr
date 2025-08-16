@@ -11,12 +11,11 @@ import sttp.model.StatusCode
  *  @param err repository error.
  *  @return corresponding application error.
  */
-def toApplicationError(
-    err: RepositoryError,
-): ApplicationServiceError = err match
+def toApplicationError(err: Throwable): ApplicationServiceError = err match
   case RepositoryError.AlreadyExists  => ApplicationServiceError.AlreadyExists
   case RepositoryError.NotFound       => ApplicationServiceError.NotFound
   case RepositoryError.StorageFailure => ApplicationServiceError.InternalError
+  case _ => ApplicationServiceError.InternalError
 
 
 /** Converts [[ApplicationServiceError]] to corresponding [[StatusCode]].
