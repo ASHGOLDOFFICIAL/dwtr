@@ -4,7 +4,7 @@ package translations.api.http
 
 import auth.application.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
-import shared.http.Authentication.authOnlyEndpoint
+import shared.http.Authentication.{authOnlyEndpoint, authOptionalEndpoint}
 import shared.http.QueryParams
 import translations.api.http.circe.given
 import translations.api.http.tapir.examples.AudioPlayExamples.{
@@ -20,7 +20,7 @@ import translations.application.dto.{
 }
 import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
-import cats.Functor
+import cats.Applicative
 import cats.syntax.all.*
 import sttp.model.StatusCode
 import sttp.tapir.*
@@ -40,7 +40,7 @@ import java.util.UUID
  *    create subtree with audio play translations.
  *  @tparam F effect type.
  */
-final class AudioPlaysController[F[_]: Functor](
+final class AudioPlaysController[F[_]: Applicative](
     pagination: Config.Pagination,
     service: AudioPlayService[F],
     authService: AuthenticationService[F],
@@ -55,32 +55,31 @@ final class AudioPlaysController[F[_]: Functor](
   private val elementPath = collectionPath / audioPlayId
   private val tag = "AudioPlays"
 
-  private val getEndpoint = endpoint.get
+  private val getEndpoint = authOptionalEndpoint.get
     .in(elementPath)
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
-      .description("Requested audio play if found.")
-      .example(responseExample)))
-    .errorOut(statusCode)
+    .out(
+      statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
+        .description("Requested audio play if found.")
+        .example(responseExample)))
     .name("GetAudioPlay")
     .summary("Returns an audio play with given ID.")
     .tag(tag)
-    .serverLogic { id =>
-      for result <- service.findById(id)
+    .serverLogic { maybeUser => id =>
+      for result <- service.findById(maybeUser, id)
       yield result.toRight(StatusCode.NotFound)
     }
 
-  private val listEndpoint = endpoint.get
+  private val listEndpoint = authOptionalEndpoint.get
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
     .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayListResponse]
       .description("List of audio plays with token to get next page.")
       .example(listResponseExample)))
-    .errorOut(statusCode)
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
-    .serverLogic { case (pageSize, pageToken) =>
-      for result <- service.listAll(pageToken, pageSize)
+    .serverLogic { maybeUser => (pageSize, pageToken) =>
+      for result <- service.listAll(maybeUser, pageToken, pageSize)
       yield result.leftMap(toErrorResponse)
     }
 

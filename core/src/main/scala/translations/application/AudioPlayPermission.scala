@@ -6,3 +6,8 @@ package translations.application
 enum AudioPlayPermission:
   /** Permission to make writing operations. */
   case Write
+
+  /** Permission to see download links associated with audio plays. Temporary
+   *  solution.
+   */
+  case SeeDownloadLinks
