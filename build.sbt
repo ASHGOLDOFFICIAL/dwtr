@@ -37,13 +37,14 @@ lazy val core = (project in file("core"))
   .settings(
     assembly / mainClass := Some("org.aulune.App"),
     name := "core",
-    libraryDependencies ++= http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+    libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
       "ch.qos.logback"         % "logback-classic" % logbackVersion,
       "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion,
       "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
       "de.mkammerer"           % "argon2-jvm"      % argon2Version,
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
       "org.xerial"     % "sqlite-jdbc"    % sqliteVersion,
     ),
@@ -53,9 +54,13 @@ lazy val core = (project in file("core"))
 lazy val integration = (project in file("integration"))
   .dependsOn(core)
   .settings(
+    Test / fork := true,
     publish / skip := true,
-    libraryDependencies ++= Seq(
+    libraryDependencies ++= testDeps ++ doobieDeps.map(_ % Test) ++ Seq(
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion % Test,
+      "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion % Test,
+      "org.postgresql" % "postgresql"  % postgresqlVersion % Test,
+      "org.typelevel" %% "cats-effect" % catsEffectVersion % Test,
     ),
   )
 
@@ -71,6 +76,7 @@ scalacOptions ++= Seq(
 val argon2Version = "2.12"
 val catsEffectTestingVersion = "1.6.0"
 val catsEffectVersion = "3.6.3"
+val catsMtlVersion = "1.5.0"
 val catsVersion = "2.13.0"
 val circeVersion = "0.14.14"
 val doobieVersion = "1.0.0-RC9"
@@ -78,6 +84,7 @@ val http4sVersion = "0.23.30"
 val jwtVersion = "11.0.2"
 val log4catsVersion = "2.7.1"
 val logbackVersion = "1.5.18"
+val postgresqlVersion = "42.7.7"
 val pureconfigVersion = "0.17.9"
 val scalatestVersion = "3.2.19"
 val sqliteVersion = "3.50.3.0"
@@ -119,7 +126,7 @@ val doobieDeps = Seq(
 ).map(_ % doobieVersion)
 
 
-libraryDependencies ++= Seq(
-  "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion % Test,
-  "org.scalatest" %% "scalatest" % scalatestVersion % Test,
-)
+val testDeps = Seq(
+  "org.scalatest" %% "scalatest"                     % scalatestVersion,
+  "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
+).map(_ % Test)
