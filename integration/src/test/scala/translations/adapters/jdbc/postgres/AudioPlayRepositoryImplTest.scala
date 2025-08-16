@@ -17,7 +17,6 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.net.URI
-import java.time.Instant
 import java.util.UUID
 
 
@@ -46,7 +45,6 @@ final class AudioPlayRepositoryImplTest
     seriesId = seriesId,
     seriesNumber = Some(1),
     externalResources = resources,
-    addedAt = Instant.parse("2000-01-01T12:00:00Z"),
   ).toOption.get
 
   private val updatedAudioPlayTest: AudioPlay = AudioPlay
@@ -151,7 +149,6 @@ final class AudioPlayRepositoryImplTest
       seriesNumber = Some(2),
       externalResources = List(
         ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
-      addedAt = Instant.parse("2013-06-04T15:00:00Z"),
     ).toOption.get,
     AudioPlay(
       id = UUID.fromString("978f8a9e-800a-4f1f-84ac-819a61916f46"),
@@ -160,7 +157,6 @@ final class AudioPlayRepositoryImplTest
       seriesNumber = None,
       externalResources = List(
         ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
-      addedAt = Instant.parse("2015-03-05T15:00:00Z"),
     ).toOption.get,
     AudioPlay(
       id = UUID.fromString("cca461a3-5f4b-49ec-807e-4d29e8ae5f44"),
@@ -169,20 +165,16 @@ final class AudioPlayRepositoryImplTest
       seriesNumber = None,
       externalResources = List(
         ExternalResource(Streaming, URI.create("https://audio.com/3").toURL)),
-      addedAt = Instant.parse("2017-01-01T10:00:00Z"),
     ).toOption.get,
   )
   private def persistAudios(repo: AudioPlayRepository[IO]) =
     audioPlayTests.foldLeft(IO.unit) { (io, audio) =>
       io >> repo.persist(audio).void
     }
-  private val sortByAddedAt: Ordering[AudioPlay] =
-    (x: AudioPlay, y: AudioPlay) =>
-      Ordering[Instant].compare(x.addedAt, y.addedAt)
 
   "list method " - {
     "should " - {
-      "return empty list if no audio plays available" in stand { repo =>
+      "return empty list if no audio play's available" in stand { repo =>
         for audios <- repo.list(None, 10)
         yield audios shouldBe Nil
       }
@@ -198,7 +190,7 @@ final class AudioPlayRepositoryImplTest
         for
           _ <- persistAudios(repo)
           first <- repo.list(None, 1).map(_.head)
-          token = AudioPlayToken(identity = first.id, timestamp = first.addedAt)
+          token = AudioPlayToken(first.id)
           rest <- repo.list(Some(token), 1)
         yield rest.head shouldBe audioPlayTests(1)
       }

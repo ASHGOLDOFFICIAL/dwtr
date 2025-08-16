@@ -24,26 +24,19 @@ trait AudioPlayRepository[F[_]]
 object AudioPlayRepository:
   /** Token to identify pagination params.
    *  @param identity identity of [[AudioPlay]].
-   *  @param timestamp when audio play was added.
    */
-  final case class AudioPlayToken(
-      identity: Uuid[AudioPlay],
-      timestamp: Instant,
-  )
+  final case class AudioPlayToken(identity: Uuid[AudioPlay])
 
   // TODO: Make better
   given TokenDecoder[AudioPlayToken] = token =>
     Try {
-      val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
-      val Array(idStr, timeStr) = raw.split('|')
-      val id                    = Uuid[AudioPlay](idStr).get
-      val instant               = Instant.ofEpochMilli(timeStr.toLong)
-      AudioPlayToken(id, instant)
+      val rawId = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
+      val id = Uuid[AudioPlay](rawId).get
+      AudioPlayToken(id)
     }.toOption
 
   given TokenEncoder[AudioPlayToken] = token =>
-    val raw = s"${token.identity.toString}|" +
-      s"${token.timestamp.toEpochMilli}"
+    val raw = token.identity.toString
     Try(
       Base64.getUrlEncoder.withoutPadding.encodeToString(
         raw.getBytes("UTF-8"))).toOption

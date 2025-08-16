@@ -9,7 +9,6 @@ import translations.domain.shared.{ExternalResource, Uuid}
 import cats.data.ValidatedNec
 import cats.syntax.all.*
 
-import java.time.Instant
 import java.util.UUID
 
 
@@ -19,7 +18,6 @@ import java.util.UUID
  *  @param seriesId audio play series ID.
  *  @param seriesNumber audio play series number.
  *  @param externalResources links to different resources.
- *  @param addedAt when it was added.
  */
 final case class AudioPlay private (
     id: Uuid[AudioPlay],
@@ -27,7 +25,6 @@ final case class AudioPlay private (
     seriesId: Option[Uuid[AudioPlaySeries]],
     seriesNumber: Option[AudioPlaySeriesNumber],
     externalResources: List[ExternalResource],
-    addedAt: Instant,
 )
 
 
@@ -40,7 +37,6 @@ object AudioPlay:
    *  @param seriesId audio play series ID.
    *  @param seriesNumber order in series.
    *  @param externalResources links to different resources.
-   *  @param addedAt when it was added.
    *  @return audio play validation result.
    */
   def apply(
@@ -49,15 +45,13 @@ object AudioPlay:
       seriesId: Option[UUID],
       seriesNumber: Option[Int],
       externalResources: List[ExternalResource],
-      addedAt: Instant,
   ): ValidationResult[AudioPlay] = (
     Uuid[AudioPlay](id).validNec,
     AudioPlayTitle(title).toValidNec(InvalidTitle),
     seriesId.map(Uuid[AudioPlaySeries]).validNec,
     validateSeriesNumber(seriesNumber),
     externalResources.validNec,
-    addedAt.validNec,
-  ).mapN(new AudioPlay(_, _, _, _, _, _))
+  ).mapN(new AudioPlay(_, _, _, _, _))
 
   /** Returns updated audio play.
    *  @param initial initial state.
@@ -81,8 +75,7 @@ object AudioPlay:
     seriesId.map(Uuid[AudioPlaySeries]).validNec,
     validateSeriesNumber(seriesNumber),
     externalResources.validNec,
-    initial.addedAt.validNec,
-  ).mapN(new AudioPlay(_, _, _, _, _, _))
+  ).mapN(new AudioPlay(_, _, _, _, _))
 
   /** Validates audio play series number.
    *  @param seriesNumber series number.

@@ -20,13 +20,11 @@ import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
 import doobie.implicits.*
-import doobie.postgres.implicits.JavaInstantMeta
 import doobie.postgres.sqlstate
 import doobie.{ConnectionIO, Transactor, Update}
 
 import java.net.URL
 import java.sql.SQLException
-import java.time.Instant
 
 
 /** [[AudioPlayRepository]] implementation for SQLite. */
@@ -48,16 +46,16 @@ object AudioPlayRepositoryImpl:
     |  title         TEXT        NOT NULL,
     |  series_id     UUID,
     |  series_number INTEGER,
-    |  added_at      TIMESTAMPTZ NOT NULL
+    |  _added_at     TIMESTAMPTZ NOT NULL DEFAULT now()
     |)""".stripMargin.update.run
 
   private val createExternalResourcesTable = sql"""
     |CREATE TABLE IF NOT EXISTS audio_play_resources (
     |  audio_play_id UUID    NOT NULL REFERENCES audio_plays(id) ON DELETE CASCADE,
-    |  resource_id   SERIAL  NOT NULL,
+    |  _resource_id  SERIAL  NOT NULL,
     |  type          INTEGER NOT NULL,
     |  url           TEXT    NOT NULL,
-    |  CONSTRAINT identity PRIMARY KEY(audio_play_id, resource_id)
+    |  CONSTRAINT identity PRIMARY KEY(audio_play_id, _resource_id)
     |)""".stripMargin.update.run
 
 
@@ -74,8 +72,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def persist(elem: AudioPlay): F[AudioPlay] =
     val insertAudioPlay = sql"""
-      |INSERT INTO audio_plays (id, title, series_id, series_number, added_at)
-      |VALUES (${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesNumber}, ${elem.addedAt})
+      |INSERT INTO audio_plays (id, title, series_id, series_number)
+      |VALUES (${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesNumber})
       |""".stripMargin.update.run
     val transaction = insertAudioPlay >> insertResources(elem)
     transaction
@@ -86,7 +84,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val query = selectBase ++ sql"""
       |WHERE ap.id = $id
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number, ap.added_at
+      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number
       |"""
     query.stripMargin
       .query[SelectResult]
@@ -100,8 +98,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |UPDATE audio_plays
       |SET title         = ${elem.title},
       |    series_id     = ${elem.seriesId},
-      |    series_number = ${elem.seriesNumber},
-      |    added_at      = ${elem.addedAt}
+      |    series_number = ${elem.seriesNumber}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
 
@@ -128,17 +125,21 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       startWith: Option[AudioPlayToken],
       count: Int,
   ): F[List[AudioPlay]] =
-    val cond = startWith match
-      case Some(t) => selectBase ++
-          fr"WHERE added_at >= ${t._2} AND id <> ${t._1}"
-      case None => selectBase
-
     val sort = fr0"""
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number, ap.added_at
-      |ORDER BY added_at ASC
+      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number
+      |ORDER BY ap._added_at ASC
       |LIMIT $count"""
 
-    (cond ++ sort).stripMargin
+    val full = startWith match
+      case Some(t) => selectBase ++ fr"""
+        |WHERE ap._added_at >= (
+        |  SELECT _added_at
+        |  FROM audio_plays
+        |  WHERE id = ${t.identity})
+        |AND ap.id <> ${t.identity}""" ++ sort
+      case None => selectBase ++ sort
+
+    full.stripMargin
       .query[SelectResult]
       .map(toAudioPlay)
       .to[List]
@@ -151,7 +152,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       AudioPlayTitle,
       Option[Uuid[AudioPlaySeries]],
       Option[AudioPlaySeriesNumber],
-      Instant,
       Option[Array[ExternalResourceType]],
       Option[Array[URL]],
   )
@@ -161,7 +161,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |       ap.title,
     |       ap.series_id,
     |       ap.series_number,
-    |       ap.added_at,
     |       ARRAY_AGG(r.type),
     |       ARRAY_AGG(r.url)
     |FROM audio_plays ap
@@ -189,7 +188,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       title: AudioPlayTitle,
       series: Option[Uuid[AudioPlaySeries]],
       number: Option[AudioPlaySeriesNumber],
-      added: Instant,
       maybeTypes: Option[Array[ExternalResourceType]],
       maybeUrls: Option[Array[URL]],
   ) =
@@ -202,8 +200,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       title = title,
       seriesId = series,
       seriesNumber = number,
-      externalResources = resources,
-      addedAt = added).toOption.get // TODO: add unsafe
+      externalResources = resources).toOption.get // TODO: add unsafe
 
   /** Converts caught errors to [[RepositoryError]]. */
   private def toRepositoryError[A](err: Throwable) = err match
@@ -211,4 +208,5 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     case e: SQLException    => e.getSQLState match
         case sqlstate.class23.UNIQUE_VIOLATION.value =>
           AlreadyExists.raiseError[F, A]
+        case _ => Unexpected(cause = e).raiseError[F, A]
     case err => Unexpected(cause = err).raiseError[F, A]

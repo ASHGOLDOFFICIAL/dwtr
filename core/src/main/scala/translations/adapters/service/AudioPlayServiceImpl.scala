@@ -4,7 +4,7 @@ package translations.adapters.service
 
 import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError.*
-import shared.errors.{ApplicationServiceError, RepositoryError, toApplicationError}
+import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.pagination.CursorToken.encode
 import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformF
@@ -12,15 +12,22 @@ import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.adapters.service.mappers.ExternalResourceMapper
 import translations.application.AudioPlayPermission.Write
-import translations.application.dto.{AudioPlayListResponse, AudioPlayRequest, AudioPlayResponse}
+import translations.application.dto.{
+  AudioPlayListResponse,
+  AudioPlayRequest,
+  AudioPlayResponse,
+}
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.{AudioPlayToken, given}
+import translations.application.repositories.AudioPlayRepository.{
+  AudioPlayToken,
+  given,
+}
 import translations.application.{AudioPlayPermission, AudioPlayService}
 import translations.domain.errors.AudioPlayValidationError
 import translations.domain.model.audioplay.AudioPlay
 import translations.domain.shared.Uuid
 
-import cats.{Monad, MonadThrow}
+import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
@@ -57,7 +64,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
           .list(pageToken, pageSize)
           .map { list =>
             val nextPageToken = list.lastOption.flatMap { elem =>
-              val token = AudioPlayToken(elem.id, elem.addedAt)
+              val token = AudioPlayToken(elem.id)
               CursorToken[AudioPlayToken](token).encode
             }
             val elements = list.map(_.toResponse)
@@ -133,7 +140,6 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       seriesNumber = ac.seriesNumber,
       externalResources =
         ac.externalResources.map(ExternalResourceMapper.toDomain),
-      addedAt = addedAt,
     )
 
   extension (domain: AudioPlay)
