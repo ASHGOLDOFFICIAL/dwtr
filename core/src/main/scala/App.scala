@@ -7,7 +7,6 @@ import auth.adapters.service.{
   AuthenticationServiceImpl,
 }
 import auth.api.http.LoginController
-import shared.errors.RepositoryError
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   TranslationRepositoryImpl,
@@ -20,9 +19,7 @@ import translations.adapters.service.{
 }
 import translations.api.http.AudioPlaysController
 
-import cats.data.EitherT
 import cats.effect.{Async, IO, IOApp}
-import cats.mtl.implicits.*
 import cats.syntax.all.*
 import doobie.Transactor
 import org.http4s.HttpRoutes

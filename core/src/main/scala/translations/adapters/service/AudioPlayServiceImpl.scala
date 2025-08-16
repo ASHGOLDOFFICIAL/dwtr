@@ -52,7 +52,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
 
   override def findById(id: UUID): F[Option[AudioPlayResponse]] =
     for result <- repo.get(Uuid[AudioPlay](id))
-    yield result.map(_.toResponse)
+    yield result.map(toResponse)
 
   override def listAll(
       token: Option[String],
@@ -62,14 +62,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       case Validated.Invalid(_) => BadRequest.asLeft.pure[F]
       case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
           .list(pageToken, pageSize)
-          .map { list =>
-            val nextPageToken = list.lastOption.flatMap { elem =>
-              val token = AudioPlayToken(elem.id)
-              CursorToken[AudioPlayToken](token).encode
-            }
-            val elements = list.map(_.toResponse)
-            AudioPlayListResponse(elements, nextPageToken).asRight
-          }
+          .map(toListResponse(_).asRight)
 
   override def create(
       user: AuthenticatedUser,
@@ -82,7 +75,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
         audioOpt = ac.toDomain(id, now).toOption
         result <- audioOpt.fold(BadRequest.asLeft.pure[F]) { audio =>
           for either <- repo.persist(audio).attempt
-          yield either.bimap(toApplicationError, _.toResponse)
+          yield either.bimap(toApplicationError, toResponse)
         }
       yield result
     }
@@ -95,7 +88,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
     requirePermissionOrDeny(Write, user) {
       val uuid = Uuid[AudioPlay](id)
       for result <- repo.transformF(uuid)(ac.update(_).toOption)
-      yield result.toRight(BadRequest).map(_.toResponse)
+      yield result.toRight(BadRequest).map(toResponse)
     }
 
   override def delete(
@@ -107,6 +100,28 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       for result <- repo.delete(uuid).attempt
       yield result.leftMap(toApplicationError)
     }
+
+  /** Converts domain object to response object. */
+  private def toResponse(domain: AudioPlay): AudioPlayResponse =
+    AudioPlayResponse(
+      id = domain.id,
+      title = domain.title,
+      seriesId = domain.seriesId,
+      seriesNumber = domain.seriesNumber,
+      externalResources =
+        domain.externalResources.map(ExternalResourceMapper.fromDomain),
+    )
+
+  /** Converts list of domain's [[AudioPlay]]s to [[AudioPlayListResponse]].
+   *  @param l list of domain objects.
+   */
+  private def toListResponse(l: List[AudioPlay]): AudioPlayListResponse =
+    val nextPageToken = l.lastOption.flatMap { elem =>
+      val token = AudioPlayToken(elem.id)
+      CursorToken[AudioPlayToken](token).encode
+    }
+    val elements = l.map(toResponse)
+    AudioPlayListResponse(elements, nextPageToken)
 
   extension (ac: AudioPlayRequest)
     /** Updates old domain object with fields from request.
@@ -140,15 +155,4 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       seriesNumber = ac.seriesNumber,
       externalResources =
         ac.externalResources.map(ExternalResourceMapper.toDomain),
-    )
-
-  extension (domain: AudioPlay)
-    /** Converts domain object to response object. */
-    private def toResponse: AudioPlayResponse = AudioPlayResponse(
-      id = domain.id,
-      title = domain.title,
-      seriesId = domain.seriesId,
-      seriesNumber = domain.seriesNumber,
-      externalResources =
-        domain.externalResources.map(ExternalResourceMapper.fromDomain),
     )
