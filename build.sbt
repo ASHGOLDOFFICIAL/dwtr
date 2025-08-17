@@ -13,28 +13,26 @@ inThisBuild {
 }
 
 
-assembly / assemblyMergeStrategy := {
-  case PathList("META-INF", "services", _*) => MergeStrategy.concat
-  case PathList(
-         "META-INF",
-         "maven",
-         "org.webjars",
-         "swagger-ui",
-         "pom.properties") => MergeStrategy.singleOrError
-  case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
-    MergeStrategy.singleOrError
-  case PathList("META-INF", _*) => MergeStrategy.discard
-
-  case "module-info.class" => MergeStrategy.discard
-  case x                   => (assembly / assemblyMergeStrategy).value.apply(x)
-}
-
-
 lazy val root = (project in file(".")).aggregate(core, integration)
 
 
 lazy val core = (project in file("core"))
   .settings(
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "services", _*) => MergeStrategy.concat
+      case PathList(
+      "META-INF",
+      "maven",
+      "org.webjars",
+      "swagger-ui",
+      "pom.properties") => MergeStrategy.singleOrError
+      case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
+        MergeStrategy.singleOrError
+      case PathList("META-INF", _*) => MergeStrategy.discard
+
+      case "module-info.class" => MergeStrategy.discard
+      case x                   => (assembly / assemblyMergeStrategy).value.apply(x)
+    },
     assembly / mainClass := Some("org.aulune.App"),
     name := "core",
     libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(

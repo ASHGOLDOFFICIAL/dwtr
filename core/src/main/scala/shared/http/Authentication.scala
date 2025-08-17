@@ -15,11 +15,13 @@ import sttp.tapir.server.PartialServerEndpoint
 object Authentication:
   private val tokenAuth = auth
     .bearer[String]()
+    .bearerFormat("JWT")
     .description("Bearer token identifying the user")
 
   private val optionalTokenAuth = auth
     .bearer[Option[String]]()
-    .description("Bearer token identifying the user (optional)")
+    .bearerFormat("JWT")
+    .description("Bearer token identifying the user")
 
   /** Decode token to [[AuthenticatedUser]].
    *  @param token token string.
@@ -50,7 +52,7 @@ object Authentication:
    *  @tparam F effect type.
    *  @return endpoint accessible only to authenticated users.
    */
-  def authOnlyEndpoint[F[_]: Functor](using
+  def authOnlyEndpoint[F[_]: Applicative](using
       AuthenticationService[F],
   ): PartialServerEndpoint[
     String,
@@ -63,7 +65,7 @@ object Authentication:
   ] = endpoint
     .securityIn(tokenAuth)
     .errorOut(statusCode)
-    .serverSecurityLogic(token => decodeToken(token))
+    .serverSecurityLogic(decodeToken)
 
   /** Endpoint that performs authentication check if token is given. Otherwise,
    *  no user is returned.

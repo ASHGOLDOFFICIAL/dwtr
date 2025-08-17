@@ -74,7 +74,7 @@ object TranslationRepositoryImpl:
     |  $languageC   TEXT        NOT NULL,
     |  $linksC      TEXT        NOT NULL,
     |  $addedAtC    TIMESTAMPTZ NOT NULL,
-    |  CONSTRAINT identity PRIMARY KEY($idC, $originalIdC)
+    |  CONSTRAINT audio_play_translation_identity PRIMARY KEY($idC, $originalIdC)
     |)""".stripMargin
   private val createTable: Fragment = Fragment.const(createTableSql)
 

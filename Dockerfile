@@ -11,13 +11,13 @@ COPY project ./project
 COPY build.sbt .
 RUN sbt update
 
-COPY core/src ./src
-RUN sbt assembly
+COPY core/src ./core/src
+RUN sbt core/assembly
 
 
 FROM eclipse-temurin:${JRE_TAG}-jre-alpine-${ALPINE_TAG} AS runtime
 WORKDIR /usr/app
-COPY --from=build /build/target/scala-3.3.6/*.jar ./app.jar
+COPY --from=build /build/core/target/scala-3.3.6/*.jar ./app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 

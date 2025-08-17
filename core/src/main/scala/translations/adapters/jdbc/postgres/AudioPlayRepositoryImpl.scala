@@ -55,7 +55,7 @@ object AudioPlayRepositoryImpl:
     |  _resource_id  SERIAL  NOT NULL,
     |  type          INTEGER NOT NULL,
     |  url           TEXT    NOT NULL,
-    |  CONSTRAINT identity PRIMARY KEY(audio_play_id, _resource_id)
+    |  CONSTRAINT audio_play_identity PRIMARY KEY(audio_play_id, _resource_id)
     |)""".stripMargin.update.run
 
 

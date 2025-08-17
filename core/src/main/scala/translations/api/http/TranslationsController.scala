@@ -21,7 +21,7 @@ import translations.application.dto.{
   AudioPlayTranslationResponse,
 }
 
-import cats.Functor
+import cats.Applicative
 import cats.syntax.all.*
 import sttp.model.StatusCode
 import sttp.tapir.*
@@ -44,7 +44,7 @@ object TranslationsController:
    *  @tparam F effect type.
    *  @return translations controller.
    */
-  def build[F[_]: Functor](
+  def build[F[_]: Applicative](
       mountPath: EndpointInput[UUID],
       tagPrefix: String,
       pagination: Pagination,
@@ -58,7 +58,7 @@ object TranslationsController:
     authService)
 
 
-private final class TranslationsController[F[_]: Functor](
+private final class TranslationsController[F[_]: Applicative](
     pagination: Pagination,
     rootPath: EndpointInput[UUID],
     tagPrefix: String,

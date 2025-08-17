@@ -109,7 +109,7 @@ object App extends IOApp.Simple:
         version = config.app.version,
       )
       .addServer(Server(
-        s"http://${config.app.host}:${config.app.port}/${mountPoint.mkString("/")}")
+        s"http://localhost:${config.app.port}/${mountPoint.mkString("/")}")
         .description("Local development server"))
       .toYaml
     Http4sServerInterpreter[F]().toRoutes(SwaggerUI[F](openApiYaml))
