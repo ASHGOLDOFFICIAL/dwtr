@@ -27,7 +27,7 @@ import java.net.URL
 import java.sql.SQLException
 
 
-/** [[AudioPlayRepository]] implementation for SQLite. */
+/** [[AudioPlayRepository]] implementation for PostgreSQL. */
 object AudioPlayRepositoryImpl:
   /** Builds an instance.
    *  @param transactor [[Transactor]] instance.

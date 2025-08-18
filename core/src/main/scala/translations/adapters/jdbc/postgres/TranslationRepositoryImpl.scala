@@ -30,7 +30,7 @@ import java.net.URI
 import java.time.Instant
 
 
-/** [[TranslationRepository]] implementation for SQLite. */
+/** [[TranslationRepository]] implementation for PostgreSQL. */
 object TranslationRepositoryImpl:
   /** Builds an instance.
    *
