@@ -9,6 +9,7 @@ import translations.domain.shared.{ExternalResource, Uuid}
 import cats.data.ValidatedNec
 import cats.syntax.all.*
 
+import java.net.URL
 import java.util.UUID
 
 
@@ -17,6 +18,7 @@ import java.util.UUID
  *  @param title title.
  *  @param seriesId audio play series ID.
  *  @param seriesNumber audio play series number.
+ *  @param coverUrl URL to audio play cover.
  *  @param externalResources links to different resources.
  */
 final case class AudioPlay private (
@@ -24,6 +26,7 @@ final case class AudioPlay private (
     title: AudioPlayTitle,
     seriesId: Option[Uuid[AudioPlaySeries]],
     seriesNumber: Option[AudioPlaySeriesNumber],
+    coverUrl: Option[URL],
     externalResources: List[ExternalResource],
 )
 
@@ -36,6 +39,7 @@ object AudioPlay:
    *  @param title title.
    *  @param seriesId audio play series ID.
    *  @param seriesNumber order in series.
+   *  @param coverUrl URL to audio play cover.
    *  @param externalResources links to different resources.
    *  @return audio play validation result.
    */
@@ -44,20 +48,23 @@ object AudioPlay:
       title: String,
       seriesId: Option[UUID],
       seriesNumber: Option[Int],
+      coverUrl: Option[URL],
       externalResources: List[ExternalResource],
   ): ValidationResult[AudioPlay] = (
     Uuid[AudioPlay](id).validNec,
     AudioPlayTitle(title).toValidNec(InvalidTitle),
     seriesId.map(Uuid[AudioPlaySeries]).validNec,
     validateSeriesNumber(seriesNumber),
+    coverUrl.validNec,
     externalResources.validNec,
-  ).mapN(new AudioPlay(_, _, _, _, _))
+  ).mapN(new AudioPlay(_, _, _, _, _, _))
 
   /** Returns updated audio play.
    *  @param initial initial state.
    *  @param title new title.
    *  @param seriesId new series ID.
    *  @param seriesNumber new series number.
+   *  @param coverUrl URL to audio play cover.
    *  @param externalResources links to different resources.
    *  @return new state validation result.
    *  @note Other fields are not supposed to be updated, use [[apply]] instead
@@ -68,14 +75,16 @@ object AudioPlay:
       title: String,
       seriesId: Option[UUID],
       seriesNumber: Option[Int],
+      coverUrl: Option[URL],
       externalResources: List[ExternalResource],
   ): ValidationResult[AudioPlay] = (
     initial.id.validNec,
     AudioPlayTitle(title).toValidNec(InvalidTitle),
     seriesId.map(Uuid[AudioPlaySeries]).validNec,
     validateSeriesNumber(seriesNumber),
+    coverUrl.validNec,
     externalResources.validNec,
-  ).mapN(new AudioPlay(_, _, _, _, _))
+  ).mapN(new AudioPlay(_, _, _, _, _, _))
 
   /** Validates audio play series number.
    *  @param seriesNumber series number.

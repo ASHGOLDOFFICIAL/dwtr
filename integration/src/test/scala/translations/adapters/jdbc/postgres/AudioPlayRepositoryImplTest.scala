@@ -44,6 +44,7 @@ final class AudioPlayRepositoryImplTest
     title = "Audio Play Title",
     seriesId = seriesId,
     seriesNumber = Some(1),
+    coverUrl = None,
     externalResources = resources,
   ).toOption.get
 
@@ -53,6 +54,7 @@ final class AudioPlayRepositoryImplTest
       title = "Updated",
       seriesId = seriesId,
       seriesNumber = Some(2),
+      coverUrl = Some(URI.create("https://cdn.test.org/1").toURL),
       externalResources =
         List(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
     )
@@ -147,6 +149,7 @@ final class AudioPlayRepositoryImplTest
       title = "Audio Play 1",
       seriesId = Some(UUID.fromString("e810039b-c44c-405f-a360-e44fadc43ead")),
       seriesNumber = Some(2),
+      coverUrl = Some(URI.create("https://cdn.test.org/23").toURL),
       externalResources = List(
         ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
     ).toOption.get,
@@ -155,6 +158,7 @@ final class AudioPlayRepositoryImplTest
       title = "Audio Play 2",
       seriesId = None,
       seriesNumber = None,
+      coverUrl = None,
       externalResources = List(
         ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
     ).toOption.get,
@@ -163,6 +167,7 @@ final class AudioPlayRepositoryImplTest
       title = "Audio Play 3",
       seriesId = None,
       seriesNumber = None,
+      coverUrl = Some(URI.create("https://cdn.test.org/53").toURL),
       externalResources = List(
         ExternalResource(Streaming, URI.create("https://audio.com/3").toURL)),
     ).toOption.get,

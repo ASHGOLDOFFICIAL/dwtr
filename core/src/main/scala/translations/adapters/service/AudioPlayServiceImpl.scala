@@ -141,6 +141,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
         title = domain.title,
         seriesId = domain.seriesId,
         seriesNumber = domain.seriesNumber,
+        coverUrl = domain.coverUrl,
         externalResources = resources.map(ExternalResourceMapper.fromDomain),
       )
     }
@@ -173,6 +174,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
         title = ac.title,
         seriesId = ac.seriesId,
         seriesNumber = ac.seriesNumber,
+        coverUrl = old.coverUrl,
         externalResources = ac.externalResources
           .map(ExternalResourceMapper.toDomain),
       )
@@ -190,6 +192,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       title = ac.title,
       seriesId = ac.seriesId,
       seriesNumber = ac.seriesNumber,
+      coverUrl = None,
       externalResources = ac.externalResources
         .map(ExternalResourceMapper.toDomain),
     )

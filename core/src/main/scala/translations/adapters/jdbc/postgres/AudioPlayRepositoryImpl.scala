@@ -46,6 +46,7 @@ object AudioPlayRepositoryImpl:
     |  title         TEXT        NOT NULL,
     |  series_id     UUID,
     |  series_number INTEGER,
+    |  cover_url     TEXT,
     |  _added_at     TIMESTAMPTZ NOT NULL DEFAULT now()
     |)""".stripMargin.update.run
 
@@ -72,8 +73,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def persist(elem: AudioPlay): F[AudioPlay] =
     val insertAudioPlay = sql"""
-      |INSERT INTO audio_plays (id, title, series_id, series_number)
-      |VALUES (${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesNumber})
+      |INSERT INTO audio_plays (id, title, series_id, series_number, cover_url)
+      |VALUES (${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesNumber}, ${elem.coverUrl})
       |""".stripMargin.update.run
     val transaction = insertAudioPlay >> insertResources(elem)
     transaction
@@ -84,7 +85,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val query = selectBase ++ sql"""
       |WHERE ap.id = $id
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number
+      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number, ap.cover_url
       |"""
     query.stripMargin
       .query[SelectResult]
@@ -98,7 +99,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |UPDATE audio_plays
       |SET title         = ${elem.title},
       |    series_id     = ${elem.seriesId},
-      |    series_number = ${elem.seriesNumber}
+      |    series_number = ${elem.seriesNumber},
+      |    cover_url     = ${elem.coverUrl}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
 
@@ -126,7 +128,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       count: Int,
   ): F[List[AudioPlay]] =
     val sort = fr0"""
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number
+      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number, ap.cover_url
       |ORDER BY ap._added_at ASC
       |LIMIT $count"""
 
@@ -152,6 +154,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       AudioPlayTitle,
       Option[Uuid[AudioPlaySeries]],
       Option[AudioPlaySeriesNumber],
+      Option[URL],
       Option[Array[ExternalResourceType]],
       Option[Array[URL]],
   )
@@ -161,6 +164,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |       ap.title,
     |       ap.series_id,
     |       ap.series_number,
+    |       ap.cover_url,
     |       ARRAY_AGG(r.type),
     |       ARRAY_AGG(r.url)
     |FROM audio_plays ap
@@ -188,6 +192,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       title: AudioPlayTitle,
       series: Option[Uuid[AudioPlaySeries]],
       number: Option[AudioPlaySeriesNumber],
+      coverUrl: Option[URL],
       maybeTypes: Option[Array[ExternalResourceType]],
       maybeUrls: Option[Array[URL]],
   ) =
@@ -200,6 +205,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       title = title,
       seriesId = series,
       seriesNumber = number,
+      coverUrl = coverUrl,
       externalResources = resources).toOption.get // TODO: add unsafe
 
   /** Converts caught errors to [[RepositoryError]]. */

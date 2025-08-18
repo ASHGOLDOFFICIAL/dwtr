@@ -19,6 +19,8 @@ object AudioPlayExamples:
   private val seriesIdExample =
     Some(UUID.fromString("3cb893bf-5382-49ef-b881-2f07e75bfcdd"))
   private val seriesNumberExample = Some(1)
+  private val coverUrlExample = Some(
+    URI.create("https://www.bigfinish.com/image/release/1605/large.jpg").toURL)
   private val purchaseResourceExample = ExternalResourceDto(
     Purchase,
     URI
@@ -50,6 +52,7 @@ object AudioPlayExamples:
     title = titleExample,
     seriesId = seriesIdExample,
     seriesNumber = seriesNumberExample,
+    coverUrl = coverUrlExample,
     externalResources = externalResourcesResponseExample,
   )
 
