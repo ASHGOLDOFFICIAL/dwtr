@@ -8,8 +8,9 @@ import pureconfig.error.ExceptionThrown
 
 
 case class Config(
-    postgres: Config.Postgres,
     app: Config.App,
+    oauth: Config.OAuth2,
+    postgres: Config.Postgres,
 ) derives ConfigReader
 
 
@@ -20,10 +21,15 @@ object Config:
       host: Host,
       port: Port,
       key: String,
-      pagination: Pagination,
+      pagination: App.Pagination,
   )
+  object App:
+    case class Pagination(max: Int, default: Int)
 
-  case class Pagination(max: Int, default: Int)
+  case class OAuth2(google: OAuth2.GoogleClient)
+  object OAuth2:
+    case class GoogleClient(clientId: String, secret: String, redirectUrl: String)
+
 
   case class Postgres(uri: String, user: String, password: String)
 

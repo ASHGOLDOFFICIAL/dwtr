@@ -2,7 +2,6 @@ package org.aulune
 package translations.api.http
 
 
-import Config.Pagination
 import auth.application.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.Authentication.authOnlyEndpoint
@@ -47,7 +46,7 @@ object TranslationsController:
   def build[F[_]: Applicative](
       mountPath: EndpointInput[UUID],
       tagPrefix: String,
-      pagination: Pagination,
+      pagination: Config.App.Pagination,
       service: AudioPlayTranslationService[F],
       authService: AuthenticationService[F],
   ): TranslationsController[F] = new TranslationsController[F](
@@ -59,7 +58,7 @@ object TranslationsController:
 
 
 private final class TranslationsController[F[_]: Applicative](
-    pagination: Pagination,
+    pagination: Config.App.Pagination,
     rootPath: EndpointInput[UUID],
     tagPrefix: String,
     service: AudioPlayTranslationService[F],

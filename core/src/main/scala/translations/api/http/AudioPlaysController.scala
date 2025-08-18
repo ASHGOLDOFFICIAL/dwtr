@@ -41,7 +41,7 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Applicative](
-    pagination: Config.Pagination,
+    pagination: Config.App.Pagination,
     service: AudioPlayService[F],
     authService: AuthenticationService[F],
     translationService: AudioPlayTranslationService[F],

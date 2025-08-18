@@ -55,7 +55,7 @@ import java.util.UUID
 final class AudioPlayTranslationServiceImpl[F[
     _,
 ]: MonadThrow: Clock: SecureRandom](
-    pagination: Config.Pagination,
+    pagination: Config.App.Pagination,
     repo: TranslationRepository[F],
     authService: AuthorizationService[F, TranslationPermission],
 ) extends AudioPlayTranslationService[F]:

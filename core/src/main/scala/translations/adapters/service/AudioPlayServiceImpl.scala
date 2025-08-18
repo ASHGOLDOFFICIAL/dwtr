@@ -45,7 +45,7 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
-    pagination: Config.Pagination,
+    pagination: Config.App.Pagination,
     repo: AudioPlayRepository[F],
     authService: AuthorizationService[F, AudioPlayPermission],
 ) extends AudioPlayService[F]:
