@@ -3,6 +3,7 @@ package auth
 
 
 import auth.adapters.jdbc.postgres.UserRepositoryImpl
+import auth.adapters.service.oauth2.GoogleOAuth2CodeExchangeService
 import auth.adapters.service.{
   Argon2iPasswordHashingService,
   AuthenticationServiceImpl,
@@ -17,7 +18,6 @@ import shared.auth.AuthenticationService
 import cats.effect.Async
 import cats.syntax.all.*
 import doobie.Transactor
-import org.aulune.auth.adapters.service.oauth2.GoogleOAuth2CodeExchangeService
 import org.http4s.ember.client.EmberClientBuilder
 import sttp.tapir.server.ServerEndpoint
 

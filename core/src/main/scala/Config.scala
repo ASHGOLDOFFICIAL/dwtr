@@ -1,8 +1,9 @@
 package org.aulune
 
 
+import auth.AuthConfig
+
 import com.comcast.ip4s.{Host, Port}
-import org.aulune.auth.AuthConfig
 import org.http4s.Uri
 import pureconfig.*
 import pureconfig.error.ExceptionThrown
