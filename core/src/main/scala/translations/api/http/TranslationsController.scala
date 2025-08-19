@@ -2,9 +2,9 @@ package org.aulune
 package translations.api.http
 
 
-import auth.application.AuthenticationService
+import shared.auth.Authentication.authOnlyEndpoint
+import shared.auth.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
-import shared.http.Authentication.authOnlyEndpoint
 import shared.http.QueryParams
 import translations.api.http.circe.given
 import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{

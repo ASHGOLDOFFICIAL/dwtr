@@ -18,4 +18,4 @@ trait AuthenticationService[F[_]]:
   /** Returns authenticated user's info if token is valid.
    *  @param token user's token.
    */
-  def authenticate(token: String): F[Option[AuthenticatedUser]]
+  def getUserInfo(token: String): F[Option[AuthenticatedUser]]

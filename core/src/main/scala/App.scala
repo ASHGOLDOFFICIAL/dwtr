@@ -1,18 +1,8 @@
 package org.aulune
 
 
-import auth.adapters.jdbc.postgres.UserRepositoryImpl
-import auth.adapters.service.{
-  Argon2iPasswordHashingService,
-  AuthenticationServiceImpl,
-  BasicLoginService,
-  GoogleOAuth2AuthenticationService,
-  JwtTokenService,
-  OAuth2AuthenticationFacade,
-  OAuth2LoginService,
-  UserServiceImpl,
-}
-import auth.api.http.{AuthenticationController, UsersController}
+import auth.AuthApp
+import shared.auth.AuthenticationService
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   TranslationRepositoryImpl,
@@ -25,13 +15,14 @@ import translations.adapters.service.{
 }
 import translations.api.http.AudioPlaysController
 
-import cats.effect.{Async, IO, IOApp}
+import cats.effect.kernel.Resource
+import cats.effect.std.SecureRandom
+import cats.effect.{Async, Clock, IO, IOApp, MonadCancelThrow}
 import cats.syntax.all.*
 import doobie.Transactor
-import org.http4s.HttpRoutes
-import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
+import org.http4s.{HttpRoutes, server}
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
@@ -41,8 +32,6 @@ import sttp.tapir.docs.openapi.OpenAPIDocsInterpreter
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.SwaggerUI
-
-import scala.concurrent.duration.DurationInt
 
 
 object App extends IOApp.Simple:
@@ -57,54 +46,49 @@ object App extends IOApp.Simple:
     logHandler = None,
   )
 
-  override def run: IO[Unit] = (for
-    httpClient <- EmberClientBuilder.default[IO].build
-    userRepo <- UserRepositoryImpl.build[IO](transactor).toResource
+  override def run: IO[Unit] =
+    for
+      authApp <- AuthApp.build(config.auth, transactor)
+      translationsEndpoints <-
+        makeTranslationsEndpoints[IO](authApp.clientAuthentication, transactor)
+      endpoints = authApp.endpoints ++ translationsEndpoints
+      _ <- makeServer[IO](endpoints).use(_ => IO.never)
+    yield ()
 
-    googleAuth <- GoogleOAuth2AuthenticationService
-      .build(config.oauth.google, httpClient)
-      .toResource
-    oauthFacade = new OAuth2AuthenticationFacade[IO](googleAuth, userRepo)
-    oauthLogin = new OAuth2LoginService[IO](oauthFacade)
+  private def makeTranslationsEndpoints[F[
+      _,
+  ]: MonadCancelThrow: Clock: SecureRandom](
+      authServ: AuthenticationService[F],
+      transactor: Transactor[F],
+  ): F[List[ServerEndpoint[Any, F]]] =
+    for
+      transRepo <- TranslationRepositoryImpl.build[F](transactor)
+      transAuth = new TranslationAuthorizationService[F]
+      transServ = new AudioPlayTranslationServiceImpl[F](
+        config.app.pagination,
+        transRepo,
+        transAuth)
 
-    hasher <- Argon2iPasswordHashingService.build[IO].toResource
-    basicLogin = new BasicLoginService[IO](userRepo, hasher)
+      audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
+      audioAuth = new AudioPlayAuthorizationService[F]
+      audioServ =
+        new AudioPlayServiceImpl[F](config.app.pagination, audioRepo, audioAuth)
 
-    tokenServ = new JwtTokenService[IO](config.app.key, 24.hours)
-    authServ =
-      AuthenticationServiceImpl(userRepo, tokenServ, basicLogin, oauthLogin)
+      endpoints = new AudioPlaysController[F](
+        config.app.pagination,
+        audioServ,
+        authServ,
+        transServ).endpoints
+    yield endpoints
 
-    transRepo <- TranslationRepositoryImpl.build[IO](transactor).toResource
-    transAuth = new TranslationAuthorizationService[IO]
-    transServ = new AudioPlayTranslationServiceImpl[IO](
-      config.app.pagination,
-      transRepo,
-      transAuth)
-
-    audioRepo <- AudioPlayRepositoryImpl.build[IO](transactor).toResource
-    audioAuth = new AudioPlayAuthorizationService[IO]
-    audioServ =
-      new AudioPlayServiceImpl[IO](config.app.pagination, audioRepo, audioAuth)
-
-    userServ = new UserServiceImpl[IO](oauthFacade, userRepo)
-    userEndpoints = new UsersController[IO](userServ).endpoints
-    authEndpoints = new AuthenticationController[IO](authServ).endpoints
-
-    audioPlayEndpoints = new AudioPlaysController[IO](
-      config.app.pagination,
-      audioServ,
-      authServ,
-      transServ).endpoints
-
-    endpoints = authEndpoints ++ userEndpoints ++ audioPlayEndpoints
-
-    _ <- EmberServerBuilder
-      .default[IO]
-      .withHost(config.app.host)
-      .withPort(config.app.port)
-      .withHttpApp(makeRoutes(List("v1"), endpoints, config).orNotFound)
-      .build
-  yield ()).use(_ => IO.never)
+  private def makeServer[F[_]: Async](
+      endpoints: List[ServerEndpoint[Any, F]],
+  ): Resource[F, server.Server] = EmberServerBuilder
+    .default[F]
+    .withHost(config.app.host)
+    .withPort(config.app.port)
+    .withHttpApp(makeRoutes(List("v1"), endpoints, config).orNotFound)
+    .build
 
   private def makeRoutes[F[_]: Async](
       mountPoint: List[String],

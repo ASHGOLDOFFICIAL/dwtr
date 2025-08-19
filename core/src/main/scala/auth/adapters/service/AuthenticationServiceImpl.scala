@@ -4,7 +4,7 @@ package auth.adapters.service
 
 import auth.application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
-  OAuth2AuthenticationRequest
+  OAuth2AuthenticationRequest,
 }
 import auth.application.dto.{AuthenticationRequest, AuthenticationResponse}
 import auth.application.repositories.UserRepository
@@ -13,7 +13,6 @@ import auth.domain.model.{AuthenticatedUser, User}
 
 import cats.Monad
 import cats.data.OptionT
-import cats.effect.Clock
 
 
 /** [[AuthenticationService]] implementation.
@@ -25,7 +24,7 @@ import cats.effect.Clock
  *    delegated.
  *  @tparam F effect type.
  */
-final class AuthenticationServiceImpl[F[_]: Monad: Clock](
+final class AuthenticationServiceImpl[F[_]: Monad](
     repo: UserRepository[F],
     tokenService: TokenService[F],
     basicLoginService: LoginService[F, BasicAuthenticationRequest],
@@ -39,7 +38,7 @@ final class AuthenticationServiceImpl[F[_]: Monad: Clock](
     token <- OptionT.liftF(tokenService.generateToken(user))
   yield AuthenticationResponse(token)).value
 
-  override def authenticate(token: String): F[Option[AuthenticatedUser]] =
+  override def getUserInfo(token: String): F[Option[AuthenticatedUser]] =
     tokenService.decodeToken(token)
 
   /** Delegates login request to a service that can manage it.

@@ -1,8 +1,7 @@
 package org.aulune
-package shared.http
+package shared.auth
 
 
-import auth.application.AuthenticationService
 import auth.domain.model.AuthenticatedUser
 
 import cats.syntax.all.*
@@ -32,7 +31,7 @@ object Authentication:
   private def decodeToken[F[_]: Functor](token: String)(using
       service: AuthenticationService[F],
   ): F[Either[StatusCode, AuthenticatedUser]] =
-    for result <- service.authenticate(token)
+    for result <- service.getUserInfo(token)
     yield result.toRight(StatusCode.Unauthorized)
 
   /** Decode token to [[AuthenticatedUser]] if present. Otherwise, `None`.

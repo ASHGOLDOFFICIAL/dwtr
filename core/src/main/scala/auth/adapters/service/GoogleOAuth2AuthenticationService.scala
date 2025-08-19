@@ -2,6 +2,7 @@ package org.aulune
 package auth.adapters.service
 
 
+import auth.AuthConfig
 import auth.adapters.service.GoogleOAuth2AuthenticationService.GoogleOpenIdConfig
 import auth.application.OAuth2AuthenticationService
 import auth.application.dto.OAuth2Provider.Google
@@ -26,7 +27,7 @@ object GoogleOAuth2AuthenticationService:
    *  @tparam F effect type.
    */
   def build[F[_]: Concurrent](
-      googleClient: Config.OAuth2.GoogleClient,
+      googleClient: AuthConfig.OAuth2.GoogleClient,
       client: Client[F],
   ): F[OAuth2AuthenticationService[F, Google]] =
     for config <- getGoogleOpenIdConfig(client)
@@ -106,7 +107,7 @@ private final class GoogleOAuth2AuthenticationService[
     F[_]: Concurrent,
 ] private (
     openIdConfig: GoogleOpenIdConfig,
-    googleClient: Config.OAuth2.GoogleClient,
+    googleClient: AuthConfig.OAuth2.GoogleClient,
     client: Client[F],
 ) extends OAuth2AuthenticationService[F, Google]:
 

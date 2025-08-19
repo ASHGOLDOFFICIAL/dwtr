@@ -2,6 +2,7 @@ package org.aulune
 
 
 import com.comcast.ip4s.{Host, Port}
+import org.aulune.auth.AuthConfig
 import org.http4s.Uri
 import pureconfig.*
 import pureconfig.error.ExceptionThrown
@@ -9,7 +10,7 @@ import pureconfig.error.ExceptionThrown
 
 case class Config(
     app: Config.App,
-    oauth: Config.OAuth2,
+    auth: AuthConfig,
     postgres: Config.Postgres,
 ) derives ConfigReader
 
@@ -20,16 +21,10 @@ object Config:
       version: String,
       host: Host,
       port: Port,
-      key: String,
       pagination: App.Pagination,
   )
   object App:
     case class Pagination(max: Int, default: Int)
-
-  case class OAuth2(google: OAuth2.GoogleClient)
-  object OAuth2:
-    case class GoogleClient(clientId: String, secret: String, redirectUrl: String)
-
 
   case class Postgres(uri: String, user: String, password: String)
 
