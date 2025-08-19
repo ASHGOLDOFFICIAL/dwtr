@@ -16,6 +16,7 @@ RUN sbt core/assembly
 
 
 FROM eclipse-temurin:${JRE_TAG}-jre-alpine-${ALPINE_TAG} AS runtime
+RUN apk add argon2-libs
 WORKDIR /usr/app
 COPY --from=build /build/core/target/scala-3.3.6/*.jar ./app.jar
 EXPOSE 8080
