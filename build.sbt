@@ -21,17 +21,17 @@ lazy val core = (project in file("core"))
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList(
-      "META-INF",
-      "maven",
-      "org.webjars",
-      "swagger-ui",
-      "pom.properties") => MergeStrategy.singleOrError
+             "META-INF",
+             "maven",
+             "org.webjars",
+             "swagger-ui",
+             "pom.properties") => MergeStrategy.singleOrError
       case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
         MergeStrategy.singleOrError
       case PathList("META-INF", _*) => MergeStrategy.discard
 
       case "module-info.class" => MergeStrategy.discard
-      case x                   => (assembly / assemblyMergeStrategy).value.apply(x)
+      case x => (assembly / assemblyMergeStrategy).value.apply(x)
     },
     assembly / mainClass := Some("org.aulune.App"),
     name := "core",
@@ -77,6 +77,7 @@ val catsEffectVersion = "3.6.3"
 val catsMtlVersion = "1.5.0"
 val catsVersion = "2.13.0"
 val circeVersion = "0.14.14"
+val circeGenericExtras = "0.14.5-RC1"
 val doobieVersion = "1.0.0-RC9"
 val http4sVersion = "0.23.30"
 val jwtVersion = "11.0.2"
@@ -104,7 +105,9 @@ val circeDeps = Seq(
   "io.circe" %% "circe-core",
   "io.circe" %% "circe-generic",
   "io.circe" %% "circe-parser",
-).map(_ % circeVersion)
+).map(_ % circeVersion) ++ Seq(
+  "io.circe" %% "circe-generic-extras" % circeGenericExtras,
+)
 
 
 val tapirDeps = Seq(

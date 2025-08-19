@@ -2,10 +2,14 @@ package org.aulune
 package auth.api.http
 
 
-import auth.api.http.circe.given
-import auth.api.http.tapir.given
+import auth.api.http.circe.AuthenticationCodecs.given
+import auth.api.http.tapir.examples.AuthenticationExamples.{
+  requestExamples,
+  responseExample,
+}
+import auth.api.http.tapir.schemas.AuthenticationSchemas.given
 import auth.application.AuthenticationService
-import auth.application.dto.{LoginRequest, LoginResponse}
+import auth.application.dto.{AuthenticationRequest, AuthenticationResponse}
 
 import cats.Functor
 import cats.syntax.all.*
@@ -19,13 +23,19 @@ import sttp.tapir.server.ServerEndpoint
  *  @param service [[AuthenticationService]] to use.
  *  @tparam F effect type.
  */
-final class LoginController[F[_]: Functor](service: AuthenticationService[F]):
+final class AuthenticationController[F[_]: Functor](
+    service: AuthenticationService[F],
+):
   private val tag = "Authentication"
 
-  private val loginEndpoint: ServerEndpoint[Any, F] = endpoint.post
-    .in("login")
-    .in(jsonBody[LoginRequest].description("Credentials for authentication"))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[LoginResponse]))
+  private val loginEndpoint = endpoint.post
+    .in("auth" / "login")
+    .in(jsonBody[AuthenticationRequest]
+      .description("Login information.")
+      .examples(requestExamples))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AuthenticationResponse]
+      .description("JSON with access token.")
+      .example(responseExample)))
     .errorOut(statusCode)
     .name("Login")
     .summary("Authenticate to receive token.")
