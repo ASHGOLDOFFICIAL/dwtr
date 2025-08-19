@@ -1,10 +1,10 @@
 package org.aulune
-package auth.adapters.service
+package auth.adapters.service.oauth2
 
 
 import auth.AuthConfig
-import auth.adapters.service.GoogleOAuth2AuthenticationService.GoogleOpenIdConfig
-import auth.application.OAuth2AuthenticationService
+import auth.adapters.service.oauth2.GoogleOAuth2CodeExchangeService.GoogleOpenIdConfig
+import auth.application.OAuth2CodeExchangeService
 import auth.application.dto.OAuth2Provider.Google
 
 import cats.effect.Concurrent
@@ -20,7 +20,7 @@ import scala.util.Try
 
 
 /** Services managing authorization code exchange with Google. */
-object GoogleOAuth2AuthenticationService:
+object GoogleOAuth2CodeExchangeService:
   /** Builds a service.
    *  @param googleClient Google client config.
    *  @param client [[Client]] to make requests.
@@ -29,9 +29,9 @@ object GoogleOAuth2AuthenticationService:
   def build[F[_]: Concurrent](
       googleClient: AuthConfig.OAuth2.GoogleClient,
       client: Client[F],
-  ): F[OAuth2AuthenticationService[F, Google]] =
+  ): F[OAuth2CodeExchangeService[F, Google]] =
     for config <- getGoogleOpenIdConfig(client)
-    yield new GoogleOAuth2AuthenticationService[F](config, googleClient, client)
+    yield new GoogleOAuth2CodeExchangeService[F](config, googleClient, client)
 
   /** Retrives Google's OpenID configuration.
    *  @param client [[Client]] to make requests with.
@@ -100,16 +100,16 @@ object GoogleOAuth2AuthenticationService:
   private given Decoder[Uri] = Decoder.decodeString.emap { str =>
     Uri.fromString(str).leftMap(pf => s"Failed to decode Url: $pf")
   }
-end GoogleOAuth2AuthenticationService
+end GoogleOAuth2CodeExchangeService
 
 
-private final class GoogleOAuth2AuthenticationService[
+private final class GoogleOAuth2CodeExchangeService[
     F[_]: Concurrent,
 ] private (
     openIdConfig: GoogleOpenIdConfig,
     googleClient: AuthConfig.OAuth2.GoogleClient,
     client: Client[F],
-) extends OAuth2AuthenticationService[F, Google]:
+) extends OAuth2CodeExchangeService[F, Google]:
 
   override def getId(authorizationCode: String): F[Option[String]] =
     exchangeCodeForToken(authorizationCode).map { maybeResponse =>

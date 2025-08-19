@@ -2,7 +2,6 @@ package org.aulune
 package auth.adapters.service
 
 
-import auth.application.UserService
 import auth.application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import auth.application.dto.{
   AuthenticationRequest,
@@ -12,6 +11,7 @@ import auth.application.dto.{
 import auth.application.errors.UserRegistrationError
 import auth.application.errors.UserRegistrationError.*
 import auth.application.repositories.UserRepository
+import auth.application.{OAuth2AuthenticationService, UserService}
 import auth.domain.errors.UserValidationError
 import auth.domain.model.User
 import shared.errors
@@ -23,11 +23,13 @@ import cats.{Monad, MonadThrow}
 
 
 /** [[UserService]] implementation.
+ *  @param oauth2Service [[OAuth2AuthenticationService]] implementation to work
+ *    with third-party IDs.
  *  @param repo [[UserRepository]] to use.
  *  @tparam F effect type.
  */
 final class UserServiceImpl[F[_]: Monad: MonadThrow](
-    oauth2Facade: OAuth2AuthenticationFacade[F],
+    oauth2Service: OAuth2AuthenticationService[F],
     repo: UserRepository[F],
 ) extends UserService[F]:
 
@@ -47,7 +49,7 @@ final class UserServiceImpl[F[_]: Monad: MonadThrow](
       oauth2Info: OAuth2AuthenticationRequest,
   ): EitherT[F, NonEmptyChain[UserRegistrationError], String] =
     val idOpt =
-      oauth2Facade.getId(oauth2Info.provider, oauth2Info.authorizationCode)
+      oauth2Service.getId(oauth2Info.provider, oauth2Info.authorizationCode)
     EitherT.fromOptionF(idOpt, NonEmptyChain.one(InvalidOAuthCode))
 
   /** Checks if user is already in repository.
@@ -59,7 +61,7 @@ final class UserServiceImpl[F[_]: Monad: MonadThrow](
       provider: OAuth2Provider,
       id: String,
   ): EitherT[F, NonEmptyChain[UserRegistrationError], Unit] = EitherT(
-    oauth2Facade.findUser(provider, id).map {
+    oauth2Service.findUser(provider, id).map {
       case Some(value) => NonEmptyChain.one(OAuthUserAlreadyExists).asLeft
       case None        => Either.unit
     })

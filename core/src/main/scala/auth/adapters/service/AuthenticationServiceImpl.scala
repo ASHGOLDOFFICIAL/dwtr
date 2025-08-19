@@ -4,11 +4,16 @@ package auth.adapters.service
 
 import auth.application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
-  OAuth2AuthenticationRequest,
+  OAuth2AuthenticationRequest
 }
 import auth.application.dto.{AuthenticationRequest, AuthenticationResponse}
 import auth.application.repositories.UserRepository
-import auth.application.{AuthenticationService, LoginService, TokenService}
+import auth.application.{
+  AuthenticationService,
+  BasicAuthenticationService,
+  OAuth2AuthenticationService,
+  TokenService,
+}
 import auth.domain.model.{AuthenticatedUser, User}
 
 import cats.Monad
@@ -18,17 +23,17 @@ import cats.data.OptionT
 /** [[AuthenticationService]] implementation.
  *  @param repo repository with users.
  *  @param tokenService service that generates and decodes token.
- *  @param basicLoginService service to which basic login requests will be
- *    delegated.
- *  @param oauth2LoginService service to which OAuth2 login requests will be
- *    delegated.
+ *  @param basicAuthService service to which basic authentication requests will
+ *    be delegated.
+ *  @param oauth2AuthService service to which OAuth2 authentication requests
+ *    will be delegated.
  *  @tparam F effect type.
  */
 final class AuthenticationServiceImpl[F[_]: Monad](
     repo: UserRepository[F],
     tokenService: TokenService[F],
-    basicLoginService: LoginService[F, BasicAuthenticationRequest],
-    oauth2LoginService: LoginService[F, OAuth2AuthenticationRequest],
+    basicAuthService: BasicAuthenticationService[F],
+    oauth2AuthService: OAuth2AuthenticationService[F],
 ) extends AuthenticationService[F]:
 
   override def login(
@@ -48,6 +53,6 @@ final class AuthenticationServiceImpl[F[_]: Monad](
   private def delegateLogin(request: AuthenticationRequest): F[Option[User]] =
     request match
       case req @ BasicAuthenticationRequest(username, password) =>
-        basicLoginService.login(req)
+        basicAuthService.authenticate(req)
       case req @ OAuth2AuthenticationRequest(provider, code) =>
-        oauth2LoginService.login(req)
+        oauth2AuthService.authenticate(req)

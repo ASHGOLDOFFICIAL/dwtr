@@ -6,11 +6,9 @@ import auth.adapters.jdbc.postgres.UserRepositoryImpl
 import auth.adapters.service.{
   Argon2iPasswordHashingService,
   AuthenticationServiceImpl,
-  BasicLoginService,
-  GoogleOAuth2AuthenticationService,
+  BasicAuthenticationServiceImpl,
   JwtTokenService,
-  OAuth2AuthenticationFacade,
-  OAuth2LoginService,
+  OAuth2AuthenticationServiceImpl,
   UserServiceImpl,
 }
 import auth.api.http.{AuthenticationController, UsersController}
@@ -19,6 +17,7 @@ import shared.auth.AuthenticationService
 import cats.effect.Async
 import cats.syntax.all.*
 import doobie.Transactor
+import org.aulune.auth.adapters.service.oauth2.GoogleOAuth2CodeExchangeService
 import org.http4s.ember.client.EmberClientBuilder
 import sttp.tapir.server.ServerEndpoint
 
@@ -47,20 +46,20 @@ object AuthApp:
     for
       userRepo <- UserRepositoryImpl.build[F](transactor)
 
-      googleAuth <-
-        GoogleOAuth2AuthenticationService.build(config.oauth.google, httpClient)
-      oauthFacade = new OAuth2AuthenticationFacade[F](googleAuth, userRepo)
-      oauthLogin = new OAuth2LoginService[F](oauthFacade)
+      googleCode <-
+        GoogleOAuth2CodeExchangeService.build(config.oauth.google, httpClient)
+      oauthService =
+        new OAuth2AuthenticationServiceImpl[F](googleCode, userRepo)
 
       hasher <- Argon2iPasswordHashingService.build[F]
-      basicLogin = new BasicLoginService[F](userRepo, hasher)
+      basicLogin = new BasicAuthenticationServiceImpl[F](userRepo, hasher)
 
       tokenServ = new JwtTokenService[F](config.key, 24.hours)
       authServ =
-        AuthenticationServiceImpl(userRepo, tokenServ, basicLogin, oauthLogin)
+        AuthenticationServiceImpl(userRepo, tokenServ, basicLogin, oauthService)
       authEndpoints = new AuthenticationController[F](authServ).endpoints
 
-      userServ = new UserServiceImpl[F](oauthFacade, userRepo)
+      userServ = new UserServiceImpl[F](oauthService, userRepo)
       userEndpoints = new UsersController[F](userServ).endpoints
 
       allEndpoints = authEndpoints ++ userEndpoints

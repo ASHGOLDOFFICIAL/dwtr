@@ -2,8 +2,9 @@ package org.aulune
 package auth.adapters.service
 
 
-import auth.application.LoginService
+import auth.application.BasicAuthenticationService
 import auth.application.dto.AuthenticationRequest
+import auth.application.dto.AuthenticationRequest.BasicAuthenticationRequest
 import auth.application.repositories.UserRepository
 import auth.domain.model.User
 import auth.domain.service.PasswordHashingService
@@ -13,18 +14,18 @@ import cats.data.OptionT
 import cats.syntax.all.*
 
 
-/** Service that manages login via username and passwords.
+/** Service that manages authentication via username and passwords.
  *  @param repo [[UserRepository]] implementation.
  *  @param hasher password hasher.
  *  @tparam F effect type.
  */
-final class BasicLoginService[F[_]: Monad](
+final class BasicAuthenticationServiceImpl[F[_]: Monad](
     repo: UserRepository[F],
     hasher: PasswordHashingService[F],
-) extends LoginService[F, AuthenticationRequest.BasicAuthenticationRequest]:
+) extends BasicAuthenticationService[F]:
 
-  override def login(
-      credentials: AuthenticationRequest.BasicAuthenticationRequest,
+  override def authenticate(
+      credentials: BasicAuthenticationRequest,
   ): F[Option[User]] = (for
     user <- OptionT(repo.get(credentials.username))
     _ <- verifyPassword(user, credentials.password)

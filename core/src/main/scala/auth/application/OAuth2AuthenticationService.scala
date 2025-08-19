@@ -1,17 +1,31 @@
 package org.aulune
 package auth.application
 
+
+import auth.application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import auth.application.dto.OAuth2Provider
+import auth.domain.model.User
 
 
-/** Service managing user authentication via third-parties's OAuth2
- *  implementations.
+/** Service that manages OAuth2 user authentication.
  *  @tparam F effect type.
- *  @tparam P provider of OAuth2 services.
  */
-trait OAuth2AuthenticationService[F[_], P <: OAuth2Provider]:
-  /** Returns user's unique ID in third-party app if authorization code's been
-   *  successfully exchanged to ID token.
-   *  @param authorizationCode authorization code.
+trait OAuth2AuthenticationService[F[_]]:
+  /** Returns user if authentication via OAuth2 is successful, otherwise `None`.
+   *  @param request authentication request.
    */
-  def getId(authorizationCode: String): F[Option[String]]
+  def authenticate(request: OAuth2AuthenticationRequest): F[Option[User]]
+
+  /** Returns user's unique ID in third-party service.
+   *
+   *  @param provider third-party.
+   *  @param code authorization code.
+   */
+  def getId(provider: OAuth2Provider, code: String): F[Option[String]]
+
+  /** Returns user associated with OAuth2 provider ID.
+   *
+   *  @param provider third-party.
+   *  @param id ID of user in third-party services.
+   */
+  def findUser(provider: OAuth2Provider, id: String): F[Option[User]]
