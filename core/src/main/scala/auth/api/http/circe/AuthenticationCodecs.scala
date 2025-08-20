@@ -9,6 +9,7 @@ import auth.application.dto.{
   AuthenticationResponse,
   OAuth2Provider,
 }
+import shared.http.circe.CirceConfiguration.config
 
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{
@@ -28,14 +29,13 @@ private[api] object AuthenticationCodecs:
       .toRight(s"Invalid OAuth2Provider: $str")
   }
 
-  private given Configuration = Configuration.default.withSnakeCaseMemberNames
-    .copy(
-      transformConstructorNames = {
-        case "BasicAuthenticationRequest"  => "basic"
-        case "OAuth2AuthenticationRequest" => "oauth2"
-        case other                         => other
-      },
-    )
+  private given Configuration = config.copy(
+    transformConstructorNames = {
+      case "BasicAuthenticationRequest"  => "basic"
+      case "OAuth2AuthenticationRequest" => "oauth2"
+      case other                         => other
+    },
+  )
 
   given Encoder[OAuth2AuthenticationRequest] = deriveConfiguredEncoder
   given Decoder[OAuth2AuthenticationRequest] = deriveConfiguredDecoder
@@ -43,5 +43,5 @@ private[api] object AuthenticationCodecs:
   given Encoder[AuthenticationRequest] = deriveConfiguredEncoder
   given Decoder[AuthenticationRequest] = deriveConfiguredDecoder
 
-  given Encoder[AuthenticationResponse] = Encoder.derived
-  given Decoder[AuthenticationResponse] = Decoder.derived
+  given Encoder[AuthenticationResponse] = deriveConfiguredEncoder
+  given Decoder[AuthenticationResponse] = deriveConfiguredDecoder

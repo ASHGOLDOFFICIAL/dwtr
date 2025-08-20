@@ -2,10 +2,11 @@ package org.aulune
 package translations.api.http.circe
 
 
+import shared.http.circe.CirceConfiguration.config
 import translations.api.mappers.{
   AudioPlayTranslationTypeMapper,
   ExternalResourceTypeMapper,
-  LanguageMapper
+  LanguageMapper,
 }
 import translations.application.dto.{
   AudioPlayListResponse,
@@ -20,6 +21,10 @@ import translations.application.dto.{
   LanguageDto,
 }
 
+import io.circe.generic.extras.semiauto.{
+  deriveConfiguredDecoder,
+  deriveConfiguredEncoder,
+}
 import io.circe.{Decoder, Encoder}
 
 import java.net.{URI, URL}
@@ -37,23 +42,23 @@ given Decoder[AudioPlayTranslationTypeDto] = Decoder.decodeString.emap { str =>
 }
 
 
-given Encoder[AudioPlayTranslationRequest] = Encoder.derived
-given Decoder[AudioPlayTranslationRequest] = Decoder.derived
+given Encoder[AudioPlayTranslationRequest] = deriveConfiguredEncoder
+given Decoder[AudioPlayTranslationRequest] = deriveConfiguredDecoder
 
-given Encoder[AudioPlayTranslationResponse] = Encoder.derived
-given Decoder[AudioPlayTranslationResponse] = Decoder.derived
+given Encoder[AudioPlayTranslationResponse] = deriveConfiguredEncoder
+given Decoder[AudioPlayTranslationResponse] = deriveConfiguredDecoder
 
-given Encoder[AudioPlayTranslationListResponse] = Encoder.derived
-given Decoder[AudioPlayTranslationListResponse] = Decoder.derived
+given Encoder[AudioPlayTranslationListResponse] = deriveConfiguredEncoder
+given Decoder[AudioPlayTranslationListResponse] = deriveConfiguredDecoder
 
-given Encoder[AudioPlayRequest] = Encoder.derived
-given Decoder[AudioPlayRequest] = Decoder.derived
+given Encoder[AudioPlayRequest] = deriveConfiguredEncoder
+given Decoder[AudioPlayRequest] = deriveConfiguredDecoder
 
-given Encoder[AudioPlayResponse] = Encoder.derived
-given Decoder[AudioPlayResponse] = Decoder.derived
+given Encoder[AudioPlayResponse] = deriveConfiguredEncoder
+given Decoder[AudioPlayResponse] = deriveConfiguredDecoder
 
-given Encoder[AudioPlayListResponse] = Encoder.derived
-given Decoder[AudioPlayListResponse] = Decoder.derived
+given Encoder[AudioPlayListResponse] = deriveConfiguredEncoder
+given Decoder[AudioPlayListResponse] = deriveConfiguredDecoder
 
 
 given Encoder[LanguageDto] =
@@ -78,8 +83,8 @@ given Decoder[ExternalResourceTypeDto] = Decoder.decodeString.emap { str =>
 }
 
 
-given Encoder[ExternalResourceDto] = Encoder.derived
-given Decoder[ExternalResourceDto] = Decoder.derived
+given Encoder[ExternalResourceDto] = deriveConfiguredEncoder
+given Decoder[ExternalResourceDto] = deriveConfiguredDecoder
 
 given Encoder[URL] = Encoder.encodeString.contramap(_.toString)
 
