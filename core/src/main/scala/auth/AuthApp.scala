@@ -54,9 +54,13 @@ object AuthApp:
       hasher <- Argon2iPasswordHashingService.build[F]
       basicLogin = new BasicAuthenticationServiceImpl[F](userRepo, hasher)
 
-      tokenServ = new JwtTokenService[F](config.key, 24.hours)
-      authServ =
-        AuthenticationServiceImpl(userRepo, tokenServ, basicLogin, oauthService)
+      tokenServ = new JwtTokenService[F](config.issuer, config.key, 24.hours)
+      authServ = AuthenticationServiceImpl(
+        userRepo,
+        tokenServ,
+        tokenServ,
+        basicLogin,
+        oauthService)
       authEndpoints = new AuthenticationController[F](authServ).endpoints
 
       userServ = new UserServiceImpl[F](oauthService, userRepo)

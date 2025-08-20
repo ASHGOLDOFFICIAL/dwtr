@@ -1,14 +1,13 @@
 package org.aulune
 package translations.application
 
-
-import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
 import translations.application.dto.{
   AudioPlayListResponse,
   AudioPlayRequest,
   AudioPlayResponse,
 }
+import org.aulune.auth.application.dto.AuthenticatedUser
 
 import java.util.UUID
 

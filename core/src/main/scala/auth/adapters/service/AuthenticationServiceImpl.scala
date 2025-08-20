@@ -6,15 +6,16 @@ import auth.application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
   OAuth2AuthenticationRequest
 }
-import auth.application.dto.{AuthenticationRequest, AuthenticationResponse}
+import auth.application.dto.{AuthenticatedUser, AuthenticationRequest, AuthenticationResponse}
 import auth.application.repositories.UserRepository
 import auth.application.{
+  AccessTokenService,
   AuthenticationService,
   BasicAuthenticationService,
+  IdTokenService,
   OAuth2AuthenticationService,
-  TokenService,
 }
-import auth.domain.model.{AuthenticatedUser, User}
+import auth.domain.model.User
 
 import cats.Monad
 import cats.data.OptionT
@@ -22,7 +23,8 @@ import cats.data.OptionT
 
 /** [[AuthenticationService]] implementation.
  *  @param repo repository with users.
- *  @param tokenService service that generates and decodes token.
+ *  @param accessTokenService service that generates and decodes token.
+ *  @param idTokenService service that generates ID tokens.
  *  @param basicAuthService service to which basic authentication requests will
  *    be delegated.
  *  @param oauth2AuthService service to which OAuth2 authentication requests
@@ -31,7 +33,8 @@ import cats.data.OptionT
  */
 final class AuthenticationServiceImpl[F[_]: Monad](
     repo: UserRepository[F],
-    tokenService: TokenService[F],
+    accessTokenService: AccessTokenService[F],
+    idTokenService: IdTokenService[F],
     basicAuthService: BasicAuthenticationService[F],
     oauth2AuthService: OAuth2AuthenticationService[F],
 ) extends AuthenticationService[F]:
@@ -40,11 +43,14 @@ final class AuthenticationServiceImpl[F[_]: Monad](
       request: AuthenticationRequest,
   ): F[Option[AuthenticationResponse]] = (for
     user <- OptionT(delegateLogin(request))
-    token <- OptionT.liftF(tokenService.generateToken(user))
-  yield AuthenticationResponse(token)).value
+    accessToken <- OptionT.liftF(accessTokenService.generateAccessToken(user))
+    idToken <- OptionT.liftF(idTokenService.generateIdToken(user))
+  yield AuthenticationResponse(
+    accessToken = accessToken,
+    idToken = idToken)).value
 
   override def getUserInfo(token: String): F[Option[AuthenticatedUser]] =
-    tokenService.decodeToken(token)
+    accessTokenService.decodeAccessToken(token)
 
   /** Delegates login request to a service that can manage it.
    *  @param request login request.

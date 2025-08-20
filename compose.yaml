@@ -7,6 +7,7 @@ services:
     depends_on:
       - postgres
     environment:
+      JWT_ISSUER: ${JWT_ISSUER}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       OAUTH2_GOOGLE_CLIENT_ID: ${OAUTH2_GOOGLE_CLIENT_ID}
       OAUTH2_GOOGLE_REDIRECT_URL: ${OAUTH2_GOOGLE_REDIRECT_URL}

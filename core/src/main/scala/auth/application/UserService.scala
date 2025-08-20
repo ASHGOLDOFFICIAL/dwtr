@@ -2,9 +2,8 @@ package org.aulune
 package auth.application
 
 
-import auth.application.dto.UserRegistrationRequest
+import auth.application.dto.{AuthenticatedUser, UserRegistrationRequest}
 import auth.application.errors.UserRegistrationError
-import auth.domain.model.AuthenticatedUser
 
 import cats.data.EitherNec
 

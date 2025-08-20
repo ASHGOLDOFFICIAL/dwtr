@@ -2,10 +2,11 @@ package org.aulune
 package auth
 
 /** Config for authentication app.
+ *  @param issuer value to use in `iss` claims.
  *  @param key secret key to use for JWT tokens.
  *  @param oauth OAuth2 clients' infos.
  */
-case class AuthConfig(key: String, oauth: AuthConfig.OAuth2)
+case class AuthConfig(issuer: String, key: String, oauth: AuthConfig.OAuth2)
 
 
 object AuthConfig:

@@ -1,8 +1,6 @@
 package org.aulune
 package translations.adapters.service
 
-
-import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.pagination.CursorToken.encode
@@ -33,6 +31,7 @@ import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
+import org.aulune.auth.application.dto.AuthenticatedUser
 
 import java.time.Instant
 import java.util.UUID

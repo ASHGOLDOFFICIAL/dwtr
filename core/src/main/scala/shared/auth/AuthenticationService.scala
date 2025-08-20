@@ -3,10 +3,11 @@ package shared.auth
 
 
 import auth.application.AuthenticationService as ExternalAuthenticationService
-import auth.domain.model.AuthenticatedUser
+import org.aulune.auth.application.dto.AuthenticatedUser
 
 
 /** Authentication service for use in other modules.
+ *
  *  @tparam F effect type.
  */
 trait AuthenticationService[F[_]]:

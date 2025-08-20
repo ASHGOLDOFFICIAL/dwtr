@@ -1,12 +1,11 @@
 package org.aulune
 package shared.service
 
-
-import auth.domain.model.AuthenticatedUser
 import shared.errors.ApplicationServiceError
 
 import cats.syntax.all.*
 import cats.{FlatMap, Monad}
+import org.aulune.auth.application.dto.AuthenticatedUser
 
 
 /** Generic service for managing authorization and permission checks.
