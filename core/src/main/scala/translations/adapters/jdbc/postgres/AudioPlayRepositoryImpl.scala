@@ -8,12 +8,7 @@ import translations.adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
-import translations.domain.model.audioplay.{
-  AudioPlay,
-  AudioPlaySeries,
-  AudioPlaySeriesNumber,
-  AudioPlayTitle,
-}
+import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeason, AudioPlaySeries, AudioPlaySeriesNumber, AudioPlayTitle}
 import translations.domain.shared.{ExternalResource, ExternalResourceType, Uuid}
 
 import cats.MonadThrow
@@ -45,6 +40,7 @@ object AudioPlayRepositoryImpl:
     |  id            UUID        PRIMARY KEY,
     |  title         TEXT        NOT NULL,
     |  series_id     UUID,
+    |  series_season INTEGER,
     |  series_number INTEGER,
     |  cover_url     TEXT,
     |  _added_at     TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -73,8 +69,15 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def persist(elem: AudioPlay): F[AudioPlay] =
     val insertAudioPlay = sql"""
-      |INSERT INTO audio_plays (id, title, series_id, series_number, cover_url)
-      |VALUES (${elem.id}, ${elem.title}, ${elem.seriesId}, ${elem.seriesNumber}, ${elem.coverUrl})
+      |INSERT INTO audio_plays (id, title, series_id, series_season, series_number, cover_url)
+      |VALUES (
+      |  ${elem.id},
+      |  ${elem.title},
+      |  ${elem.seriesId},
+      |  ${elem.seriesSeason},
+      |  ${elem.seriesNumber},
+      |  ${elem.coverUrl}
+      |)
       |""".stripMargin.update.run
     val transaction = insertAudioPlay >> insertResources(elem)
     transaction
@@ -85,7 +88,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val query = selectBase ++ sql"""
       |WHERE ap.id = $id
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number, ap.cover_url
+      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_season, ap.series_number, ap.cover_url
       |"""
     query.stripMargin
       .query[SelectResult]
@@ -99,6 +102,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |UPDATE audio_plays
       |SET title         = ${elem.title},
       |    series_id     = ${elem.seriesId},
+      |    series_season = ${elem.seriesSeason},
       |    series_number = ${elem.seriesNumber},
       |    cover_url     = ${elem.coverUrl}
       |WHERE id = ${elem.id}
@@ -128,7 +132,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       count: Int,
   ): F[List[AudioPlay]] =
     val sort = fr0"""
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_number, ap.cover_url
+      |GROUP BY ap.id, ap.title,
+      |         ap.series_id, ap.series_season, ap.series_number,
+      |         ap.cover_url
       |ORDER BY ap._added_at ASC
       |LIMIT $count"""
 
@@ -152,7 +158,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   private type SelectResult = (
       Uuid[AudioPlay],
       AudioPlayTitle,
-      Option[Uuid[AudioPlaySeries]],
+      Option[Uuid[AudioPlaySeries]], 
+      Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
       Option[URL],
       Option[Array[ExternalResourceType]],
@@ -163,6 +170,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |SELECT ap.id,
     |       ap.title,
     |       ap.series_id,
+    |       ap.series_season,
     |       ap.series_number,
     |       ap.cover_url,
     |       ARRAY_AGG(r.type),
@@ -191,6 +199,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       uuid: Uuid[AudioPlay],
       title: AudioPlayTitle,
       series: Option[Uuid[AudioPlaySeries]],
+      season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
       coverUrl: Option[URL],
       maybeTypes: Option[Array[ExternalResourceType]],
@@ -204,6 +213,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       id = uuid,
       title = title,
       seriesId = series,
+      seriesSeason = season,
       seriesNumber = number,
       coverUrl = coverUrl,
       externalResources = resources).toOption.get // TODO: add unsafe

@@ -6,7 +6,7 @@ import translations.domain.errors.AudioPlayValidationError
 import translations.domain.errors.AudioPlayValidationError.*
 import translations.domain.shared.{ExternalResource, Uuid}
 
-import cats.data.ValidatedNec
+import cats.data.{NonEmptyChain, Validated, ValidatedNec}
 import cats.syntax.all.*
 
 import java.net.URL
@@ -17,6 +17,7 @@ import java.util.UUID
  *  @param id ID.
  *  @param title title.
  *  @param seriesId audio play series ID.
+ *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
  *  @param coverUrl URL to audio play cover.
  *  @param externalResources links to different resources.
@@ -25,6 +26,7 @@ final case class AudioPlay private (
     id: Uuid[AudioPlay],
     title: AudioPlayTitle,
     seriesId: Option[Uuid[AudioPlaySeries]],
+    seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
     coverUrl: Option[URL],
     externalResources: List[ExternalResource],
@@ -38,7 +40,8 @@ object AudioPlay:
    *  @param id ID.
    *  @param title title.
    *  @param seriesId audio play series ID.
-   *  @param seriesNumber order in series.
+   *  @param seriesSeason audio play season.
+   *  @param seriesNumber audio play series number.
    *  @param coverUrl URL to audio play cover.
    *  @param externalResources links to different resources.
    *  @return audio play validation result.
@@ -47,6 +50,7 @@ object AudioPlay:
       id: UUID,
       title: String,
       seriesId: Option[UUID],
+      seriesSeason: Option[Int],
       seriesNumber: Option[Int],
       coverUrl: Option[URL],
       externalResources: List[ExternalResource],
@@ -54,15 +58,17 @@ object AudioPlay:
     Uuid[AudioPlay](id).validNec,
     AudioPlayTitle(title).toValidNec(InvalidTitle),
     seriesId.map(Uuid[AudioPlaySeries]).validNec,
+    validateSeason(seriesSeason),
     validateSeriesNumber(seriesNumber),
     coverUrl.validNec,
     externalResources.validNec,
-  ).mapN(new AudioPlay(_, _, _, _, _, _))
+  ).mapN(new AudioPlay(_, _, _, _, _, _, _)).andThen(validateState)
 
   /** Returns updated audio play.
    *  @param initial initial state.
    *  @param title new title.
    *  @param seriesId new series ID.
+   *  @param seriesSeason audio play season.
    *  @param seriesNumber new series number.
    *  @param coverUrl URL to audio play cover.
    *  @param externalResources links to different resources.
@@ -74,6 +80,7 @@ object AudioPlay:
       initial: AudioPlay,
       title: String,
       seriesId: Option[UUID],
+      seriesSeason: Option[Int],
       seriesNumber: Option[Int],
       coverUrl: Option[URL],
       externalResources: List[ExternalResource],
@@ -81,10 +88,20 @@ object AudioPlay:
     initial.id.validNec,
     AudioPlayTitle(title).toValidNec(InvalidTitle),
     seriesId.map(Uuid[AudioPlaySeries]).validNec,
+    validateSeason(seriesSeason),
     validateSeriesNumber(seriesNumber),
     coverUrl.validNec,
     externalResources.validNec,
-  ).mapN(new AudioPlay(_, _, _, _, _, _))
+  ).mapN(new AudioPlay(_, _, _, _, _, _, _)).andThen(validateState)
+
+  /** Validates audio play season.
+   *  @param season season number.
+   *  @return validation result.
+   */
+  private def validateSeason(
+      season: Option[Int],
+  ): ValidationResult[Option[AudioPlaySeason]] =
+    season.traverse(value => AudioPlaySeason(value).toValidNec(InvalidSeason))
 
   /** Validates audio play series number.
    *  @param seriesNumber series number.
@@ -95,3 +112,13 @@ object AudioPlay:
   ): ValidationResult[Option[AudioPlaySeriesNumber]] = seriesNumber.traverse {
     value => AudioPlaySeriesNumber(value).toValidNec(InvalidSeriesNumber)
   }
+
+  /** Validates audio play state:
+   *    - If season or series number is given, then series ID must be given too.
+   *  @param ap audio play.
+   *  @return validation result.
+   */
+  private def validateState(ap: AudioPlay): ValidationResult[AudioPlay] =
+    val seriesAlright =
+      ap.seriesId.isDefined || (ap.seriesSeason.isEmpty && ap.seriesNumber.isEmpty)
+    Validated.cond(seriesAlright, ap, NonEmptyChain.one(SeriesIsMissing))

@@ -43,6 +43,7 @@ final class AudioPlayRepositoryImplTest
     id = UUID.fromString("3f8a202e-609d-49b2-a643-907b341cea66"),
     title = "Audio Play Title",
     seriesId = seriesId,
+    seriesSeason = Some(1),
     seriesNumber = Some(1),
     coverUrl = None,
     externalResources = resources,
@@ -53,6 +54,7 @@ final class AudioPlayRepositoryImplTest
       audioPlayTest,
       title = "Updated",
       seriesId = seriesId,
+      seriesSeason = Some(1),
       seriesNumber = Some(2),
       coverUrl = Some(URI.create("https://cdn.test.org/1").toURL),
       externalResources =
@@ -148,6 +150,7 @@ final class AudioPlayRepositoryImplTest
       id = UUID.fromString("e87d47de-50c9-4588-aba9-b0c30637f7de"),
       title = "Audio Play 1",
       seriesId = Some(UUID.fromString("e810039b-c44c-405f-a360-e44fadc43ead")),
+      seriesSeason = None,
       seriesNumber = Some(2),
       coverUrl = Some(URI.create("https://cdn.test.org/23").toURL),
       externalResources = List(
@@ -157,6 +160,7 @@ final class AudioPlayRepositoryImplTest
       id = UUID.fromString("978f8a9e-800a-4f1f-84ac-819a61916f46"),
       title = "Audio Play 2",
       seriesId = None,
+      seriesSeason = None,
       seriesNumber = None,
       coverUrl = None,
       externalResources = List(
@@ -166,6 +170,7 @@ final class AudioPlayRepositoryImplTest
       id = UUID.fromString("cca461a3-5f4b-49ec-807e-4d29e8ae5f44"),
       title = "Audio Play 3",
       seriesId = None,
+      seriesSeason = None,
       seriesNumber = None,
       coverUrl = Some(URI.create("https://cdn.test.org/53").toURL),
       externalResources = List(

@@ -1,6 +1,8 @@
 package org.aulune
 package translations.adapters.service
 
+
+import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.pagination.CursorToken.encode
@@ -31,7 +33,6 @@ import cats.data.{Validated, ValidatedNec}
 import cats.effect.Clock
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
-import org.aulune.auth.application.dto.AuthenticatedUser
 
 import java.time.Instant
 import java.util.UUID
@@ -139,6 +140,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
         id = domain.id,
         title = domain.title,
         seriesId = domain.seriesId,
+        seriesSeason = domain.seriesSeason,
         seriesNumber = domain.seriesNumber,
         coverUrl = domain.coverUrl,
         externalResources = resources.map(ExternalResourceMapper.fromDomain),
@@ -172,6 +174,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
         initial = old,
         title = ac.title,
         seriesId = ac.seriesId,
+        seriesSeason = ac.seriesSeason,
         seriesNumber = ac.seriesNumber,
         coverUrl = old.coverUrl,
         externalResources = ac.externalResources
@@ -190,6 +193,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       id = id,
       title = ac.title,
       seriesId = ac.seriesId,
+      seriesSeason = ac.seriesSeason,
       seriesNumber = ac.seriesNumber,
       coverUrl = None,
       externalResources = ac.externalResources
