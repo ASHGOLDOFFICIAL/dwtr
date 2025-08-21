@@ -1,6 +1,9 @@
 package org.aulune
 package translations.adapters.service
 
+
+import auth.application.dto.AuthenticatedUser
+import shared.UUIDv7Gen.uuidv7Instance
 import shared.errors.ApplicationServiceError.BadRequest
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.pagination.{CursorToken, PaginationParams}
@@ -38,7 +41,6 @@ import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.mtl.Handle
 import cats.mtl.syntax.all.*
 import cats.syntax.all.*
-import org.aulune.auth.application.dto.AuthenticatedUser
 
 import java.time.Instant
 import java.util.UUID

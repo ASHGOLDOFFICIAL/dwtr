@@ -3,6 +3,7 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
+import shared.UUIDv7Gen.uuidv7Instance
 import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.pagination.CursorToken.encode
