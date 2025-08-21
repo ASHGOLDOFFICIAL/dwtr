@@ -88,7 +88,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val query = selectBase ++ sql"""
       |WHERE ap.id = $id
-      |GROUP BY ap.id, ap.title, ap.series_id, ap.series_season, ap.series_number, ap.cover_url
+      |GROUP BY ap.id, ap.title,
+      |         ap.series_id, ap.series_season, ap.series_number,
+      |         ap.cover_url
       |"""
     query.stripMargin
       .query[SelectResult]
@@ -158,12 +160,12 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   private type SelectResult = (
       Uuid[AudioPlay],
       AudioPlayTitle,
-      Option[Uuid[AudioPlaySeries]], 
+      Option[Uuid[AudioPlaySeries]],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
       Option[URL],
-      Option[Array[ExternalResourceType]],
-      Option[Array[URL]],
+      Array[ExternalResourceType],
+      Array[URL],
   )
 
   private val selectBase = fr"""
@@ -173,8 +175,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |       ap.series_season,
     |       ap.series_number,
     |       ap.cover_url,
-    |       ARRAY_AGG(r.type),
-    |       ARRAY_AGG(r.url)
+    |       COALESCE(ARRAY_AGG(r.type) FILTER (WHERE r.type IS NOT NULL), '{}'),
+    |       COALESCE(ARRAY_AGG(r.url)  FILTER (WHERE r.url  IS NOT NULL), '{}')
     |FROM audio_plays ap
     |LEFT JOIN audio_play_resources r ON r.audio_play_id = ap.id"""
 
@@ -202,13 +204,11 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
       coverUrl: Option[URL],
-      maybeTypes: Option[Array[ExternalResourceType]],
-      maybeUrls: Option[Array[URL]],
+      types: Array[ExternalResourceType],
+      urls: Array[URL],
   ) =
-    val resources: List[ExternalResource] = (for
-      types <- maybeTypes
-      urls <- maybeUrls
-    yield types.zip(urls).map(ExternalResource.apply).toList).getOrElse(Nil)
+    val resources: List[ExternalResource] =
+      types.zip(urls).map(ExternalResource.apply).toList
     AudioPlay(
       id = uuid,
       title = title,
@@ -224,5 +224,3 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     case e: SQLException    => e.getSQLState match
         case sqlstate.class23.UNIQUE_VIOLATION.value =>
           AlreadyExists.raiseError[F, A]
-        case _ => Unexpected(cause = e).raiseError[F, A]
-    case err => Unexpected(cause = err).raiseError[F, A]

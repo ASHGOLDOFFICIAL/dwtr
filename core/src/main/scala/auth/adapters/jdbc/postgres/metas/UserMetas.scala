@@ -26,4 +26,4 @@ private[postgres] object UserMetas:
     .timap { str =>
       if str.isEmpty then Set.empty
       else str.split(',').map(s => groupFromInt(s.toInt)).toSet
-    }(_.mkString(","))
+    }(_.map(groupToInt).mkString(","))

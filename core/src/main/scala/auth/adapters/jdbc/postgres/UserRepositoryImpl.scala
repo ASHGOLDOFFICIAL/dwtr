@@ -121,5 +121,3 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       case e: SQLException    => e.getSQLState match
           case sqlstate.class23.UNIQUE_VIOLATION.value =>
             AlreadyExists.raiseError[F, A]
-          case _ => Unexpected(cause = e).raiseError[F, A]
-      case err => Unexpected(cause = err).raiseError[F, A]

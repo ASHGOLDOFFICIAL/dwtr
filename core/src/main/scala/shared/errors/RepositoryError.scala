@@ -11,6 +11,3 @@ enum RepositoryError extends NoStackTrace:
 
   /** No element was found to update. */
   case NothingToUpdate
-
-  /** Unexpected repository error. */
-  case Unexpected(cause: Throwable)

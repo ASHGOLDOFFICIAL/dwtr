@@ -18,5 +18,3 @@ enum ApplicationServiceError extends NoStackTrace:
   /** User doesn't have permission to do the action. */
   case PermissionDenied
 
-  /** Some unexpected error. */
-  case InternalError

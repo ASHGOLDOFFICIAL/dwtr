@@ -49,6 +49,16 @@ final class AudioPlayRepositoryImplTest
     externalResources = resources,
   ).toOption.get
 
+  private val audioPlayTestWithoutResources = AudioPlay(
+    id = UUID.fromString("3f8a202e-609d-49b2-a643-907b341cea66"),
+    title = "Audio Play Title",
+    seriesId = seriesId,
+    seriesSeason = Some(1),
+    seriesNumber = Some(1),
+    coverUrl = None,
+    externalResources = Nil,
+  ).toOption.get
+
   private val updatedAudioPlayTest: AudioPlay = AudioPlay
     .update(
       audioPlayTest,
@@ -79,15 +89,26 @@ final class AudioPlayRepositoryImplTest
     }
   }
 
-  "persist method " - {
+  "get method " - {
     "should " - {
-      "retrieve audio plays" in stand { repo =>
+      "retrieve audio plays with resources" in stand { repo =>
         for
           _ <- repo.persist(audioPlayTest)
           audio <- repo.get(audioPlayTest.id)
         yield audio shouldBe Some(audioPlayTest)
       }
 
+      "retrieve audio plays without resources" in stand { repo =>
+        for
+          _ <- repo.persist(audioPlayTestWithoutResources)
+          audio <- repo.get(audioPlayTestWithoutResources.id)
+        yield audio shouldBe Some(audioPlayTestWithoutResources)
+      }
+    }
+  }
+
+  "persist method " - {
+    "should " - {
       "return `None` for non-existent audio play" in stand { repo =>
         for audio <- repo.get(audioPlayTest.id)
         yield audio shouldBe None
