@@ -8,7 +8,13 @@ import translations.adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
-import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeason, AudioPlaySeries, AudioPlaySeriesNumber, AudioPlayTitle}
+import translations.domain.model.audioplay.{
+  AudioPlay,
+  AudioPlaySeason,
+  AudioPlaySeries,
+  AudioPlaySeriesNumber,
+  AudioPlayTitle,
+}
 import translations.domain.shared.{ExternalResource, ExternalResourceType, Uuid}
 
 import cats.MonadThrow
@@ -137,17 +143,11 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |GROUP BY ap.id, ap.title,
       |         ap.series_id, ap.series_season, ap.series_number,
       |         ap.cover_url
-      |ORDER BY ap._added_at ASC
       |LIMIT $count"""
 
     val full = startWith match
-      case Some(t) => selectBase ++ fr"""
-        |WHERE ap._added_at >= (
-        |  SELECT _added_at
-        |  FROM audio_plays
-        |  WHERE id = ${t.identity})
-        |AND ap.id <> ${t.identity}""" ++ sort
-      case None => selectBase ++ sort
+      case Some(t) => selectBase ++ fr"WHERE ap.id > ${t.identity}" ++ sort
+      case None    => selectBase ++ sort
 
     full.stripMargin
       .query[SelectResult]
