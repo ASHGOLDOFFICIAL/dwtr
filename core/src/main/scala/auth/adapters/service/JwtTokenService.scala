@@ -2,7 +2,11 @@ package org.aulune
 package auth.adapters.service
 
 
-import auth.application.dto.{AccessTokenPayload, AuthenticatedUser, IdTokenPayload}
+import auth.application.dto.{
+  AccessTokenPayload,
+  AuthenticatedUser,
+  IdTokenPayload
+}
 import auth.application.{AccessTokenService, IdTokenService}
 import auth.domain.model.{AuthenticationToken, Group, User}
 
@@ -63,8 +67,8 @@ final class JwtTokenService[F[_]: Clock: Monad](
     }
 
   /** Makes [[IdTokenPayload]] for given values.
-   * @param user user whose ID token is being made.
-   * @param now  current timestamp.
+   *  @param user user whose ID token is being made.
+   *  @param now current timestamp.
    */
   private def makeIdTokenPayload(user: User, now: Instant): IdTokenPayload =
     val iat = now.getEpochSecond
@@ -117,7 +121,7 @@ final class JwtTokenService[F[_]: Clock: Monad](
   private def validateExpirationPure(
       now: Instant,
       expiration: Long,
-  ): Boolean = expiration > maxAllowed(now)
+  ): Boolean = now.getEpochSecond < expiration && expiration < maxAllowed(now)
 
   private val maxExp = expiration.toSeconds
 
@@ -125,7 +129,7 @@ final class JwtTokenService[F[_]: Clock: Monad](
    *  @param now current timestamp.
    */
   private def maxAllowed(now: Instant) = now.plusSeconds(maxExp).getEpochSecond
-  
+
   extension (p: AccessTokenPayload)
     /** Makes [[AuthenticatedUser]] out of given payload. */
     private def toAuthenticatedUser: AuthenticatedUser =
@@ -133,15 +137,15 @@ final class JwtTokenService[F[_]: Clock: Monad](
 
   private given Encoder[Group] = Encoder.encodeString.contramap {
     case Group.Trusted => "trusted"
-    case Group.Admin => "admin"
+    case Group.Admin   => "admin"
   }
 
   private given Decoder[Group] = Decoder.decodeString.emap {
     case "trusted" => Group.Trusted.asRight
-    case "admin" => Group.Admin.asRight
-    case _ => "Unknown role".asLeft
+    case "admin"   => Group.Admin.asRight
+    case _         => "Unknown role".asLeft
   }
-  
+
   private given Encoder[AccessTokenPayload] = Encoder.derived
   private given Decoder[AccessTokenPayload] = Decoder.derived
   private given Encoder[IdTokenPayload] = Encoder.derived

@@ -2,9 +2,10 @@ package org.aulune
 package shared.auth
 
 
+import auth.application.dto.AuthenticatedUser
+
 import cats.syntax.all.*
 import cats.{Applicative, Functor}
-import org.aulune.auth.application.dto.AuthenticatedUser
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.server.PartialServerEndpoint
