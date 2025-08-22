@@ -1,14 +1,13 @@
 package org.aulune
-package translations.domain.shared
+package translations.domain.model.person
 
 
 import translations.domain.errors.PersonValidationError
 import translations.domain.errors.PersonValidationError.*
+import translations.domain.shared.Uuid
 
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*
-
-import java.util.UUID
 
 
 /** Person (primarily a creator of some sort).
@@ -29,7 +28,14 @@ object Person:
    *  @param name full name.
    *  @return person validation result.
    */
-  def apply(id: UUID, name: String): ValidationResult[Person] = (
-    Uuid[Person](id).validNec,
-    FullName(name).toValidNec(InvalidFullName),
-  ).mapN(new Person(_, _))
+  def apply(id: Uuid[Person], name: FullName): ValidationResult[Person] =
+    new Person(id, name).validNec
+
+  /** Unsafe constructor to use inside always-valid boundary.
+   *  @param id person's unique ID.
+   *  @param name full name.
+   *  @throws PersonValidationError if given parameters are invalid.
+   */
+  def unsafe(id: Uuid[Person], name: FullName): Person = Person(id, name) match
+    case Validated.Valid(a)   => a
+    case Validated.Invalid(e) => throw e.head

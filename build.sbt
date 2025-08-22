@@ -87,6 +87,7 @@ val logbackVersion = "1.5.18"
 val nimbusJoseJwt = "10.4.2"
 val postgresqlVersion = "42.7.7"
 val pureconfigVersion = "0.17.9"
+val scalamockVersion = "7.4.1"
 val scalatestVersion = "3.2.19"
 val sqliteVersion = "3.50.3.0"
 val tapirVersion = "1.11.40"
@@ -130,6 +131,7 @@ val doobieDeps = Seq(
 
 
 val testDeps = Seq(
+  "org.scalamock" %% "scalamock"                     % scalamockVersion,
   "org.scalatest" %% "scalatest"                     % scalatestVersion,
   "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
 ).map(_ % Test)

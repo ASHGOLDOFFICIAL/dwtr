@@ -2,12 +2,12 @@ package org.aulune
 package translations.domain.errors
 
 
-import translations.domain.shared.Person
+import translations.domain.model.person.Person
 
 import scala.util.control.NoStackTrace
 
 
 /** Errors that can occur during [[Person]] validation. */
 enum PersonValidationError extends NoStackTrace:
-  /** Given full name is invalid */
-  case InvalidFullName
+  /** Some given arguments are invalid */
+  case InvalidArguments
