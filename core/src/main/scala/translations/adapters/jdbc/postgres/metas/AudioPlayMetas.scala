@@ -2,7 +2,12 @@ package org.aulune
 package translations.adapters.jdbc.postgres.metas
 
 
-import translations.domain.model.audioplay.{AudioPlaySeason, AudioPlaySeriesNumber, AudioPlayTitle}
+import translations.domain.model.audioplay.{
+  AudioPlaySeason,
+  AudioPlaySeriesName,
+  AudioPlaySeriesNumber,
+  AudioPlayTitle
+}
 import translations.domain.shared.ExternalResourceType
 
 import doobie.Meta
@@ -18,6 +23,11 @@ private[postgres] object AudioPlayMetas:
   given Meta[AudioPlaySeason] = Meta[Int].tiemap { str =>
     AudioPlaySeason(str).toRight(
       s"Failed to decode AudioPlaySeason from: $str.")
+  }(identity)
+
+  given Meta[AudioPlaySeriesName] = Meta[String].tiemap { str =>
+    AudioPlaySeriesName(str).toRight(
+      s"Failed to decode AudioPlaySeriesName from: $str.")
   }(identity)
 
   given Meta[AudioPlaySeriesNumber] = Meta[Int].tiemap { str =>

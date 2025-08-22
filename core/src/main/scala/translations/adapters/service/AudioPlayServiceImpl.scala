@@ -11,7 +11,10 @@ import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformF
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
-import translations.adapters.service.mappers.ExternalResourceMapper
+import translations.adapters.service.mappers.{
+  AudioPlaySeriesMapper,
+  ExternalResourceMapper,
+}
 import translations.application.AudioPlayPermission.{SeeDownloadLinks, Write}
 import translations.application.dto.{
   AudioPlayListResponse,
@@ -25,9 +28,21 @@ import translations.application.repositories.AudioPlayRepository.{
 }
 import translations.application.{AudioPlayPermission, AudioPlayService}
 import translations.domain.errors.AudioPlayValidationError
-import translations.domain.model.audioplay.AudioPlay
+import translations.domain.model.audioplay.{
+  AudioPlay,
+  AudioPlaySeason,
+  AudioPlaySeries,
+  AudioPlaySeriesNumber,
+  AudioPlayTitle,
+}
 import translations.domain.shared.ExternalResourceType.Download
-import translations.domain.shared.{ExternalResource, Uuid}
+import translations.domain.shared.{
+  ExternalResource,
+  ImageUrl,
+  ReleaseDate,
+  Synopsis,
+  Uuid,
+}
 
 import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}
@@ -45,7 +60,7 @@ import java.util.UUID
  *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
  *  @tparam F effect type.
  */
-final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
+final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     pagination: Config.App.Pagination,
     repo: AudioPlayRepository[F],
     authService: AuthorizationService[F, AudioPlayPermission],
@@ -56,8 +71,9 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       user: Option[AuthenticatedUser],
       id: UUID,
   ): F[Option[AudioPlayResponse]] =
+    val uuid = Uuid[AudioPlay](id)
     for
-      result <- repo.get(Uuid[AudioPlay](id))
+      result <- repo.get(uuid)
       response <- result.traverse(toResponse(user, _))
     yield response
 
@@ -78,11 +94,12 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
+      val seriesId = ac.seriesId.map(Uuid[AudioPlaySeries])
       (for
+        series <- getSeriesOrThrow(seriesId)
         id <- UUIDGen.randomUUID[F]
-        now <- Clock[F].realTimeInstant
         audio <- ac
-          .toDomain(id, now)
+          .toDomain(id, series)
           .fold(_ => BadRequest.raiseError, _.pure[F])
         persisted <- repo.persist(audio)
         response <- toResponse(Some(user), persisted)
@@ -96,8 +113,10 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
       val uuid = Uuid[AudioPlay](id)
+      val seriesId = ac.seriesId.map(Uuid[AudioPlaySeries])
       (for
-        updatedOpt <- repo.transformF(uuid)(ac.update(_).toOption)
+        series <- getSeriesOrThrow(seriesId)
+        updatedOpt <- repo.transformF(uuid)(ac.update(_, series).toOption)
         updated <-
           updatedOpt.fold(BadRequest.raiseError[F, AudioPlay])(_.pure[F])
         response <- toResponse(Some(user), updated)
@@ -113,6 +132,22 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       for result <- repo.delete(uuid).attempt
       yield result.leftMap(toApplicationError)
     }
+
+  /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
+   *  audio play series with it.
+   *
+   *  If [[seriesId]] is not `None` but there's no [[AudioPlaySeries]] found
+   *  with it, then it will throw [[NotFound]].
+   *  @param seriesId audio play series ID.
+   */
+  private def getSeriesOrThrow(
+      seriesId: Option[Uuid[AudioPlaySeries]],
+  ): F[Option[AudioPlaySeries]] = seriesId match
+    case Some(sid) => repo.getSeries(sid).flatMap {
+        case Some(s) => s.some.pure[F]
+        case None    => NotFound.raiseError[F, Option[AudioPlaySeries]]
+      }
+    case None => None.pure[F]
 
   /** Removes resources user isn't supposed to see.
    *  @param maybeUser user who asks for resources. If user is not present, then
@@ -140,7 +175,9 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       AudioPlayResponse(
         id = domain.id,
         title = domain.title,
-        seriesId = domain.seriesId,
+        synopsis = domain.synopsis,
+        releaseDate = domain.releaseDate,
+        series = domain.series.map(AudioPlaySeriesMapper.toResponse),
         seriesSeason = domain.seriesSeason,
         seriesNumber = domain.seriesNumber,
         coverUrl = domain.coverUrl,
@@ -166,37 +203,62 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
   extension (ac: AudioPlayRequest)
     /** Updates old domain object with fields from request.
      *  @param old old domain object.
+     *  @param series previously fetched by given series ID series (if series ID
+     *    was given).
      *  @return updated domain object if valid.
      */
     private def update(
         old: AudioPlay,
-    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = AudioPlay
-      .update(
-        initial = old,
-        title = ac.title,
-        seriesId = ac.seriesId,
-        seriesSeason = ac.seriesSeason,
-        seriesNumber = ac.seriesNumber,
-        coverUrl = old.coverUrl,
-        externalResources = ac.externalResources
-          .map(ExternalResourceMapper.toDomain),
-      )
+        series: Option[AudioPlaySeries],
+    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = (for
+      title <- AudioPlayTitle(ac.title)
+      synopsis <- Synopsis(ac.synopsis)
+      releaseDate <- ReleaseDate(ac.releaseDate)
+      season <- ac.seriesSeason.map(AudioPlaySeason.apply)
+      number <- ac.seriesNumber.map(AudioPlaySeriesNumber.apply)
+      resources <-
+        Option(ac.externalResources.map(ExternalResourceMapper.toDomain))
+    yield AudioPlay(
+      id = old.id,
+      title = title,
+      synopsis = synopsis,
+      releaseDate = releaseDate,
+      series = series,
+      seriesSeason = season,
+      seriesNumber = number,
+      coverUrl = old.coverUrl,
+      externalResources = resources,
+    )) match
+      case Some(value) => value
+      case None        => AudioPlayValidationError.InvalidValues.invalidNec
 
     /** Converts request to domain object and verifies it.
      *  @param id ID assigned to this audio play.
-     *  @param addedAt timestamp of when was this resource added.
+     *  @param series previously fetched by given series ID series (if series ID
+     *    was given).
      *  @return created domain object if valid.
      */
     private def toDomain(
         id: UUID,
-        addedAt: Instant,
-    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = AudioPlay(
-      id = id,
-      title = ac.title,
-      seriesId = ac.seriesId,
-      seriesSeason = ac.seriesSeason,
-      seriesNumber = ac.seriesNumber,
+        series: Option[AudioPlaySeries],
+    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = (for
+      title <- AudioPlayTitle(ac.title)
+      synopsis <- Synopsis(ac.synopsis)
+      releaseDate <- ReleaseDate(ac.releaseDate)
+      season <- ac.seriesSeason.map(AudioPlaySeason.apply)
+      number <- ac.seriesNumber.map(AudioPlaySeriesNumber.apply)
+      resources <-
+        Option(ac.externalResources.map(ExternalResourceMapper.toDomain))
+    yield AudioPlay(
+      id = Uuid[AudioPlay](id),
+      title = title,
+      synopsis = synopsis,
+      releaseDate = releaseDate,
+      series = series,
+      seriesSeason = season,
+      seriesNumber = number,
       coverUrl = None,
-      externalResources = ac.externalResources
-        .map(ExternalResourceMapper.toDomain),
-    )
+      externalResources = resources,
+    )) match
+      case Some(value) => value
+      case None        => AudioPlayValidationError.InvalidValues.invalidNec

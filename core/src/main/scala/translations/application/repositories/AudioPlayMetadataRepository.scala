@@ -5,7 +5,7 @@ package translations.application.repositories
 import shared.pagination.{TokenDecoder, TokenEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
-import translations.domain.model.audioplay.AudioPlay
+import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 import translations.domain.shared.Uuid
 
 import java.time.Instant
@@ -18,4 +18,9 @@ import scala.util.Try
  */
 trait AudioPlayMetadataRepository[F[_]]
     extends GenericRepository[F, AudioPlayMetadata, Uuid[AudioPlay]]
-    with PaginatedList[F, AudioPlayMetadata, AudioPlayToken]
+    with PaginatedList[F, AudioPlayMetadata, AudioPlayToken]:
+
+  /** Returns audio play series for given ID if found.
+   *  @param id audio play series ID.
+   */
+  def getSeries(id: Uuid[AudioPlaySeries]): F[Option[AudioPlaySeries]]

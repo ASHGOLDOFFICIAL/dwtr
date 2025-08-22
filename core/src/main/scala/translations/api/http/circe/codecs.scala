@@ -12,6 +12,7 @@ import translations.application.dto.{
   AudioPlayListResponse,
   AudioPlayRequest,
   AudioPlayResponse,
+  AudioPlaySeriesResponse,
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
@@ -50,6 +51,9 @@ given Decoder[AudioPlayTranslationResponse] = deriveConfiguredDecoder
 
 given Encoder[AudioPlayTranslationListResponse] = deriveConfiguredEncoder
 given Decoder[AudioPlayTranslationListResponse] = deriveConfiguredDecoder
+
+given Encoder[AudioPlaySeriesResponse] = deriveConfiguredEncoder
+given Decoder[AudioPlaySeriesResponse] = deriveConfiguredDecoder
 
 given Encoder[AudioPlayRequest] = deriveConfiguredEncoder
 given Decoder[AudioPlayRequest] = deriveConfiguredDecoder
