@@ -3,11 +3,13 @@ package translations.api.http.tapir.schemas
 
 
 import translations.api.mappers.ExternalResourceTypeMapper
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
   AudioPlaySeriesResponse,
+  ListAudioPlaysResponse,
+}
+import translations.application.dto.{
   ExternalResourceDto,
   ExternalResourceTypeDto,
 }
@@ -21,7 +23,7 @@ object AudioPlaySchemas:
   given Schema[AudioPlaySeriesResponse] = Schema.derived
   given Schema[AudioPlayRequest] = Schema.derived
   given Schema[AudioPlayResponse] = Schema.derived
-  given Schema[AudioPlayListResponse] = Schema.derived
+  given Schema[ListAudioPlaysResponse] = Schema.derived
 
   private given Schema[URL] = Schema.string[URL]
 

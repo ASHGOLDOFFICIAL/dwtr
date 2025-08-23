@@ -4,8 +4,8 @@ package translations.api.http.tapir.examples
 
 import translations.application.dto.AudioPlayTranslationTypeDto.Subtitles
 import translations.application.dto.LanguageDto.Russian
+import translations.application.dto.audioplay.ListAudioPlaysResponse
 import translations.application.dto.{
-  AudioPlayListResponse,
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,

@@ -2,13 +2,13 @@ package org.aulune
 package translations.api.http.tapir.examples
 
 
+import translations.application.dto.ExternalResourceDto
 import translations.application.dto.ExternalResourceTypeDto.{Private, Purchase}
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
   AudioPlaySeriesResponse,
-  ExternalResourceDto,
+  ListAudioPlaysResponse,
 }
 
 import java.net.URI
@@ -37,6 +37,9 @@ object AudioPlayExamples:
       " the true culprit; but in their quest for justice, the brothers Cicero may be about" +
       " to make some very powerful enemies indeed..."
   private val releaseDateExample = LocalDate.of(2017, 2, 28)
+  private val writersExample = List(
+    UUID.fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b"),
+  )
   private val seriesSeasonExample = Some(1)
   private val seriesNumberExample = Some(1)
 
@@ -66,6 +69,7 @@ object AudioPlayExamples:
     title = titleExample,
     synopsis = synopsisExample,
     releaseDate = releaseDateExample,
+    writers = writersExample,
     seriesId = Some(seriesIdExample),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
@@ -77,6 +81,7 @@ object AudioPlayExamples:
     title = titleExample,
     synopsis = synopsisExample,
     releaseDate = releaseDateExample,
+    writers = writersExample,
     series = seriesExample,
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
@@ -84,7 +89,7 @@ object AudioPlayExamples:
     externalResources = externalResourcesResponseExample,
   )
 
-  val listResponseExample: AudioPlayListResponse = AudioPlayListResponse(
+  val listResponseExample: ListAudioPlaysResponse = ListAudioPlaysResponse(
     audioPlays = List(responseExample),
     nextPageToken = nextPageTokenExample,
   )

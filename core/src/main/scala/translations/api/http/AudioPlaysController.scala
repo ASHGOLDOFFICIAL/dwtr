@@ -13,10 +13,10 @@ import translations.api.http.tapir.examples.AudioPlayExamples.{
   responseExample,
 }
 import translations.api.http.tapir.schemas.AudioPlaySchemas.given
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
+  ListAudioPlaysResponse,
 }
 import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
@@ -66,13 +66,13 @@ final class AudioPlaysController[F[_]: Applicative](
     .tag(tag)
     .serverLogic { maybeUser => id =>
       for result <- service.findById(maybeUser, id)
-      yield result.toRight(StatusCode.NotFound)
+      yield result.leftMap(toErrorResponse)
     }
 
   private val listEndpoint = authOptionalEndpoint.get
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayListResponse]
+    .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
       .example(listResponseExample)))
     .name("ListAudioPlays")
@@ -99,22 +99,6 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(toErrorResponse)
     }
 
-  private val updateEndpoint = authOnlyEndpoint.put
-    .in(elementPath)
-    .in(jsonBody[AudioPlayRequest]
-      .description("Audio play's new state.")
-      .example(requestExample))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
-      .description("Updated audio play.")
-      .example(responseExample)))
-    .name("UpdateAudioPlay")
-    .summary("Updates audio play resource with given ID.")
-    .tag(tag)
-    .serverLogic { user => (id, ac) =>
-      for result <- service.update(user, id, ac)
-      yield result.leftMap(toErrorResponse)
-    }
-
   private val deleteEndpoint = authOnlyEndpoint.delete
     .in(elementPath)
     .out(statusCode(StatusCode.NoContent))
@@ -131,7 +115,6 @@ final class AudioPlaysController[F[_]: Applicative](
     getEndpoint,
     listEndpoint,
     postEndpoint,
-    updateEndpoint,
     deleteEndpoint,
   ) ++ TranslationsController
     .build(elementPath, tag, pagination, translationService, authService)

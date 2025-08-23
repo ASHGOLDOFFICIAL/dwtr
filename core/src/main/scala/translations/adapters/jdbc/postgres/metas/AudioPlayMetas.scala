@@ -3,6 +3,7 @@ package translations.adapters.jdbc.postgres.metas
 
 
 import translations.domain.model.audioplay.{
+  AudioPlay,
   AudioPlaySeason,
   AudioPlaySeriesName,
   AudioPlaySeriesNumber,
@@ -11,29 +12,22 @@ import translations.domain.model.audioplay.{
 import translations.domain.shared.ExternalResourceType
 
 import doobie.Meta
-import doobie.postgres.implicits.*
+import doobie.postgres.implicits.unliftedUnboxedIntegerArrayType
 
 
+/** [[Meta]] instances for [[AudioPlay]]. */
 private[postgres] object AudioPlayMetas:
-  given Meta[AudioPlayTitle] = Meta[String].tiemap { str =>
-    AudioPlayTitle(str)
-      .toRight(s"Failed to decode AudioPlayTitle from: $str.")
-  }(identity)
+  given Meta[AudioPlayTitle] = Meta[String]
+    .imap(AudioPlayTitle.unsafe)(identity)
 
-  given Meta[AudioPlaySeason] = Meta[Int].tiemap { str =>
-    AudioPlaySeason(str).toRight(
-      s"Failed to decode AudioPlaySeason from: $str.")
-  }(identity)
+  given Meta[AudioPlaySeason] = Meta[Int]
+    .imap(AudioPlaySeason.unsafe)(identity)
 
-  given Meta[AudioPlaySeriesName] = Meta[String].tiemap { str =>
-    AudioPlaySeriesName(str).toRight(
-      s"Failed to decode AudioPlaySeriesName from: $str.")
-  }(identity)
+  given Meta[AudioPlaySeriesName] = Meta[String]
+    .imap(AudioPlaySeriesName.unsafe)(identity)
 
-  given Meta[AudioPlaySeriesNumber] = Meta[Int].tiemap { str =>
-    AudioPlaySeriesNumber(str).toRight(
-      s"Failed to decode AudioPlaySeriesNumber from: $str.")
-  }(identity)
+  given Meta[AudioPlaySeriesNumber] = Meta[Int]
+    .imap(AudioPlaySeriesNumber.unsafe)(identity)
 
   private val resourceTypeToInt = ExternalResourceType.values.map {
     case t @ ExternalResourceType.Purchase  => t -> 1
@@ -45,7 +39,7 @@ private[postgres] object AudioPlayMetas:
   private val resourceTypeFromInt = resourceTypeToInt.map(_.swap)
 
   given Meta[ExternalResourceType] = Meta[Int]
-    .timap(resourceTypeFromInt.apply)(resourceTypeToInt.apply)
+    .imap(resourceTypeFromInt.apply)(resourceTypeToInt.apply)
 
   given Meta[Array[ExternalResourceType]] = Meta[Array[Int]]
-    .timap(_.map(resourceTypeFromInt.apply))(_.map(resourceTypeToInt.apply))
+    .imap(_.map(resourceTypeFromInt.apply))(_.map(resourceTypeToInt.apply))

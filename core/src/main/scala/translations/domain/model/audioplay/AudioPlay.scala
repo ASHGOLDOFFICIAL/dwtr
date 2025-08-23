@@ -4,6 +4,11 @@ package translations.domain.model.audioplay
 
 import translations.domain.errors.AudioPlayValidationError
 import translations.domain.errors.AudioPlayValidationError.*
+import translations.domain.model.audioplay.AudioPlay.{
+  ValidationResult,
+  validateState,
+}
+import translations.domain.model.person.Person
 import translations.domain.shared.{
   ExternalResource,
   ImageUrl,
@@ -13,19 +18,14 @@ import translations.domain.shared.{
 }
 
 import cats.data.{NonEmptyChain, Validated, ValidatedNec}
-import cats.syntax.all.*
-
-import java.net.URL
-import java.time.LocalDate
-import java.util.{Date, UUID}
 
 
 /** Audio play representation.
  *  @param id ID.
  *  @param title title.
  *  @param synopsis brief description.
- *  @param releaseDate release date of this audio play. // * @param writers
- *    author(s) of audio play. // * @param cast audio play cast.
+ *  @param releaseDate release date of this audio play.
+ *  @param writers author(s) of audio play. // * @param cast audio play cast.
  *  @param series audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
@@ -37,14 +37,41 @@ final case class AudioPlay private (
     title: AudioPlayTitle,
     synopsis: Synopsis,
     releaseDate: ReleaseDate,
-//    writers: List[Person], // TODO: enable them
-//    cast: List[CastMember],
+    writers: List[Uuid[Person]],
+    //    cast: List[CastMember],// TODO: enable them
     series: Option[AudioPlaySeries],
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
     coverUrl: Option[ImageUrl],
     externalResources: List[ExternalResource],
-)
+):
+  /** Copies with validation.
+   *  @return new state validation result.
+   */
+  def update(
+      id: Uuid[AudioPlay] = id,
+      title: AudioPlayTitle = title,
+      synopsis: Synopsis = synopsis,
+      releaseDate: ReleaseDate = releaseDate,
+      writers: List[Uuid[Person]] = writers,
+      series: Option[AudioPlaySeries] = series,
+      seriesSeason: Option[AudioPlaySeason] = seriesSeason,
+      seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
+      coverUrl: Option[ImageUrl] = coverUrl,
+      externalResources: List[ExternalResource] = externalResources,
+  ): ValidationResult[AudioPlay] = validateState(
+    copy(
+      id = id,
+      title = title,
+      synopsis = synopsis,
+      releaseDate = releaseDate,
+      writers = writers,
+      series = series,
+      seriesSeason = seriesSeason,
+      seriesNumber = seriesNumber,
+      coverUrl = coverUrl,
+      externalResources = externalResources,
+    ))
 
 
 object AudioPlay:
@@ -58,98 +85,63 @@ object AudioPlay:
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-//      writers: List[Person] = Nil,
-//      cast: List[CastMember] = Nil,
-      series: Option[AudioPlaySeries] = None,
-      seriesSeason: Option[AudioPlaySeason] = None,
-      seriesNumber: Option[AudioPlaySeriesNumber] = None,
-      coverUrl: Option[ImageUrl] = None,
-      externalResources: List[ExternalResource] = Nil,
-  ): ValidationResult[AudioPlay] =
-    val ap = new AudioPlay(
+      writers: List[Uuid[Person]],
+      series: Option[AudioPlaySeries],
+      seriesSeason: Option[AudioPlaySeason],
+      seriesNumber: Option[AudioPlaySeriesNumber],
+      coverUrl: Option[ImageUrl],
+      externalResources: List[ExternalResource],
+  ): ValidationResult[AudioPlay] = validateState(
+    new AudioPlay(
       id = id,
       title = title,
       synopsis = synopsis,
       releaseDate = releaseDate,
-//      writers = writers,
-//      cast = cast,
+      writers = writers,
       series = series,
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
       coverUrl = coverUrl,
       externalResources = externalResources,
-    )
-    validateState(ap)
+    ))
 
-  /** Unsafe constructor to use only inside always-valid boundary. */
+  /** Unsafe constructor to use only inside always-valid boundary.
+   *  @throws AudioPlayValidationError if constructs invalid object.
+   */
   def unsafe(
       id: Uuid[AudioPlay],
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      //      writers: List[Person] = Nil,
-      //      cast: List[CastMember] = Nil,
-      series: Option[AudioPlaySeries] = None,
-      seriesSeason: Option[AudioPlaySeason] = None,
-      seriesNumber: Option[AudioPlaySeriesNumber] = None,
-      coverUrl: Option[ImageUrl] = None,
-      externalResources: List[ExternalResource] = Nil,
-  ): AudioPlay = new AudioPlay(
+      writers: List[Uuid[Person]],
+      series: Option[AudioPlaySeries],
+      seriesSeason: Option[AudioPlaySeason],
+      seriesNumber: Option[AudioPlaySeriesNumber],
+      coverUrl: Option[ImageUrl],
+      externalResources: List[ExternalResource],
+  ): AudioPlay = apply(
     id = id,
     title = title,
     synopsis = synopsis,
     releaseDate = releaseDate,
-    //      writers = writers,
-    //      cast = cast,
+    writers = writers,
     series = series,
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
     coverUrl = coverUrl,
     externalResources = externalResources,
-  )
-
-  /** Returns audio play with updated metadata.
-   *  @param initial initial state.
-   *  @return new state validation result.
-   */
-  def update(
-      initial: AudioPlay,
-      title: AudioPlayTitle,
-      synopsis: Synopsis,
-      releaseDate: ReleaseDate,
-      coverUrl: Option[ImageUrl],
-      externalResources: List[ExternalResource],
-  ): ValidationResult[AudioPlay] =
-    val updated = initial.copy(
-      title = title,
-      coverUrl = coverUrl,
-      externalResources = externalResources,
-    )
-    validateState(updated)
-
-  /** Returns audio play with updated series info.
-   *  @param initial initial state.
-   *  @return new state validation result.
-   */
-  def updateSeriesInfo(
-      initial: AudioPlay,
-      series: Option[AudioPlaySeries],
-      season: Option[AudioPlaySeason],
-      number: Option[AudioPlaySeriesNumber],
-  ): ValidationResult[AudioPlay] =
-    val updated = initial.copy(
-      series = series,
-      seriesSeason = season,
-      seriesNumber = number,
-    )
-    validateState(updated)
+  ) match
+    case Validated.Valid(a)   => a
+    case Validated.Invalid(e) => throw e.head
 
   /** Validates audio play state:
    *    - If season or series number is given, then series ID must be given too.
    *  @param ap audio play.
    *  @return validation result.
    */
-  private def validateState(ap: AudioPlay): ValidationResult[AudioPlay] =
+  private def validateState(
+      ap: AudioPlay,
+  ): ValidationResult[AudioPlay] =
     val seriesAlright =
       ap.series.isDefined || (ap.seriesSeason.isEmpty && ap.seriesNumber.isEmpty)
     Validated.cond(seriesAlright, ap, NonEmptyChain.one(SeriesIsMissing))

@@ -9,7 +9,15 @@ opaque type ImageUrl <: URL = URL
 
 object ImageUrl:
   /** Returns [[ImageUrl]] if argument is valid. Only allows `https` URLs.
-   *  @param value title.
+   *  @param url title.
    */
-  def apply(value: URL): Option[ImageUrl] =
-    Option.when(value.getProtocol == "https")(value)
+  def apply(url: URL): Option[ImageUrl] =
+    Option.when(url.getProtocol == "https")(url)
+
+  /** Unsafe constructor to use inside always-valid boundary.
+   *  @param url image URL.
+   *  @throws IllegalArgumentException if given params are invalid.
+   */
+  def unsafe(url: URL): ImageUrl = ImageUrl(url) match
+    case Some(value) => value
+    case None        => throw new IllegalArgumentException()

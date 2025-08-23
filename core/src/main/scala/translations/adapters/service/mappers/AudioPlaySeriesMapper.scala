@@ -2,7 +2,7 @@ package org.aulune
 package translations.adapters.service.mappers
 
 
-import translations.application.dto.AudioPlaySeriesResponse
+import translations.application.dto.audioplay.AudioPlaySeriesResponse
 import translations.domain.model.audioplay.AudioPlaySeries
 
 
@@ -20,4 +20,3 @@ private[service] object AudioPlaySeriesMapper:
    */
   def toResponse(domain: AudioPlaySeries): AudioPlaySeriesResponse =
     AudioPlaySeriesResponse(id = domain.id, name = domain.name)
-  

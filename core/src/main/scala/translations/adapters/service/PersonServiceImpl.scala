@@ -69,7 +69,7 @@ final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
         }
         updated <- updatedOpt match
           case Some(person) => person.pure
-          case None => NotFound.raiseError[F, Person]
+          case None         => NotFound.raiseError[F, Person]
         response = updated.toResponse
       yield response).attempt.map(_.leftMap(toApplicationError))
     }

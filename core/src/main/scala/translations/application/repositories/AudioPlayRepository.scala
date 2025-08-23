@@ -32,7 +32,6 @@ object AudioPlayRepository:
    */
   final case class AudioPlayToken(identity: Uuid[AudioPlay])
 
-  // TODO: Make better
   given TokenDecoder[AudioPlayToken] = token =>
     Try {
       val rawId = new String(Base64.getUrlDecoder.decode(token), "UTF-8")

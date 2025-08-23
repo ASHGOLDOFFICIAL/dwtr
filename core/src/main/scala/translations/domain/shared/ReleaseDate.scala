@@ -9,7 +9,15 @@ opaque type ReleaseDate <: LocalDate = LocalDate
 
 object ReleaseDate:
   /** Returns [[ReleaseDate]] from [[LocalDate]].
-   *  @param value release date as [[LocalDate]].
+   *  @param date release date as [[LocalDate]].
    *  @return validation result.
    */
-  def apply(value: LocalDate): Option[ReleaseDate] = Some(value)
+  def apply(date: LocalDate): Option[ReleaseDate] = Some(date)
+
+  /** Unsafe constructor to use inside always-valid boundary.
+   *  @param date release date.
+   *  @throws IllegalArgumentException if given params are invalid.
+   */
+  def unsafe(date: LocalDate): ReleaseDate = ReleaseDate(date) match
+    case Some(value) => value
+    case None        => throw new IllegalArgumentException()

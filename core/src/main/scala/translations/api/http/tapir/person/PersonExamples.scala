@@ -1,6 +1,7 @@
 package org.aulune
 package translations.api.http.tapir.person
 
+
 import translations.application.dto.ExternalResourceTypeDto.{Private, Purchase}
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 
@@ -11,7 +12,7 @@ import java.util.UUID
 object PersonExamples:
   private val idExample =
     UUID.fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b")
-  private val nameExample = "Samuel Barnett"
+  private val nameExample = "David Llewellyn"
 
   val personRequestExample: PersonRequest = PersonRequest(
     name = nameExample,

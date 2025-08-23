@@ -1,7 +1,7 @@
 package org.aulune
 package translations.domain.model.audioplay
 
-import translations.domain.shared.Person
+import translations.domain.model.person.Person
 
 
 /** Cast member representation.

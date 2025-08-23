@@ -5,12 +5,8 @@ package translations.adapters.jdbc.postgres
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
 import shared.errors.RepositoryError
 import shared.errors.RepositoryError.*
+import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
-import translations.application.repositories.{
-  AudioPlayMetadata,
-  AudioPlayMetadataRepository,
-  AudioPlayRepository,
-}
 import translations.domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -35,37 +31,30 @@ import org.scalatest.matchers.should.Matchers
 
 import java.net.URI
 import java.time.LocalDate
-import java.util.UUID
 
 
-/** Tests for [[AudioPlayMetadataRepositoryImpl]]. */
-final class AudioPlayMetadataRepositoryImplTest
+/** Tests for [[AudioPlayRepositoryImpl]]. */
+final class AudioPlayRepositoryImplTest
     extends AsyncFreeSpec
     with AsyncIOSpec
     with Matchers
     with PostgresTestContainer:
-  private def stand = makeStand(AudioPlayMetadataRepositoryImpl.build[IO])
+  private def stand = makeStand(AudioPlayRepositoryImpl.build[IO])
 
-  /* All value objects are constructed using unsafe Option `get` method.
-  It's intentional to always keep tests up-to-date with changes in model. */
-  private def makeUuid[A](uuid: String): Uuid[A] =
-    Uuid[A](UUID.fromString(uuid))
-  private def makeTitle(str: String): AudioPlayTitle = AudioPlayTitle(str).get
-  private def makeSynopsis(str: String): Synopsis = Synopsis(str).get
   private def makeReleaseDate(year: Int, month: Int, day: Int): ReleaseDate =
-    ReleaseDate(LocalDate.of(year, month, day)).get
+    ReleaseDate.unsafe(LocalDate.of(year, month, day))
   private def makeSeries(uuid: String, name: String): Option[AudioPlaySeries] =
     Some(
-      AudioPlaySeries(
-        id = makeUuid(uuid),
-        name = AudioPlaySeriesName(name).get,
-      ).get)
+      AudioPlaySeries.unsafe(
+        id = Uuid.unsafe(uuid),
+        name = AudioPlaySeriesName.unsafe(name),
+      ))
   private def makeSeason(int: Int): Option[AudioPlaySeason] =
-    Some(AudioPlaySeason(int).get)
+    Some(AudioPlaySeason.unsafe(int))
   private def makeSeriesNumber(int: Int): Option[AudioPlaySeriesNumber] =
-    Some(AudioPlaySeriesNumber(int).get)
+    Some(AudioPlaySeriesNumber.unsafe(int))
   private def makeCoverUrl(url: String): Option[ImageUrl] =
-    Some(ImageUrl(URI.create(url).toURL).get)
+    Some(ImageUrl.unsafe(URI.create(url).toURL))
 
   private val resources = List(
     ExternalResource(Purchase, URI.create("https://test.org/1").toURL),
@@ -75,10 +64,19 @@ final class AudioPlayMetadataRepositoryImplTest
     ExternalResource(Private, URI.create("https://test.org/3").toURL),
   )
 
-  private val audioPlayTest = AudioPlayMetadata(
-    id = makeUuid("3f8a202e-609d-49b2-a643-907b341cea66"),
-    title = makeTitle("Title"),
-    synopsis = makeSynopsis("Synopsis"),
+  private val audioPlayTest = AudioPlay.unsafe(
+    id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea66"),
+    title = AudioPlayTitle.unsafe("Title"),
+    synopsis = Synopsis.unsafe("Synopsis"),
+    writers = List(
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950481"),
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950482"),
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950483"),
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950484"),
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950485"),
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950486"),
+      Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950487"),
+    ),
     releaseDate = makeReleaseDate(2000, 10, 10),
     series = makeSeries("1e0a7f74-8143-4477-ae0f-33547de9c53f", "Series"),
     seriesSeason = makeSeason(1),
@@ -87,12 +85,16 @@ final class AudioPlayMetadataRepositoryImplTest
     externalResources = resources,
   )
 
-  private val updatedAudioPlayTest = audioPlayTest.copy(
-    title = makeTitle("Updated"),
-    coverUrl = makeCoverUrl("https://cdn.test.org/1"),
-    externalResources =
-      List(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
-  )
+  private val updatedAudioPlayTest = audioPlayTest
+    .update(
+      title = AudioPlayTitle.unsafe("Updated"),
+      writers = List(Uuid.unsafe("c5c1f3b9-175c-4fa2-800d-c9c20cb44539")),
+      coverUrl = makeCoverUrl("https://cdn.test.org/1"),
+      externalResources =
+        List(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
+    )
+    .toOption
+    .get
 
   "contains method " - {
     "should " - {
@@ -112,7 +114,7 @@ final class AudioPlayMetadataRepositoryImplTest
 
   "get method " - {
     "should " - {
-      "retrieve audio plays with resources" in stand { repo =>
+      "retrieve audio plays with writers and resources" in stand { repo =>
         for
           _ <- repo.persist(audioPlayTest)
           audio <- repo.get(audioPlayTest.id)
@@ -120,22 +122,30 @@ final class AudioPlayMetadataRepositoryImplTest
       }
 
       "retrieve audio plays without resources" in stand { repo =>
-        val without = audioPlayTest.copy(externalResources = Nil)
+        val without = audioPlayTest.update(externalResources = Nil).toOption.get
         for
           _ <- repo.persist(without)
           audio <- repo.get(without.id)
         yield audio shouldBe Some(without)
+      }
+
+      "retrieve audio plays without writers" in stand { repo =>
+        val without = audioPlayTest.update(writers = Nil).toOption.get
+        for
+          _ <- repo.persist(without)
+          audio <- repo.get(without.id)
+        yield audio shouldBe Some(without)
+      }
+
+      "return `None` for non-existent audio play" in stand { repo =>
+        for audio <- repo.get(audioPlayTest.id)
+        yield audio shouldBe None
       }
     }
   }
 
   "persist method " - {
     "should " - {
-      "return `None` for non-existent audio play" in stand { repo =>
-        for audio <- repo.get(audioPlayTest.id)
-        yield audio shouldBe None
-      }
-
       "throw error if an audio play exists" in stand { repo =>
         for
           _ <- repo.persist(audioPlayTest)
@@ -189,11 +199,12 @@ final class AudioPlayMetadataRepositoryImplTest
   }
 
   private val audioPlayTests = List(
-    AudioPlayMetadata(
-      id = makeUuid("0198d217-2e95-7b94-80a7-a762589de506"),
-      title = makeTitle("Audio Play 1"),
-      synopsis = makeSynopsis("Synopsis 1"),
+    AudioPlay.unsafe(
+      id = Uuid.unsafe("0198d217-2e95-7b94-80a7-a762589de506"),
+      title = AudioPlayTitle.unsafe("Audio Play 1"),
+      synopsis = Synopsis.unsafe("Synopsis 1"),
       releaseDate = makeReleaseDate(1999, 10, 3),
+      writers = Nil,
       series = makeSeries("e810039b-c44c-405f-a360-e44fadc43ead", "Series"),
       seriesSeason = None,
       seriesNumber = makeSeriesNumber(2),
@@ -201,11 +212,12 @@ final class AudioPlayMetadataRepositoryImplTest
       externalResources = List(
         ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
     ),
-    AudioPlayMetadata(
-      id = makeUuid("0198d217-859b-71b7-947c-dd2548d7f8f4"),
-      title = makeTitle("Audio Play 2"),
-      synopsis = makeSynopsis("Synopsis 2"),
+    AudioPlay.unsafe(
+      id = Uuid.unsafe("0198d217-859b-71b7-947c-dd2548d7f8f4"),
+      title = AudioPlayTitle.unsafe("Audio Play 2"),
+      synopsis = Synopsis.unsafe("Synopsis 2"),
       releaseDate = makeReleaseDate(2024, 3, 15),
+      writers = Nil,
       series = None,
       seriesSeason = None,
       seriesNumber = None,
@@ -213,11 +225,12 @@ final class AudioPlayMetadataRepositoryImplTest
       externalResources = List(
         ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
     ),
-    AudioPlayMetadata(
-      id = makeUuid("0198d217-b41c-7e8d-95c8-ed78fd168d0d"),
-      title = makeTitle("Audio Play 3"),
-      synopsis = makeSynopsis("Synopsis 3"),
+    AudioPlay.unsafe(
+      id = Uuid.unsafe("0198d217-b41c-7e8d-95c8-ed78fd168d0d"),
+      title = AudioPlayTitle.unsafe("Audio Play 3"),
+      synopsis = Synopsis.unsafe("Synopsis 3"),
       releaseDate = makeReleaseDate(2007, 7, 8),
+      writers = List(Uuid.unsafe("8b78e607-7afe-434c-a426-63a4512f3bf5")),
       series = None,
       seriesSeason = None,
       seriesNumber = None,
@@ -226,7 +239,7 @@ final class AudioPlayMetadataRepositoryImplTest
         ExternalResource(Streaming, URI.create("https://audio.com/3").toURL)),
     ),
   )
-  private def persistAudios(repo: AudioPlayMetadataRepository[IO]) =
+  private def persistAudios(repo: AudioPlayRepository[IO]) =
     audioPlayTests.foldLeft(IO.unit) { (io, audio) =>
       io >> repo.persist(audio).void
     }
@@ -259,8 +272,8 @@ final class AudioPlayMetadataRepositoryImplTest
   "getSeries method " - {
     "should " - {
       "return None if series doesn't exist" in stand { repo =>
-        val nonExistent =
-          makeUuid[AudioPlaySeries]("7efa6d44-ffd6-4668-94a2-7650821cd9f9")
+        val nonExistent = Uuid
+          .unsafe[AudioPlaySeries]("7efa6d44-ffd6-4668-94a2-7650821cd9f9")
         for result <- repo.getSeries(nonExistent)
         yield result shouldBe None
       }
@@ -269,10 +282,10 @@ final class AudioPlayMetadataRepositoryImplTest
         val series =
           makeSeries("1bf2deb3-2915-4673-a7da-976343776f1d", "New Series")
         for
-          _ <- repo.persist(audioPlayTest.copy(series = series))
+          _ <- repo.persist(audioPlayTest.update(series = series).toOption.get)
           result <- repo.getSeries(series.get.id)
         yield result shouldBe series
       }
     }
   }
-end AudioPlayMetadataRepositoryImplTest
+end AudioPlayRepositoryImplTest

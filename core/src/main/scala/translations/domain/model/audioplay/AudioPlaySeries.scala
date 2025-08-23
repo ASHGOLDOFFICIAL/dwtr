@@ -1,10 +1,7 @@
 package org.aulune
 package translations.domain.model.audioplay
 
-
 import translations.domain.shared.Uuid
-
-import java.util.UUID
 
 
 /** Audio play series representation.
@@ -23,17 +20,19 @@ object AudioPlaySeries:
    *  @param name series name.
    *  @return audio play series validation result.
    */
-  def apply(id: UUID, name: String): Option[AudioPlaySeries] =
-    val uuid = Uuid[AudioPlaySeries](id)
-    AudioPlaySeriesName(name).map {
-      AudioPlaySeries(uuid, _)
-    }
+  def apply(
+      id: Uuid[AudioPlaySeries],
+      name: AudioPlaySeriesName,
+  ): Option[AudioPlaySeries] = Some(new AudioPlaySeries(id, name))
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param id series ID.
    *  @param name series name.
+   *  @throws IllegalArgumentException if given params are invalid.
    */
   def unsafe(
       id: Uuid[AudioPlaySeries],
       name: AudioPlaySeriesName,
-  ): AudioPlaySeries = AudioPlaySeries(id, name)
+  ): AudioPlaySeries = AudioPlaySeries(id, name) match
+    case Some(value) => value
+    case None        => throw new IllegalArgumentException()

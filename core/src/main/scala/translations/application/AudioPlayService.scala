@@ -1,13 +1,14 @@
 package org.aulune
 package translations.application
 
+
+import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
+  ListAudioPlaysResponse,
 }
-import org.aulune.auth.application.dto.AuthenticatedUser
 
 import java.util.UUID
 
@@ -17,8 +18,8 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait AudioPlayService[F[_]]:
-  /** Find audio play by given identity.
-   *
+  /** Find audio play by given identity. If none exists, returns
+   *  `Left(NotFound)`.
    *  @param user user who performs this action (optional).
    *  @param id audio play identity.
    *  @return requested audio play if found.
@@ -26,7 +27,7 @@ trait AudioPlayService[F[_]]:
   def findById(
       user: Option[AuthenticatedUser],
       id: UUID,
-  ): F[Option[AudioPlayResponse]]
+  ): F[Either[ApplicationServiceError, AudioPlayResponse]]
 
   /** Get all audio plays.
    *
@@ -40,7 +41,7 @@ trait AudioPlayService[F[_]]:
       user: Option[AuthenticatedUser],
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, AudioPlayListResponse]]
+  ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]]
 
   /** Create new audio play.
    *
@@ -51,20 +52,6 @@ trait AudioPlayService[F[_]]:
    */
   def create(
       user: AuthenticatedUser,
-      ac: AudioPlayRequest,
-  ): F[Either[ApplicationServiceError, AudioPlayResponse]]
-
-  /** Updates existing audio play.
-   *
-   *  @param user user who performs this action.
-   *  @param id audio play id.
-   *  @param ac new state.
-   *  @return updated audio play if success, otherwise error.
-   *  @note user must have [[AudioPlayPermission.Write]] permission.
-   */
-  def update(
-      user: AuthenticatedUser,
-      id: UUID,
       ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]]
 

@@ -8,11 +8,13 @@ import translations.api.mappers.{
   ExternalResourceTypeMapper,
   LanguageMapper,
 }
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
   AudioPlaySeriesResponse,
+  ListAudioPlaysResponse,
+}
+import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
@@ -61,8 +63,8 @@ given Decoder[AudioPlayRequest] = deriveConfiguredDecoder
 given Encoder[AudioPlayResponse] = deriveConfiguredEncoder
 given Decoder[AudioPlayResponse] = deriveConfiguredDecoder
 
-given Encoder[AudioPlayListResponse] = deriveConfiguredEncoder
-given Decoder[AudioPlayListResponse] = deriveConfiguredDecoder
+given Encoder[ListAudioPlaysResponse] = deriveConfiguredEncoder
+given Decoder[ListAudioPlaysResponse] = deriveConfiguredDecoder
 
 
 given Encoder[LanguageDto] =

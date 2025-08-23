@@ -1,6 +1,9 @@
 package org.aulune
-package translations.application.dto
+package translations.application.dto.audioplay
 
+
+import translations.application.dto.ExternalResourceDto
+import translations.application.dto.person.PersonResponse
 
 import java.net.URL
 import java.time.LocalDate
@@ -12,6 +15,7 @@ import java.util.UUID
  *  @param title audio play title.
  *  @param synopsis brief description.
  *  @param releaseDate release date of this audio play.
+ *  @param writers writers of this audio play.
  *  @param series audio play series.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play number in series.
@@ -23,6 +27,7 @@ final case class AudioPlayResponse(
     title: String,
     synopsis: String,
     releaseDate: LocalDate,
+    writers: List[UUID],
     series: Option[AudioPlaySeriesResponse],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],

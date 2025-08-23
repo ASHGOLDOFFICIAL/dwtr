@@ -76,8 +76,11 @@ object App extends IOApp.Simple:
         transAuth)
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
-      audioServ =
-        new AudioPlayServiceImpl[F](config.app.pagination, audioRepo, audioAuth)
+      audioServ = new AudioPlayServiceImpl[F](
+        config.app.pagination,
+        audioRepo,
+        personSev,
+        audioAuth)
 
       audioEndpoints = new AudioPlaysController[F](
         config.app.pagination,
