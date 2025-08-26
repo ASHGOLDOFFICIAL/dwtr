@@ -1,0 +1,58 @@
+name: Project Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+  style-check:
+    name: Check code style
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          check-latest: true
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+
+      - name: Coursier cache
+        uses: coursier/cache-action@v6
+
+      - name: Run scalafmtCheck
+        run: sbt scalafmtCheckAll scalafmtSbtCheck
+
+  build:
+    name: Compile and run tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          check-latest: true
+          cache: sbt
+      - uses: sbt/setup-sbt@v1
+
+      - name: Coursier cache
+        uses: coursier/cache-action@v6
+
+      - name: Compile
+        run: sbt "project core" clean compile "project integration" clean compile
+
+      - name: Test
+        run: sbt "project core" test
+
+      - name: Integration tests
+        run: sbt "project integration" test
