@@ -3,7 +3,7 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import auth.domain.model.Group.Admin
+import .Admin
 import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.model.Uuid
 import translations.application.dto.person.{PersonRequest, PersonResponse}

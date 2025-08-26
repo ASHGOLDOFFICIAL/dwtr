@@ -21,7 +21,6 @@ final case class User private (
     username: Username,
     hashedPassword: Option[String],
     googleId: Option[String],
-    groups: Set[Group] = Set.empty,
 )
 
 
