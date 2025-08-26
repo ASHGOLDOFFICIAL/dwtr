@@ -4,8 +4,8 @@ package translations.adapters.jdbc.postgres
 
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
 import shared.errors.RepositoryError.{AlreadyExists, NothingToUpdate}
+import shared.model.Uuid
 import translations.domain.model.person.{FullName, Person}
-import translations.domain.shared.Uuid
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec

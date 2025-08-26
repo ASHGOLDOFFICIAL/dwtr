@@ -5,6 +5,7 @@ package translations.adapters.jdbc.postgres
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
 import shared.errors.RepositoryError
 import shared.errors.RepositoryError.*
+import shared.model.Uuid
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.{
@@ -23,7 +24,6 @@ import translations.domain.shared.{
   ImageUrl,
   ReleaseDate,
   Synopsis,
-  Uuid,
 }
 
 import cats.effect.IO

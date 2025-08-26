@@ -1,12 +1,12 @@
 package org.aulune
-package translations.domain.shared
+package shared.model
 
 
 import java.util.UUID
 import scala.util.Try
 
 
-/** UUID for given [[A]].
+/** UUID for given [[A]]. Use for type safety.
  *  @tparam A type of object this UUID identifies.
  */
 opaque type Uuid[A] <: UUID = UUID

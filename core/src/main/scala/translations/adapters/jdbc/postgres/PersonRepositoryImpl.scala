@@ -4,11 +4,11 @@ package translations.adapters.jdbc.postgres
 
 import shared.errors.RepositoryError
 import shared.errors.RepositoryError.{AlreadyExists, NothingToUpdate}
+import shared.model.Uuid
 import translations.adapters.jdbc.postgres.metas.PersonMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.PersonRepository
 import translations.domain.model.person.{FullName, Person}
-import translations.domain.shared.Uuid
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow

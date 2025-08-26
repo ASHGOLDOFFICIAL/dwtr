@@ -2,6 +2,7 @@ package org.aulune
 package translations.adapters.jdbc.postgres.metas
 
 
+import shared.model.Uuid
 import translations.adapters.jdbc.postgres.metas.SharedMetas.jsonbMeta
 import translations.domain.model.audioplay.{
   ActorRole,
@@ -13,7 +14,7 @@ import translations.domain.model.audioplay.{
   CastMember,
 }
 import translations.domain.model.person.Person
-import translations.domain.shared.{ExternalResource, ExternalResourceType, Uuid}
+import translations.domain.shared.{ExternalResource, ExternalResourceType}
 
 import doobie.Meta
 import io.circe.generic.extras.Configuration

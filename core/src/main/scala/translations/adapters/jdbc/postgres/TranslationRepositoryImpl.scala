@@ -4,6 +4,7 @@ package translations.adapters.jdbc.postgres
 
 import shared.adapters.doobie.*
 import shared.errors.RepositoryError
+import shared.model.Uuid
 import translations.adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.TranslationRepository
@@ -12,7 +13,6 @@ import translations.application.repositories.TranslationRepository.{
   AudioPlayTranslationToken,
 }
 import translations.domain.model.audioplay.AudioPlayTranslation
-import translations.domain.shared.Uuid
 
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow

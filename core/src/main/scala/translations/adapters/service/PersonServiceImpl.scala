@@ -5,6 +5,7 @@ package translations.adapters.service
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
+import shared.model.Uuid
 import shared.repositories.transformFP
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
@@ -14,7 +15,6 @@ import translations.application.repositories.PersonRepository
 import translations.application.{AudioPlayPermission, PersonService}
 import translations.domain.errors.PersonValidationError
 import translations.domain.model.person.{FullName, Person}
-import translations.domain.shared.Uuid
 
 import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}

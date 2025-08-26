@@ -6,6 +6,7 @@ import auth.application.dto.AuthenticatedUser
 import shared.UUIDv7Gen.uuidv7Instance
 import shared.errors.ApplicationServiceError.BadRequest
 import shared.errors.{ApplicationServiceError, toApplicationError}
+import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformF
 import shared.service.AuthorizationService
@@ -32,7 +33,6 @@ import translations.application.{
 }
 import translations.domain.errors.TranslationValidationError
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
-import translations.domain.shared.Uuid
 
 import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}

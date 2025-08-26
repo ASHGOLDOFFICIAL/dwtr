@@ -5,6 +5,7 @@ package translations.adapters.service
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
+import shared.model.Uuid
 import shared.pagination.PaginationParams
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
@@ -28,7 +29,6 @@ import translations.application.{
   PersonService,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
-import translations.domain.shared.Uuid
 
 import cats.MonadThrow
 import cats.data.Validated

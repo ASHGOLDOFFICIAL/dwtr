@@ -2,7 +2,8 @@ package org.aulune
 package translations.adapters.jdbc.postgres.metas
 
 
-import translations.domain.shared.{ImageUrl, ReleaseDate, Synopsis, Uuid}
+import shared.model.Uuid
+import translations.domain.shared.{ImageUrl, ReleaseDate, Synopsis}
 
 import cats.Show
 import cats.syntax.all.given

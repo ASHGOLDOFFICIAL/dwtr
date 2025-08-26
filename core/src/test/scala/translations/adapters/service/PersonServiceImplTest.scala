@@ -5,10 +5,10 @@ package translations.adapters.service
 import auth.application.dto.AuthenticatedUser
 import auth.domain.model.Group.Admin
 import shared.errors.{ApplicationServiceError, RepositoryError}
+import shared.model.Uuid
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
 import translations.domain.model.person.{FullName, Person}
-import translations.domain.shared.Uuid
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
