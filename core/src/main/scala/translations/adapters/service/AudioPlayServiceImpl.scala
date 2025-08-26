@@ -10,7 +10,7 @@ import shared.pagination.PaginationParams
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.AudioPlayPermission.Modify
+import translations.application.TranslationPermission.Modify
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -24,9 +24,9 @@ import translations.application.repositories.AudioPlayRepository.{
   given,
 }
 import translations.application.{
-  AudioPlayPermission,
   AudioPlayService,
   PersonService,
+  TranslationPermission,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 

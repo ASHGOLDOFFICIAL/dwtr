@@ -9,10 +9,10 @@ import shared.model.Uuid
 import shared.repositories.transformFP
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
-import translations.application.AudioPlayPermission.*
+import translations.application.TranslationPermission.*
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
-import translations.application.{AudioPlayPermission, PersonService}
+import translations.application.{PersonService, TranslationPermission}
 import translations.domain.errors.PersonValidationError
 import translations.domain.model.person.{FullName, Person}
 

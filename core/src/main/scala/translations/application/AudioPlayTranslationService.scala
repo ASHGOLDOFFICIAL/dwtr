@@ -4,7 +4,7 @@ package translations.application
 
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
-import translations.application.AudioPlayPermission.*
+import translations.application.TranslationPermission.*
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,

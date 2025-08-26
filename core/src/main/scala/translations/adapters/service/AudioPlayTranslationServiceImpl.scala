@@ -15,8 +15,8 @@ import translations.adapters.service.mappers.{
   AudioPlayTranslationTypeMapper,
   LanguageMapper,
 }
-import translations.application.AudioPlayPermission.*
 import translations.application.AudioPlayTranslationService
+import translations.application.TranslationPermission.*
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,

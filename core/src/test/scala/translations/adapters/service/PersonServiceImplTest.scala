@@ -6,7 +6,7 @@ import auth.application.dto.AuthenticatedUser
 import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.model.Uuid
 import shared.service.permission.PermissionClientService
-import translations.application.AudioPlayPermission.Modify
+import translations.application.TranslationPermission.Modify
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
 import translations.domain.model.person.{FullName, Person}
