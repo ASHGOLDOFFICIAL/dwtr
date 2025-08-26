@@ -13,6 +13,7 @@ import translations.application.AudioPlayPermission.Write
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
+  CastMemberDto,
   ListAudioPlaysResponse,
 }
 import translations.application.dto.person.PersonResponse
@@ -27,7 +28,6 @@ import translations.application.{
   PersonService,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
-import translations.domain.model.person.Person
 import translations.domain.shared.Uuid
 
 import cats.MonadThrow
@@ -78,7 +78,8 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
         series <- getSeriesOrThrow(seriesId)
-        writers <- checkPersonsExistence(request.writers)
+        _ <- checkWritersExistence(request.writers)
+        _ <- checkCastExistence(request.cast)
         id <- UUIDGen.randomUUID[F]
         audio <- AudioPlayMapper
           .fromRequest(request, id, series)
@@ -98,16 +99,26 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       yield result.leftMap(toApplicationError)
     }
 
-  /** Returns UUIDs of [[Person]]s. If person with one of the given IDs don't
-   *  exist, [[NotFound]] will be thrown.
+  /** Throws [[NotFound]] if person with one of the given IDs don't exist.
    *  @param uuids persons UUIDs.
    */
-  private def checkPersonsExistence(uuids: List[UUID]): F[List[Uuid[Person]]] =
-    uuids.traverse { id =>
+  private def checkWritersExistence(uuids: List[UUID]): F[Unit] =
+    uuids.traverseVoid { id =>
       for
         writerOpt <- personService.findById(id)
         _ <- MonadThrow[F].fromOption(writerOpt, NotFound)
-      yield Uuid[Person](id)
+      yield ()
+    }
+
+  /** Throws [[NotFound]] if at least one of the cast members don't exist.
+   *  @param uuids cast UUIDs.
+   */
+  private def checkCastExistence(uuids: List[CastMemberDto]): F[Unit] =
+    uuids.traverseVoid { castMember =>
+      for
+        actorOpt <- personService.findById(castMember.actor)
+        _ <- MonadThrow[F].fromOption(actorOpt, NotFound)
+      yield ()
     }
 
   /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
