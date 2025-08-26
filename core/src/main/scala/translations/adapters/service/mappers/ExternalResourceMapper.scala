@@ -4,7 +4,7 @@ package translations.adapters.service.mappers
 
 import translations.application.dto.{
   ExternalResourceDto,
-  ExternalResourceTypeDto
+  ExternalResourceTypeDto,
 }
 import translations.domain.shared.{ExternalResource, ExternalResourceType}
 

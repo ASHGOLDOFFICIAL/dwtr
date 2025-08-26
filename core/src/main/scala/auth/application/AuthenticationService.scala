@@ -2,7 +2,11 @@ package org.aulune
 package auth.application
 
 
-import auth.application.dto.{AuthenticatedUser, AuthenticationRequest, AuthenticationResponse}
+import auth.application.dto.{
+  AuthenticatedUser,
+  AuthenticationRequest,
+  AuthenticationResponse,
+}
 
 
 /** Service managing user authentication.

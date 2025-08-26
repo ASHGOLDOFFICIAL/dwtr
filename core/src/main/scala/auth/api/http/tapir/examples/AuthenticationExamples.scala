@@ -4,7 +4,7 @@ package auth.api.http.tapir.examples
 
 import auth.application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
-  OAuth2AuthenticationRequest
+  OAuth2AuthenticationRequest,
 }
 import auth.application.dto.OAuth2Provider.Google
 import auth.application.dto.{AuthenticationRequest, AuthenticationResponse}
@@ -45,5 +45,5 @@ object AuthenticationExamples:
       "FXLb53Syf8jrOhbdiPQaqQObuH-FUtAypTEJPmmChZo",
     idToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
       "eyJpc3MiOiJodHRwczovL2V4YW1wbGUub3JnIiwic3ViIjoiMTIzNCIsImF1ZCI6Imh0dHBzOi8vZXhhbXBsZS5vcmciLCJleHAiOjEwMDAwNjAsImlhdCI6MTAwMDAwMCwidXNlcm5hbWUiOiJhZG1pbiJ9." +
-      "i1a7tAK9chVZLUZ-KIb9P-lO1ff7o_ATR7jhzSypZfk"
+      "i1a7tAK9chVZLUZ-KIb9P-lO1ff7o_ATR7jhzSypZfk",
   )

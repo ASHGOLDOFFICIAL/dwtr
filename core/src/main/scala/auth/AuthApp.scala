@@ -4,7 +4,14 @@ package auth
 
 import auth.adapters.jdbc.postgres.UserRepositoryImpl
 import auth.adapters.service.oauth2.GoogleOAuth2CodeExchangeService
-import auth.adapters.service.{Argon2iPasswordHashingService, AuthenticationServiceImpl, BasicAuthenticationServiceImpl, JwtTokenService, OAuth2AuthenticationServiceImpl, UserServiceImpl}
+import auth.adapters.service.{
+  Argon2iPasswordHashingService,
+  AuthenticationServiceImpl,
+  BasicAuthenticationServiceImpl,
+  JwtTokenService,
+  OAuth2AuthenticationServiceImpl,
+  UserServiceImpl,
+}
 import auth.api.http.{AuthenticationController, UsersController}
 import auth.domain.model.Group.Admin
 import auth.domain.model.{User, Username}
