@@ -3,28 +3,53 @@ package permissions.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import permissions.application.{PermissionCheckResult, PermissionDto, PermissionRepository, PermissionService}
+import permissions.application.{
+  PermissionCheckResult,
+  PermissionDto,
+  PermissionRepository,
+  PermissionService,
+}
 import permissions.domain.Permission
+import shared.model.Uuid
 
-import cats.Functor
+import cats.Monad
 import cats.syntax.all.given
-import org.aulune.shared.model.Uuid
 
 
-/** [[PermissionService]] implementation.
- *  @param repo [[PermissionRepository]] instance.
- *  @tparam F effect type.
- */
-final class PermissionServiceImpl[F[_]: Functor](repo: PermissionRepository[F])
-    extends PermissionService[F]:
+/** [[PermissionService]] implementation. */
+object PermissionServiceImpl:
+  /** Builds an instance.
+   *  @param adminPermissionName name of admin permission.
+   *  @param repo [[PermissionRepository]] implementation.
+   *  @tparam F effect type.
+   *  @return [[PermissionService]] implementation.
+   *  @note Users with admin permission will be granted any other permission.
+   */
+  def build[F[_]: Monad](
+      adminPermissionName: String,
+      repo: PermissionRepository[F],
+  ): F[PermissionService[F]] =
+    repo.persist(Permission(adminPermissionName)).map { permission =>
+      new PermissionServiceImpl(permission, repo)
+    }
+
+
+private final class PermissionServiceImpl[F[_]: Monad](
+    adminPermission: Permission,
+    repo: PermissionRepository[F],
+) extends PermissionService[F]:
+
   override def checkPermission(
       user: AuthenticatedUser,
       permission: PermissionDto,
   ): F[PermissionCheckResult] =
+    val id = Uuid[AuthenticatedUser](user.id)
     val domainPermission = Permission(name = permission.name)
-    for bool <- repo.contains(
-        user = Uuid[AuthenticatedUser](user.id),
-        permission = domainPermission)
-    yield
-      if bool then PermissionCheckResult.Granted
-      else PermissionCheckResult.Denied
+    repo.contains(user = id, permission = adminPermission).flatMap {
+      case true  => PermissionCheckResult.Granted.pure[F]
+      case false =>
+        repo.contains(user = id, permission = domainPermission).map {
+          case true  => PermissionCheckResult.Granted
+          case false => PermissionCheckResult.Denied
+        }
+    }

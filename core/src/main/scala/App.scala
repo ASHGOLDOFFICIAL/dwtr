@@ -2,7 +2,7 @@ package org.aulune
 
 
 import auth.AuthApp
-import permissions.PermissionsApp
+import permissions.PermissionApp
 import shared.service.auth.AuthenticationClientService
 import shared.service.permission.PermissionClientService
 import translations.adapters.jdbc.postgres.{
@@ -51,7 +51,7 @@ object App extends IOApp.Simple:
   override def run: IO[Unit] =
     for
       authApp <- AuthApp.build(config.auth, transactor)
-      permissionApp <- PermissionsApp.build(transactor)
+      permissionApp <- PermissionApp.build(config.permission, transactor)
       translationsEndpoints <- makeTranslationsEndpoints[IO](
         authApp.clientAuthentication,
         permissionApp.clientPermission,

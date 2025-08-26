@@ -14,21 +14,22 @@ import doobie.Transactor
 /** Permission app with client-side service implementation.
  *  @tparam F effect type.
  */
-trait PermissionsApp[F[_]]:
+trait PermissionApp[F[_]]:
   val clientPermission: PermissionClientService[F]
 
 
-object PermissionsApp:
+object PermissionApp:
   /** Builds permission app. It's used to hide wiring logic.
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
   def build[F[_]: Async](
+      config: PermissionConfig,
       transactor: Transactor[F],
-  ): F[PermissionsApp[F]] =
+  ): F[PermissionApp[F]] =
     for
       repository <- PermissionRepositoryImpl.build(transactor)
-      service = PermissionServiceImpl(repository)
-    yield new PermissionsApp[F]:
+      service <- PermissionServiceImpl.build(config.adminPermission, repository)
+    yield new PermissionApp[F]:
       override val clientPermission: PermissionClientService[F] =
         PermissionClientService.make(service)
