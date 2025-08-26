@@ -53,7 +53,6 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
   given AuthorizationService[F, AudioPlayPermission] = authService
 
   override def findById(
-      user: Option[AuthenticatedUser],
       id: UUID,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] = (for
     audioPlayOpt <- repo.get(Uuid[AudioPlay](id))
@@ -62,7 +61,6 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
   yield response).attempt.map(_.leftMap(toApplicationError))
 
   override def listAll(
-      user: Option[AuthenticatedUser],
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]] =

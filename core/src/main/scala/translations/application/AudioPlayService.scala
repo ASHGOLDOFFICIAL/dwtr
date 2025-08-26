@@ -20,25 +20,19 @@ import java.util.UUID
 trait AudioPlayService[F[_]]:
   /** Find audio play by given identity. If none exists, returns
    *  `Left(NotFound)`.
-   *  @param user user who performs this action (optional).
    *  @param id audio play identity.
    *  @return requested audio play if found.
    */
-  def findById(
-      user: Option[AuthenticatedUser],
-      id: UUID,
-  ): F[Either[ApplicationServiceError, AudioPlayResponse]]
+  def findById(id: UUID): F[Either[ApplicationServiceError, AudioPlayResponse]]
 
   /** Get all audio plays.
    *
-   *  @param user user who performs this action (optional).
    *  @param token token of element to start with. Service will decode it.
    *  @param count number of returned elements.
    *
    *  @return list of all audio plays if success, otherwise error.
    */
   def listAll(
-      user: Option[AuthenticatedUser],
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]]
