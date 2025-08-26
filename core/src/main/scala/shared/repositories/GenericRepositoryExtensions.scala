@@ -2,14 +2,8 @@ package org.aulune
 package shared.repositories
 
 
-import shared.errors.RepositoryError
-import shared.errors.RepositoryError.NothingToUpdate
-
-import cats.data.OptionT
+import cats.Monad
 import cats.syntax.all.*
-import cats.{Applicative, Functor, Monad, Traverse}
-
-import scala.util.control.NoStackTrace
 
 
 extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
@@ -51,7 +45,7 @@ extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
         else repo.update(updated)
       }
     yield result
-  
+
   // TODO: delete it.
   /** Updates element to result of [[f]] if not `None`.
    *

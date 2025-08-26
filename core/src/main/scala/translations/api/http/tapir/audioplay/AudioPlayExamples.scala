@@ -1,8 +1,9 @@
 package org.aulune
 package translations.api.http.tapir.audioplay
 
+
 import translations.application.dto.ExternalResourceDto
-import translations.application.dto.ExternalResourceTypeDto.{Private, Purchase}
+import translations.application.dto.ExternalResourceTypeDto.Purchase
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,

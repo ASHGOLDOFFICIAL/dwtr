@@ -1,10 +1,10 @@
 package org.aulune
 package translations.api.http.tapir.audioplay.translation
 
+
 import translations.api.http.tapir.audioplay.AudioPlayExamples
 import translations.application.dto.AudioPlayTranslationTypeDto.Subtitles
 import translations.application.dto.LanguageDto.Russian
-import translations.application.dto.audioplay.ListAudioPlaysResponse
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
