@@ -13,7 +13,6 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait PersonService[F[_]]:
-  // TODO: change permission types after rewrite.
   /** Find person by given identity.
    *  @param id person identity.
    *  @return requested person if found.
