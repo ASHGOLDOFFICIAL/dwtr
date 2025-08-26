@@ -5,7 +5,7 @@ package auth.adapters.service
 import auth.application.dto.{
   AccessTokenPayload,
   AuthenticatedUser,
-  IdTokenPayload
+  IdTokenPayload,
 }
 import auth.application.{AccessTokenService, IdTokenService}
 import auth.domain.model.{AuthenticationToken, Group, User}

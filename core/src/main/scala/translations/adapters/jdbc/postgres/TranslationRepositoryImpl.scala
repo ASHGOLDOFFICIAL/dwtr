@@ -128,7 +128,8 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .run
     .transact(transactor)
     .flatMap {
-      case 0 => RepositoryError.NothingToUpdate.raiseError[F, AudioPlayTranslation]
+      case 0 =>
+        RepositoryError.NothingToUpdate.raiseError[F, AudioPlayTranslation]
       case _ => elem.pure[F]
     }
 
