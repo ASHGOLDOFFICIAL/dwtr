@@ -3,7 +3,7 @@ package org.aulune
 
 import auth.AuthApp
 import permissions.PermissionsApp
-import shared.auth.AuthenticationService
+import shared.auth.AuthenticationClientService
 import shared.permission.PermissionClientService
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
@@ -63,7 +63,7 @@ object App extends IOApp.Simple:
   private def makeTranslationsEndpoints[F[
       _,
   ]: MonadCancelThrow: Clock: SecureRandom](
-      authServ: AuthenticationService[F],
+      authServ: AuthenticationClientService[F],
       permissionServ: PermissionClientService[F],
       transactor: Transactor[F],
   ): F[List[ServerEndpoint[Any, F]]] =
