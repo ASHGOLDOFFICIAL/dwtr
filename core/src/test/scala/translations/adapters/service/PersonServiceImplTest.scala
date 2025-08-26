@@ -157,7 +157,7 @@ final class PersonServiceImplTest
 
       "return `PermissionDenied` when users without permissions are trying to delete persons" in {
         for result <- service.delete(nonAdmin, person.id)
-          yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
+        yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
       }
     }
   }
