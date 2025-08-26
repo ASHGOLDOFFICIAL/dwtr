@@ -7,27 +7,32 @@ import translations.domain.shared.Uuid
 
 
 /** Cast member representation.
+ *
+ *  Following conditions must be true:
+ *    - roles should be non-empty.
+ *    - roles should not have duplicated.
  *  @param actor ID of actor (cast member) as a person.
  *  @param roles roles this actor performed.
  *  @param main is this cast member considered part of main cast.
- *  @note set is used to indicate that roles must not have duplicates.
  */
 final case class CastMember private (
     actor: Uuid[Person],
-    roles: Set[ActorRole],
+    roles: List[ActorRole],
     main: Boolean,
 )
 
 
 object CastMember:
-  /** Returns [[CastMember]] if arguments are valid.
+  /** Returns [[CastMember]] if arguments are valid, i.e.:
+   *    - roles should be non-empty.
+   *    - roles should not have duplicated.
    *  @param actor ID of actor (cast member) as a person.
    *  @param roles roles this actor performed.
    *  @param main is this cast member considered part of main cast.
    */
   def apply(
       actor: Uuid[Person],
-      roles: Set[ActorRole],
+      roles: List[ActorRole],
       main: Boolean,
   ): Option[CastMember] = Option.when(roles.nonEmpty) {
     new CastMember(actor = actor, roles = roles, main = main)
@@ -41,8 +46,19 @@ object CastMember:
    */
   def unsafe(
       actor: Uuid[Person],
-      roles: Set[ActorRole],
+      roles: List[ActorRole],
       main: Boolean,
   ): CastMember = CastMember(actor = actor, roles = roles, main = main) match
     case Some(value) => value
     case None        => throw new IllegalArgumentException()
+
+  /** Validates cast member state, i.e.:
+   *    - roles should be non-empty.
+   *    - roles should not have duplicated.
+   *  @param member cast member to be validated.
+   *  @return `None` if invalid.
+   */
+  private def validateState(member: CastMember): Option[CastMember] =
+    val roleSet = member.roles.toSet
+    val noDuplicates = roleSet.size == member.roles.size
+    Option.when(member.roles.nonEmpty && noDuplicates)(member)

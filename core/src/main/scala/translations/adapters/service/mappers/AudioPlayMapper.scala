@@ -26,6 +26,10 @@ import cats.syntax.all.given
 import java.util.UUID
 
 
+/** Mapper between external audio plays DTOs and domain's [[AudioPlay]].
+ *  @note Should not be used outside `service` package to not expose domain
+ *    type.
+ */
 private[service] object AudioPlayMapper:
   /** Converts request to domain object and verifies it.
    *  @param request audio play request DTO.
@@ -43,6 +47,7 @@ private[service] object AudioPlayMapper:
     synopsis <- Synopsis(request.synopsis)
     releaseDate <- ReleaseDate(request.releaseDate)
     writers = request.writers.map(Uuid[Person])
+    cast <- request.cast.toList.traverse(CastMemberMapper.toDomain)
     season <- request.seriesSeason.map(AudioPlaySeason.apply)
     number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
     resources = request.externalResources.map(ExternalResourceMapper.toDomain)
@@ -51,7 +56,7 @@ private[service] object AudioPlayMapper:
     title = title,
     synopsis = synopsis,
     writers = writers,
-    cast = Set.empty,
+    cast = cast,
     releaseDate = releaseDate,
     series = series,
     seriesSeason = season,
@@ -68,7 +73,8 @@ private[service] object AudioPlayMapper:
     title = domain.title,
     synopsis = domain.synopsis,
     releaseDate = domain.releaseDate,
-    writers = domain.writers.map(identity),
+    writers = domain.writers,
+    cast = domain.cast.map(CastMemberMapper.fromDomain),
     series = domain.series.map(AudioPlaySeriesMapper.toResponse),
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,

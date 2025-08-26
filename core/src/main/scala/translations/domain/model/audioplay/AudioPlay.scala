@@ -38,13 +38,13 @@ final case class AudioPlay private (
     title: AudioPlayTitle,
     synopsis: Synopsis,
     releaseDate: ReleaseDate,
-    writers: Set[Uuid[Person]],
-    cast: Set[CastMember],
+    writers: List[Uuid[Person]],
+    cast: List[CastMember],
     series: Option[AudioPlaySeries],
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
     coverUrl: Option[ImageUrl],
-    externalResources: Set[ExternalResource],
+    externalResources: List[ExternalResource],
 ):
   /** Copies with validation.
    *  @return new state validation result.
@@ -54,13 +54,13 @@ final case class AudioPlay private (
       title: AudioPlayTitle = title,
       synopsis: Synopsis = synopsis,
       releaseDate: ReleaseDate = releaseDate,
-      writers: Set[Uuid[Person]] = writers,
-      cast: Set[CastMember] = cast,
+      writers: List[Uuid[Person]] = writers,
+      cast: List[CastMember] = cast,
       series: Option[AudioPlaySeries] = series,
       seriesSeason: Option[AudioPlaySeason] = seriesSeason,
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
       coverUrl: Option[ImageUrl] = coverUrl,
-      externalResources: Set[ExternalResource] = externalResources,
+      externalResources: List[ExternalResource] = externalResources,
   ): ValidationResult[AudioPlay] = validateState(
     copy(
       id = id,
@@ -80,7 +80,10 @@ final case class AudioPlay private (
 object AudioPlay:
   private type ValidationResult[A] = ValidatedNec[AudioPlayValidationError, A]
 
-  /** Creates an audio play with state validation.
+  /** Creates an audio play with state validation, i.e.:
+   *    - writers must not have duplicates.
+   *    - cast must not have one person listed more than once.
+   *    - series must be given, if season or series number is given.
    *  @return audio play validation result.
    */
   def apply(
@@ -88,13 +91,13 @@ object AudioPlay:
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      writers: Set[Uuid[Person]],
-      cast: Set[CastMember],
+      writers: List[Uuid[Person]],
+      cast: List[CastMember],
       series: Option[AudioPlaySeries],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
-      externalResources: Set[ExternalResource],
+      externalResources: List[ExternalResource],
   ): ValidationResult[AudioPlay] = validateState(
     new AudioPlay(
       id = id,
@@ -118,13 +121,13 @@ object AudioPlay:
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      writers: Set[Uuid[Person]],
-      cast: Set[CastMember],
+      writers: List[Uuid[Person]],
+      cast: List[CastMember],
       series: Option[AudioPlaySeries],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
-      externalResources: Set[ExternalResource],
+      externalResources: List[ExternalResource],
   ): AudioPlay = apply(
     id = id,
     title = title,
@@ -141,24 +144,32 @@ object AudioPlay:
     case Validated.Valid(a)   => a
     case Validated.Invalid(e) => throw e.head
 
-  /** Validates audio play state:
-   *    - There shouldn't be duplicate cast members.
-   *    - If season or series number is given, then series ID must be given too.
+  /** Validates audio play state.
    *  @param ap audio play.
    *  @return validation result.
    */
   private def validateState(
       ap: AudioPlay,
-  ): ValidationResult[AudioPlay] = validateCast(ap).andThen(validateSeriesInfo)
+  ): ValidationResult[AudioPlay] = validateWriters(ap)
+    .andThen(validateCast)
+    .andThen(validateSeriesInfo)
 
-  /** Validates cast. It shouldn't have duplicate actors.
-   *  @param ap audio play whose cast is being validated.
+  /** Validates writers. There should not be duplicates.
+   *  @param ap audio play whose writers are being checked.
+   *  @return validation result.
+   */
+  private def validateWriters(ap: AudioPlay): ValidationResult[AudioPlay] =
+    val noDuplicates = ap.writers.toSet.size == ap.writers.size
+    Validated.cond(noDuplicates, ap, NonEmptyChain.one(WriterDuplicates))
+
+  /** Validates cast. There should not be duplicate actors.
+   *  @param ap audio play whose cast is being checked.
    *  @return validation result.
    */
   private def validateCast(ap: AudioPlay): ValidationResult[AudioPlay] =
-    val castIds = ap.cast.map(_.actor)
-    val castAlright = castIds.size == ap.cast.size
-    Validated.cond(castAlright, ap, NonEmptyChain.one(DuplicateCastMembers))
+    val actors = ap.cast.map(_.actor).toSet
+    val noDuplicates = actors.size == ap.cast.size
+    Validated.cond(noDuplicates, ap, NonEmptyChain.one(CastMemberDuplicates))
 
   /** Validates series info. It shouldn't have season or series number if series
    *  itself is not given.

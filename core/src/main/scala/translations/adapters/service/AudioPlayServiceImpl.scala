@@ -58,13 +58,6 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] = (for
     audioPlayOpt <- repo.get(Uuid[AudioPlay](id))
     audioPlay <- audioPlayOpt.fold(NotFound.raiseError[F, AudioPlay])(_.pure[F])
-    writersOpt <- audioPlay.writers.toList
-      .traverse(personService.findById)
-      .map(_.toSet)
-    writers = writersOpt.flatMap {
-      case Some(writer) => Set(writer)
-      case None         => Nil // TODO: log
-    }
     response = AudioPlayMapper.toResponse(audioPlay)
   yield response).attempt.map(_.leftMap(toApplicationError))
 
@@ -87,7 +80,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
         series <- getSeriesOrThrow(seriesId)
-        writers <- checkWritersExistence(request.writers)
+        writers <- checkPersonsExistence(request.writers)
         id <- UUIDGen.randomUUID[F]
         audio <- AudioPlayMapper
           .fromRequest(request, id, series)
@@ -107,17 +100,17 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       yield result.leftMap(toApplicationError)
     }
 
-  /** Returns UUIDs of [[Person]]s. If writer with one of the given IDs don't
+  /** Returns UUIDs of [[Person]]s. If person with one of the given IDs don't
    *  exist, [[NotFound]] will be thrown.
    *  @param uuids persons UUIDs.
    */
-  private def checkWritersExistence(uuids: Set[UUID]): F[Set[Uuid[Person]]] =
-    uuids.toList.traverse { id =>
+  private def checkPersonsExistence(uuids: List[UUID]): F[List[Uuid[Person]]] =
+    uuids.traverse { id =>
       for
         writerOpt <- personService.findById(id)
         _ <- MonadThrow[F].fromOption(writerOpt, NotFound)
       yield Uuid[Person](id)
-    }.map(_.toSet)
+    }
 
   /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
    *  audio play series with it.

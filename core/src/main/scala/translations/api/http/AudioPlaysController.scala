@@ -6,13 +6,13 @@ import shared.auth.Authentication.{authOnlyEndpoint, authOptionalEndpoint}
 import shared.auth.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.QueryParams
-import translations.api.http.circe.given
-import translations.api.http.tapir.examples.AudioPlayExamples.{
+import translations.api.http.circe.AudioPlayCodecs.given
+import translations.api.http.tapir.audioplay.AudioPlayExamples.{
   listResponseExample,
   requestExample,
   responseExample,
 }
-import translations.api.http.tapir.schemas.AudioPlaySchemas.given
+import translations.api.http.tapir.audioplay.AudioPlaySchemas.given
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -21,11 +21,11 @@ import translations.application.dto.audioplay.{
 import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
 import cats.Applicative
-import cats.syntax.all.*
+import cats.syntax.all.given
 import sttp.model.StatusCode
-import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
+import sttp.tapir.{path, statusCode, stringToPath}
 
 import java.util.UUID
 

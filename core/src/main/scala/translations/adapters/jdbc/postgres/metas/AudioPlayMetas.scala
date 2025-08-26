@@ -58,16 +58,16 @@ private[postgres] object AudioPlayMetas:
 
   given castMemberMeta: Meta[CastMember] = jsonbMeta.imap(json =>
     json.as[CastMember].fold(throw _, identity))(_.asJson)
-  given castMembersMeta: Meta[Set[CastMember]] = jsonbMeta.imap(json =>
-    json.as[Set[CastMember]].fold(throw _, identity))(_.asJson)
+  given castMembersMeta: Meta[List[CastMember]] = jsonbMeta.imap(json =>
+    json.as[List[CastMember]].fold(throw _, identity))(_.asJson)
 
   given externalResourceMeta: Meta[ExternalResource] = jsonbMeta.imap(json =>
     json.as[ExternalResource].fold(throw _, identity))(_.asJson)
-  given externalResourcesMeta: Meta[Set[ExternalResource]] = jsonbMeta.imap(
-    json => json.as[Set[ExternalResource]].fold(throw _, identity))(_.asJson)
+  given externalResourcesMeta: Meta[List[ExternalResource]] = jsonbMeta.imap(
+    json => json.as[List[ExternalResource]].fold(throw _, identity))(_.asJson)
 
-  given writersMeta: Meta[Set[Uuid[Person]]] = jsonbMeta.imap(json =>
-    json.as[Set[Uuid[Person]]].fold(throw _, identity))(_.asJson)
+  given writersMeta: Meta[List[Uuid[Person]]] = jsonbMeta.imap(json =>
+    json.as[List[Uuid[Person]]].fold(throw _, identity))(_.asJson)
 
   private given Configuration = Configuration.default.withSnakeCaseMemberNames
   private given [A]: Decoder[Uuid[A]] = Decoder.decodeUUID.map(Uuid[A])

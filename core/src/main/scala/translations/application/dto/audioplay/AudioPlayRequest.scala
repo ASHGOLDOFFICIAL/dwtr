@@ -23,9 +23,10 @@ final case class AudioPlayRequest(
     title: String,
     synopsis: String,
     releaseDate: LocalDate,
-    writers: Set[UUID],
+    writers: List[UUID],
+    cast: List[CastMemberDto],
     seriesId: Option[UUID],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
-    externalResources: Set[ExternalResourceDto],
+    externalResources: List[ExternalResourceDto],
 )

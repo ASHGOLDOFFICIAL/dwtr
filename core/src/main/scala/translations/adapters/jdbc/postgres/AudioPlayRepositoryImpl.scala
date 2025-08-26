@@ -186,14 +186,14 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       AudioPlayTitle,
       Synopsis,
       ReleaseDate,
-      Set[Uuid[Person]],
-      Set[CastMember],
+      List[Uuid[Person]],
+      List[CastMember],
       Option[Uuid[AudioPlaySeries]],
       Option[AudioPlaySeriesName],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
       Option[ImageUrl],
-      Set[ExternalResource],
+      List[ExternalResource],
   )
 
   private val selectBase = fr"""
@@ -228,14 +228,14 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      writerIds: Set[Uuid[Person]],
-      cast: Set[CastMember],
+      writerIds: List[Uuid[Person]],
+      cast: List[CastMember],
       seriesId: Option[Uuid[AudioPlaySeries]],
       seriesName: Option[AudioPlaySeriesName],
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
-      resources: Set[ExternalResource],
+      resources: List[ExternalResource],
   ): AudioPlay =
     val series = seriesId.zip(seriesName).map(AudioPlaySeries.unsafe)
     AudioPlay.unsafe(
