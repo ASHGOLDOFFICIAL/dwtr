@@ -1,5 +1,5 @@
 package org.aulune
-package shared.permission
+package shared.service.permission
 
 
 import auth.application.dto.AuthenticatedUser

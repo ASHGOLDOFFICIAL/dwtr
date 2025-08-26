@@ -3,8 +3,8 @@ package org.aulune
 
 import auth.AuthApp
 import permissions.PermissionsApp
-import shared.auth.AuthenticationClientService
-import shared.permission.PermissionClientService
+import shared.service.auth.AuthenticationClientService
+import shared.service.permission.PermissionClientService
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   PersonRepositoryImpl,

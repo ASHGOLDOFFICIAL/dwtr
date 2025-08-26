@@ -4,7 +4,7 @@ package permissions
 
 import permissions.adapters.jdbc.postgres.PermissionRepositoryImpl
 import permissions.adapters.service.PermissionServiceImpl
-import shared.permission.PermissionClientService
+import shared.service.permission.PermissionClientService
 
 import cats.effect.Async
 import cats.syntax.all.given

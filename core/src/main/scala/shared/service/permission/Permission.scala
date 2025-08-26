@@ -1,5 +1,6 @@
 package org.aulune
-package shared.permission
+package shared.service.permission
+
 
 /** Permission type to implement by clients. */
 trait Permission:

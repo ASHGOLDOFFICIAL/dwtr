@@ -6,9 +6,9 @@ import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
-import shared.permission.PermissionClientService
-import shared.permission.PermissionClientService.requirePermissionOrDeny
 import shared.repositories.transformFP
+import shared.service.permission.PermissionClientService
+import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.application.AudioPlayPermission.*
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository

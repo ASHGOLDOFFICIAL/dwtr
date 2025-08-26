@@ -8,9 +8,9 @@ import shared.errors.ApplicationServiceError.BadRequest
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
-import shared.permission.PermissionClientService
-import shared.permission.PermissionClientService.requirePermissionOrDeny
 import shared.repositories.transformF
+import shared.service.permission.PermissionClientService
+import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.{
   AudioPlayTranslationTypeMapper,
   LanguageMapper,

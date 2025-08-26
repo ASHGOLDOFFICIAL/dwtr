@@ -1,7 +1,7 @@
 package org.aulune
 package translations.application
 
-import shared.permission.Permission
+import shared.service.permission.Permission
 
 
 /** Permissions to operation on audio plays. */

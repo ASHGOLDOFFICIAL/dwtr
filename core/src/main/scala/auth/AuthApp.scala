@@ -14,8 +14,8 @@ import auth.adapters.service.{
 }
 import auth.api.http.{AuthenticationController, UsersController}
 import auth.domain.model.{User, Username}
-import shared.auth.AuthenticationClientService
 import shared.model.Uuid
+import shared.service.auth.AuthenticationClientService
 
 import cats.effect.Async
 import cats.effect.std.UUIDGen

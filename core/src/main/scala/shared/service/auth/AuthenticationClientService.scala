@@ -1,5 +1,5 @@
 package org.aulune
-package shared.auth
+package shared.service.auth
 
 
 import auth.application.AuthenticationService as ExternalAuthenticationService
