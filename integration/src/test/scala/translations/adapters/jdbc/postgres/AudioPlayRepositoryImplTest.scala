@@ -232,8 +232,8 @@ final class AudioPlayRepositoryImplTest
       seriesSeason = None,
       seriesNumber = makeSeriesNumber(2),
       coverUrl = makeCoverUrl("https://cdn.test.org/23"),
-      externalResources =
-        List(ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
+      externalResources = List(
+        ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
     ),
     AudioPlay.unsafe(
       id = Uuid.unsafe("0198d217-859b-71b7-947c-dd2548d7f8f4"),
