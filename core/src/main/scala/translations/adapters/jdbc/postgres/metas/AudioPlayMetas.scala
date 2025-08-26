@@ -2,7 +2,11 @@ package org.aulune
 package translations.adapters.jdbc.postgres.metas
 
 
-import translations.domain.model.audioplay.{AudioPlaySeason, AudioPlaySeriesNumber, AudioPlayTitle}
+import translations.domain.model.audioplay.{
+  AudioPlaySeason,
+  AudioPlaySeriesNumber,
+  AudioPlayTitle,
+}
 import translations.domain.shared.ExternalResourceType
 
 import doobie.Meta

@@ -47,7 +47,8 @@ object AudioPlayExamples:
     seriesId = seriesIdExample,
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
-    externalResources = externalResourcesRequestExample)
+    externalResources = externalResourcesRequestExample,
+  )
 
   val responseExample: AudioPlayResponse = AudioPlayResponse(
     id = UUID.fromString("bab591f2-e256-4969-9b79-7652d6d8430e"),

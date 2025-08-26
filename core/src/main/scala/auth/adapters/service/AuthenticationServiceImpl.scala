@@ -4,9 +4,13 @@ package auth.adapters.service
 
 import auth.application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
-  OAuth2AuthenticationRequest
+  OAuth2AuthenticationRequest,
 }
-import auth.application.dto.{AuthenticatedUser, AuthenticationRequest, AuthenticationResponse}
+import auth.application.dto.{
+  AuthenticatedUser,
+  AuthenticationRequest,
+  AuthenticationResponse,
+}
 import auth.application.repositories.UserRepository
 import auth.application.{
   AccessTokenService,

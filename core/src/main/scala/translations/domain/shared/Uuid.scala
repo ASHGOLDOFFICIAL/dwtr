@@ -1,6 +1,7 @@
 package org.aulune
 package translations.domain.shared
 
+
 import java.util.UUID
 import scala.util.Try
 

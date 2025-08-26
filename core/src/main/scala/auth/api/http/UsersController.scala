@@ -51,13 +51,15 @@ final class UsersController[F[_]: Functor](service: UserService[F]):
    */
   private def toErrorResponse(
       errs: NonEmptyChain[UserRegistrationError],
-  ): (StatusCode, String) = (StatusCode.BadRequest, errs.map {
-    case UserRegistrationError.TakenUsername =>
-      "Username already taken."
-    case UserRegistrationError.InvalidUsername =>
-      "Invalid username."
-    case UserRegistrationError.InvalidOAuthCode =>
-      "Invalid OAuth2 authorization code."
-    case UserRegistrationError.OAuthUserAlreadyExists =>
-      "User with this third-party account already exists."
-  }.mkString_(" "))
+  ): (StatusCode, String) = (
+    StatusCode.BadRequest,
+    errs
+      .map {
+        case UserRegistrationError.TakenUsername    => "Username already taken."
+        case UserRegistrationError.InvalidUsername  => "Invalid username."
+        case UserRegistrationError.InvalidOAuthCode =>
+          "Invalid OAuth2 authorization code."
+        case UserRegistrationError.OAuthUserAlreadyExists =>
+          "User with this third-party account already exists."
+      }
+      .mkString_(" "))

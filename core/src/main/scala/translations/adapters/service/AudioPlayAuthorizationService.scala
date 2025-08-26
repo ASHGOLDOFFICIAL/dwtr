@@ -1,13 +1,14 @@
 package org.aulune
 package translations.adapters.service
 
+
+import auth.application.dto.AuthenticatedUser
 import auth.domain.model.Group.Admin
 import shared.service.AuthorizationService
 import translations.application.AudioPlayPermission
 
 import cats.Applicative
 import cats.syntax.all.*
-import org.aulune.auth.application.dto.AuthenticatedUser
 
 
 /** [[AuthorizationService]] for [[AudioPlayPermission]]s.

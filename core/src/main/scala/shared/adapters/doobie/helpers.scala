@@ -49,7 +49,7 @@ inline def updateF(inline table: String)(
     inline kvs: (String, Fragment)*,
 ): Fragment =
   def setC(kv: (String, Fragment)) = Fragment.const(kv._1) ++ fr"= " ++ kv._2
-  val setPart                      = kvs
+  val setPart = kvs
     .map(setC)
     .foldLeft(setC(kv))(_ ++ fr", " ++ _)
   fr"UPDATE" ++ Fragment.const(table) ++ fr"SET" ++ setPart
