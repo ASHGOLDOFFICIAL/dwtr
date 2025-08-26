@@ -2,30 +2,30 @@ package org.aulune
 package translations.api.http
 
 
-import shared.auth.Authentication.{authOnlyEndpoint, authOptionalEndpoint}
+import shared.auth.Authentication.authOnlyEndpoint
 import shared.auth.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.QueryParams
-import translations.api.http.circe.given
-import translations.api.http.tapir.examples.AudioPlayExamples.{
+import translations.api.http.circe.AudioPlayCodecs.given
+import translations.api.http.tapir.audioplay.AudioPlayExamples.{
   listResponseExample,
   requestExample,
   responseExample,
 }
-import translations.api.http.tapir.schemas.AudioPlaySchemas.given
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.api.http.tapir.audioplay.AudioPlaySchemas.given
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
+  ListAudioPlaysResponse,
 }
 import translations.application.{AudioPlayService, AudioPlayTranslationService}
 
 import cats.Applicative
-import cats.syntax.all.*
+import cats.syntax.all.given
 import sttp.model.StatusCode
-import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
+import sttp.tapir.{endpoint, path, statusCode, stringToPath}
 
 import java.util.UUID
 
@@ -55,31 +55,32 @@ final class AudioPlaysController[F[_]: Applicative](
   private val elementPath = collectionPath / audioPlayId
   private val tag = "AudioPlays"
 
-  private val getEndpoint = authOptionalEndpoint.get
+  private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(
-      statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
-        .description("Requested audio play if found.")
-        .example(responseExample)))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
+      .description("Requested audio play if found.")
+      .example(responseExample)))
+    .errorOut(statusCode)
     .name("GetAudioPlay")
     .summary("Returns an audio play with given ID.")
     .tag(tag)
-    .serverLogic { maybeUser => id =>
-      for result <- service.findById(maybeUser, id)
-      yield result.toRight(StatusCode.NotFound)
+    .serverLogic { id =>
+      for result <- service.findById(id)
+      yield result.leftMap(toErrorResponse)
     }
 
-  private val listEndpoint = authOptionalEndpoint.get
+  private val listEndpoint = endpoint.get
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayListResponse]
+    .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
       .example(listResponseExample)))
+    .errorOut(statusCode)
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
-    .serverLogic { maybeUser => (pageSize, pageToken) =>
-      for result <- service.listAll(maybeUser, pageToken, pageSize)
+    .serverLogic { (pageSize, pageToken) =>
+      for result <- service.listAll(pageToken, pageSize)
       yield result.leftMap(toErrorResponse)
     }
 
@@ -99,22 +100,6 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(toErrorResponse)
     }
 
-  private val updateEndpoint = authOnlyEndpoint.put
-    .in(elementPath)
-    .in(jsonBody[AudioPlayRequest]
-      .description("Audio play's new state.")
-      .example(requestExample))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
-      .description("Updated audio play.")
-      .example(responseExample)))
-    .name("UpdateAudioPlay")
-    .summary("Updates audio play resource with given ID.")
-    .tag(tag)
-    .serverLogic { user => (id, ac) =>
-      for result <- service.update(user, id, ac)
-      yield result.leftMap(toErrorResponse)
-    }
-
   private val deleteEndpoint = authOnlyEndpoint.delete
     .in(elementPath)
     .out(statusCode(StatusCode.NoContent))
@@ -131,7 +116,6 @@ final class AudioPlaysController[F[_]: Applicative](
     getEndpoint,
     listEndpoint,
     postEndpoint,
-    updateEndpoint,
     deleteEndpoint,
   ) ++ TranslationsController
     .build(elementPath, tag, pagination, translationService, authService)

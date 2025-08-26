@@ -5,15 +5,17 @@ import auth.AuthApp
 import shared.auth.AuthenticationService
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
+  PersonRepositoryImpl,
   TranslationRepositoryImpl,
 }
 import translations.adapters.service.{
   AudioPlayAuthorizationService,
   AudioPlayServiceImpl,
   AudioPlayTranslationServiceImpl,
+  PersonServiceImpl,
   TranslationAuthorizationService,
 }
-import translations.api.http.AudioPlaysController
+import translations.api.http.{AudioPlaysController, PersonsController}
 
 import cats.effect.kernel.Resource
 import cats.effect.std.SecureRandom
@@ -62,6 +64,10 @@ object App extends IOApp.Simple:
       transactor: Transactor[F],
   ): F[List[ServerEndpoint[Any, F]]] =
     for
+      personRepo <- PersonRepositoryImpl.build[F](transactor)
+      audioAuth = new AudioPlayAuthorizationService[F]
+      personSev = new PersonServiceImpl[F](personRepo, audioAuth)
+
       transRepo <- TranslationRepositoryImpl.build[F](transactor)
       transAuth = new TranslationAuthorizationService[F]
       transServ = new AudioPlayTranslationServiceImpl[F](
@@ -70,16 +76,19 @@ object App extends IOApp.Simple:
         transAuth)
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
-      audioAuth = new AudioPlayAuthorizationService[F]
-      audioServ =
-        new AudioPlayServiceImpl[F](config.app.pagination, audioRepo, audioAuth)
+      audioServ = new AudioPlayServiceImpl[F](
+        config.app.pagination,
+        audioRepo,
+        personSev,
+        audioAuth)
 
-      endpoints = new AudioPlaysController[F](
+      audioEndpoints = new AudioPlaysController[F](
         config.app.pagination,
         audioServ,
         authServ,
         transServ).endpoints
-    yield endpoints
+      personEndpoints = new PersonsController[F](personSev, authServ).endpoints
+    yield audioEndpoints ++ personEndpoints
 
   private def makeServer[F[_]: Async](
       endpoints: List[ServerEndpoint[Any, F]],

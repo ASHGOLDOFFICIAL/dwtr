@@ -1,15 +1,22 @@
 package org.aulune
-package translations.application.dto
+package translations.application.dto.audioplay
 
+
+import translations.application.dto.ExternalResourceDto
+import translations.application.dto.person.PersonResponse
 
 import java.net.URL
+import java.time.LocalDate
 import java.util.UUID
 
 
 /** Audio play response body.
  *  @param id audio play ID.
  *  @param title audio play title.
- *  @param seriesId audio play series ID.
+ *  @param synopsis brief description.
+ *  @param releaseDate release date of this audio play.
+ *  @param writers writers of this audio play.
+ *  @param series audio play series.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play number in series.
  *  @param coverUrl link to cover image.
@@ -18,7 +25,11 @@ import java.util.UUID
 final case class AudioPlayResponse(
     id: UUID,
     title: String,
-    seriesId: Option[UUID],
+    synopsis: String,
+    releaseDate: LocalDate,
+    writers: List[UUID],
+    cast: List[CastMemberDto],
+    series: Option[AudioPlaySeriesResponse],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
     coverUrl: Option[URL],

@@ -9,6 +9,11 @@ import translations.application.dto.{
 import translations.domain.shared.{ExternalResource, ExternalResourceType}
 
 
+/** Mapper between external [[ExternalResourceDto]] and domain's
+ *  [[ExternalResource]].
+ *  @note Should not be used outside `service` package to not expose domain
+ *    type.
+ */
 private[service] object ExternalResourceMapper:
   private val mapToDomain = Map(
     ExternalResourceTypeDto.Purchase -> ExternalResourceType.Purchase,

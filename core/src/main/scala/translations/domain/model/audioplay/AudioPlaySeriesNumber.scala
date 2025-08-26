@@ -11,3 +11,12 @@ object AudioPlaySeriesNumber:
    */
   def apply(number: Int): Option[AudioPlaySeriesNumber] =
     Option.when(number > 0)(number)
+
+  /** Unsafe constructor to use inside always-valid boundary.
+   *  @param number series number.
+   *  @throws IllegalArgumentException if given params are invalid.
+   */
+  def unsafe(number: Int): AudioPlaySeriesNumber =
+    AudioPlaySeriesNumber(number) match
+      case Some(value) => value
+      case None        => throw new IllegalArgumentException()

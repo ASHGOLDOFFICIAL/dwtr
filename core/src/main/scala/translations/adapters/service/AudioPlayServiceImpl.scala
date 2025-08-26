@@ -3,39 +3,38 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import shared.UUIDv7Gen.uuidv7Instance
 import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
-import shared.pagination.CursorToken.encode
-import shared.pagination.{CursorToken, PaginationParams}
-import shared.repositories.transformF
+import shared.pagination.PaginationParams
 import shared.service.AuthorizationService
 import shared.service.AuthorizationService.requirePermissionOrDeny
-import translations.adapters.service.mappers.ExternalResourceMapper
-import translations.application.AudioPlayPermission.{SeeDownloadLinks, Write}
-import translations.application.dto.{
-  AudioPlayListResponse,
+import translations.adapters.service.mappers.AudioPlayMapper
+import translations.application.AudioPlayPermission.Write
+import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
+  CastMemberDto,
+  ListAudioPlaysResponse,
 }
+import translations.application.dto.person.PersonResponse
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.{
   AudioPlayToken,
   given,
 }
-import translations.application.{AudioPlayPermission, AudioPlayService}
-import translations.domain.errors.AudioPlayValidationError
-import translations.domain.model.audioplay.AudioPlay
-import translations.domain.shared.ExternalResourceType.Download
-import translations.domain.shared.{ExternalResource, Uuid}
+import translations.application.{
+  AudioPlayPermission,
+  AudioPlayService,
+  PersonService,
+}
+import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import translations.domain.shared.Uuid
 
 import cats.MonadThrow
-import cats.data.{Validated, ValidatedNec}
-import cats.effect.Clock
+import cats.data.Validated
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
 
-import java.time.Instant
 import java.util.UUID
 
 
@@ -45,62 +44,48 @@ import java.util.UUID
  *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
  *  @tparam F effect type.
  */
-final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
+final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     pagination: Config.App.Pagination,
     repo: AudioPlayRepository[F],
+    personService: PersonService[F],
     authService: AuthorizationService[F, AudioPlayPermission],
 ) extends AudioPlayService[F]:
   given AuthorizationService[F, AudioPlayPermission] = authService
 
   override def findById(
-      user: Option[AuthenticatedUser],
       id: UUID,
-  ): F[Option[AudioPlayResponse]] =
-    for
-      result <- repo.get(Uuid[AudioPlay](id))
-      response <- result.traverse(toResponse(user, _))
-    yield response
+  ): F[Either[ApplicationServiceError, AudioPlayResponse]] = (for
+    audioPlayOpt <- repo.get(Uuid[AudioPlay](id))
+    audioPlay <- audioPlayOpt.fold(NotFound.raiseError[F, AudioPlay])(_.pure[F])
+    response = AudioPlayMapper.toResponse(audioPlay)
+  yield response).attempt.map(_.leftMap(toApplicationError))
 
   override def listAll(
-      user: Option[AuthenticatedUser],
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, AudioPlayListResponse]] =
+  ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]] =
     PaginationParams[AudioPlayToken](pagination.max)(count, token) match
       case Validated.Invalid(_) => BadRequest.asLeft.pure[F]
-      case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
-          .list(pageToken, pageSize)
-          .flatMap(toListResponse(user, _))
-          .map(_.asRight)
+      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
+        for audios <- repo.list(pageToken, pageSize)
+        yield AudioPlayMapper.toListResponse(audios).asRight
 
   override def create(
       user: AuthenticatedUser,
-      ac: AudioPlayRequest,
+      request: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Write, user) {
+      val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
+        series <- getSeriesOrThrow(seriesId)
+        _ <- checkWritersExistence(request.writers)
+        _ <- checkCastExistence(request.cast)
         id <- UUIDGen.randomUUID[F]
-        now <- Clock[F].realTimeInstant
-        audio <- ac
-          .toDomain(id, now)
+        audio <- AudioPlayMapper
+          .fromRequest(request, id, series)
           .fold(_ => BadRequest.raiseError, _.pure[F])
         persisted <- repo.persist(audio)
-        response <- toResponse(Some(user), persisted)
-      yield response).attempt.map(_.leftMap(toApplicationError))
-    }
-
-  override def update(
-      user: AuthenticatedUser,
-      id: UUID,
-      ac: AudioPlayRequest,
-  ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
-    requirePermissionOrDeny(Write, user) {
-      val uuid = Uuid[AudioPlay](id)
-      (for
-        updatedOpt <- repo.transformF(uuid)(ac.update(_).toOption)
-        updated <-
-          updatedOpt.fold(BadRequest.raiseError[F, AudioPlay])(_.pure[F])
-        response <- toResponse(Some(user), updated)
+        response = AudioPlayMapper.toResponse(persisted)
       yield response).attempt.map(_.leftMap(toApplicationError))
     }
 
@@ -114,89 +99,40 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: Clock: SecureRandom](
       yield result.leftMap(toApplicationError)
     }
 
-  /** Removes resources user isn't supposed to see.
-   *  @param maybeUser user who asks for resources. If user is not present, then
-   *    none resources that require permissions are left.
-   *  @param resources resources to filter.
-   *  @return only resources accessible to user.
+  /** Throws [[NotFound]] if person with one of the given IDs don't exist.
+   *  @param uuids persons UUIDs.
    */
-  private def filterResourcesForUser(
-      maybeUser: Option[AuthenticatedUser],
-      resources: List[ExternalResource],
-  ): F[List[ExternalResource]] = resources.filterA { resource =>
-    if resource.resourceType != Download then true.pure[F]
-    else
-      maybeUser.fold(false.pure[F]) {
-        authService.hasPermission(_, SeeDownloadLinks)
-      }
+  private def checkWritersExistence(uuids: List[UUID]): F[Unit] =
+    uuids.traverseVoid { id =>
+      for
+        writerOpt <- personService.findById(id)
+        _ <- MonadThrow[F].fromOption(writerOpt, NotFound)
+      yield ()
+    }
+
+  /** Throws [[NotFound]] if at least one of the cast members don't exist.
+   *  @param uuids cast UUIDs.
+   */
+  private def checkCastExistence(uuids: List[CastMemberDto]): F[Unit] =
+    uuids.traverseVoid { castMember =>
+      for
+        actorOpt <- personService.findById(castMember.actor)
+        _ <- MonadThrow[F].fromOption(actorOpt, NotFound)
+      yield ()
+    }
+
+  /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
+   *  audio play series with it.
+   *
+   *  If [[seriesId]] is not `None` but there's no [[AudioPlaySeries]] found
+   *  with it, then it will throw [[NotFound]].
+   *  @param seriesId audio play series ID.
+   */
+  private def getSeriesOrThrow(
+      seriesId: Option[Uuid[AudioPlaySeries]],
+  ): F[Option[AudioPlaySeries]] = seriesId.traverse { id =>
+    for
+      seriesOpt <- repo.getSeries(id)
+      series <- MonadThrow[F].fromOption(seriesOpt, NotFound)
+    yield series
   }
-
-  /** Converts domain object to response object. */
-  private def toResponse(
-      user: Option[AuthenticatedUser],
-      domain: AudioPlay,
-  ): F[AudioPlayResponse] =
-    filterResourcesForUser(user, domain.externalResources).map { resources =>
-      AudioPlayResponse(
-        id = domain.id,
-        title = domain.title,
-        seriesId = domain.seriesId,
-        seriesSeason = domain.seriesSeason,
-        seriesNumber = domain.seriesNumber,
-        coverUrl = domain.coverUrl,
-        externalResources = resources.map(ExternalResourceMapper.fromDomain),
-      )
-    }
-
-  /** Converts list of domain's [[AudioPlay]]s to [[AudioPlayListResponse]].
-   *  @param audios list of domain objects.
-   */
-  private def toListResponse(
-      user: Option[AuthenticatedUser],
-      audios: List[AudioPlay],
-  ): F[AudioPlayListResponse] =
-    val nextPageToken = audios.lastOption.flatMap { elem =>
-      val token = AudioPlayToken(elem.id)
-      CursorToken[AudioPlayToken](token).encode
-    }
-    audios.traverse(toResponse(user, _)).map { xs =>
-      AudioPlayListResponse(xs, nextPageToken)
-    }
-
-  extension (ac: AudioPlayRequest)
-    /** Updates old domain object with fields from request.
-     *  @param old old domain object.
-     *  @return updated domain object if valid.
-     */
-    private def update(
-        old: AudioPlay,
-    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = AudioPlay
-      .update(
-        initial = old,
-        title = ac.title,
-        seriesId = ac.seriesId,
-        seriesSeason = ac.seriesSeason,
-        seriesNumber = ac.seriesNumber,
-        coverUrl = old.coverUrl,
-        externalResources = ac.externalResources
-          .map(ExternalResourceMapper.toDomain),
-      )
-
-    /** Converts request to domain object and verifies it.
-     *  @param id ID assigned to this audio play.
-     *  @param addedAt timestamp of when was this resource added.
-     *  @return created domain object if valid.
-     */
-    private def toDomain(
-        id: UUID,
-        addedAt: Instant,
-    ): ValidatedNec[AudioPlayValidationError, AudioPlay] = AudioPlay(
-      id = id,
-      title = ac.title,
-      seriesId = ac.seriesId,
-      seriesSeason = ac.seriesSeason,
-      seriesNumber = ac.seriesNumber,
-      coverUrl = None,
-      externalResources = ac.externalResources
-        .map(ExternalResourceMapper.toDomain),
-    )

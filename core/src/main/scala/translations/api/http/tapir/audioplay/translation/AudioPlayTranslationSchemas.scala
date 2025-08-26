@@ -1,9 +1,9 @@
 package org.aulune
-package translations.api.http.tapir.schemas
+package translations.api.http.tapir.audioplay.translation
 
 
-import translations.api.http.tapir.examples.AudioPlayExamples
-import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{
+import translations.api.http.tapir.audioplay.AudioPlayExamples
+import translations.api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
   listResponseExample,
   requestExample,
   responseExample,

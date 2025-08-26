@@ -6,13 +6,13 @@ import shared.auth.Authentication.authOnlyEndpoint
 import shared.auth.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.QueryParams
-import translations.api.http.circe.given
-import translations.api.http.tapir.examples.AudioPlayTranslationExamples.{
+import translations.api.http.circe.AudioPlayTranslationCodecs.given
+import translations.api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
   listResponseExample,
   requestExample,
   responseExample,
 }
-import translations.api.http.tapir.schemas.AudioPlayTranslationSchemas.given
+import translations.api.http.tapir.audioplay.translation.AudioPlayTranslationSchemas.given
 import translations.application.AudioPlayTranslationService
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
