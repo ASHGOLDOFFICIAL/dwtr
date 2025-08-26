@@ -27,10 +27,10 @@ final case class AudioPlayResponse(
     title: String,
     synopsis: String,
     releaseDate: LocalDate,
-    writers: List[UUID],
+    writers: Set[UUID],
     series: Option[AudioPlaySeriesResponse],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
     coverUrl: Option[URL],
-    externalResources: List[ExternalResourceDto],
+    externalResources: Set[ExternalResourceDto],
 )

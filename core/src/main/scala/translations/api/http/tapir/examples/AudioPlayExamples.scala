@@ -37,7 +37,7 @@ object AudioPlayExamples:
       " the true culprit; but in their quest for justice, the brothers Cicero may be about" +
       " to make some very powerful enemies indeed..."
   private val releaseDateExample = LocalDate.of(2017, 2, 28)
-  private val writersExample = List(
+  private val writersExample = Set(
     UUID.fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b"),
   )
   private val seriesSeasonExample = Some(1)
@@ -51,7 +51,7 @@ object AudioPlayExamples:
       .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605")
       .toURL,
   )
-  private val externalResourcesRequestExample = List(
+  private val externalResourcesRequestExample = Set(
     purchaseResourceExample,
     ExternalResourceDto(
       Private,
@@ -61,7 +61,7 @@ object AudioPlayExamples:
         .toURL,
     ),
   )
-  private val externalResourcesResponseExample = List(purchaseResourceExample)
+  private val externalResourcesResponseExample = Set(purchaseResourceExample)
   private val nextPageTokenExample =
     Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 

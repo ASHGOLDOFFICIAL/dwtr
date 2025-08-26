@@ -25,7 +25,8 @@ import cats.data.{NonEmptyChain, Validated, ValidatedNec}
  *  @param title title.
  *  @param synopsis brief description.
  *  @param releaseDate release date of this audio play.
- *  @param writers author(s) of audio play. // * @param cast audio play cast.
+ *  @param writers author(s) of audio play.
+ *  @param cast audio play cast.
  *  @param series audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
@@ -37,13 +38,13 @@ final case class AudioPlay private (
     title: AudioPlayTitle,
     synopsis: Synopsis,
     releaseDate: ReleaseDate,
-    writers: List[Uuid[Person]],
-    //    cast: List[CastMember],// TODO: enable them
+    writers: Set[Uuid[Person]],
+    cast: Set[CastMember],
     series: Option[AudioPlaySeries],
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
     coverUrl: Option[ImageUrl],
-    externalResources: List[ExternalResource],
+    externalResources: Set[ExternalResource],
 ):
   /** Copies with validation.
    *  @return new state validation result.
@@ -53,12 +54,13 @@ final case class AudioPlay private (
       title: AudioPlayTitle = title,
       synopsis: Synopsis = synopsis,
       releaseDate: ReleaseDate = releaseDate,
-      writers: List[Uuid[Person]] = writers,
+      writers: Set[Uuid[Person]] = writers,
+      cast: Set[CastMember] = cast,
       series: Option[AudioPlaySeries] = series,
       seriesSeason: Option[AudioPlaySeason] = seriesSeason,
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
       coverUrl: Option[ImageUrl] = coverUrl,
-      externalResources: List[ExternalResource] = externalResources,
+      externalResources: Set[ExternalResource] = externalResources,
   ): ValidationResult[AudioPlay] = validateState(
     copy(
       id = id,
@@ -66,6 +68,7 @@ final case class AudioPlay private (
       synopsis = synopsis,
       releaseDate = releaseDate,
       writers = writers,
+      cast = cast,
       series = series,
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
@@ -85,12 +88,13 @@ object AudioPlay:
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      writers: List[Uuid[Person]],
+      writers: Set[Uuid[Person]],
+      cast: Set[CastMember],
       series: Option[AudioPlaySeries],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
-      externalResources: List[ExternalResource],
+      externalResources: Set[ExternalResource],
   ): ValidationResult[AudioPlay] = validateState(
     new AudioPlay(
       id = id,
@@ -98,6 +102,7 @@ object AudioPlay:
       synopsis = synopsis,
       releaseDate = releaseDate,
       writers = writers,
+      cast = cast,
       series = series,
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
@@ -113,18 +118,20 @@ object AudioPlay:
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      writers: List[Uuid[Person]],
+      writers: Set[Uuid[Person]],
+      cast: Set[CastMember],
       series: Option[AudioPlaySeries],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
-      externalResources: List[ExternalResource],
+      externalResources: Set[ExternalResource],
   ): AudioPlay = apply(
     id = id,
     title = title,
     synopsis = synopsis,
     releaseDate = releaseDate,
     writers = writers,
+    cast = cast,
     series = series,
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
@@ -135,13 +142,30 @@ object AudioPlay:
     case Validated.Invalid(e) => throw e.head
 
   /** Validates audio play state:
+   *    - There shouldn't be duplicate cast members.
    *    - If season or series number is given, then series ID must be given too.
    *  @param ap audio play.
    *  @return validation result.
    */
   private def validateState(
       ap: AudioPlay,
-  ): ValidationResult[AudioPlay] =
-    val seriesAlright =
-      ap.series.isDefined || (ap.seriesSeason.isEmpty && ap.seriesNumber.isEmpty)
+  ): ValidationResult[AudioPlay] = validateCast(ap).andThen(validateSeriesInfo)
+
+  /** Validates cast. It shouldn't have duplicate actors.
+   *  @param ap audio play whose cast is being validated.
+   *  @return validation result.
+   */
+  private def validateCast(ap: AudioPlay): ValidationResult[AudioPlay] =
+    val castIds = ap.cast.map(_.actor)
+    val castAlright = castIds.size == ap.cast.size
+    Validated.cond(castAlright, ap, NonEmptyChain.one(DuplicateCastMembers))
+
+  /** Validates series info. It shouldn't have season or series number if series
+   *  itself is not given.
+   *  @param ap audio play whose series info is being validated.
+   *  @return validation result.
+   */
+  private def validateSeriesInfo(ap: AudioPlay): ValidationResult[AudioPlay] =
+    val seriesAlright = ap.series.isDefined ||
+      (ap.seriesSeason.isEmpty && ap.seriesNumber.isEmpty)
     Validated.cond(seriesAlright, ap, NonEmptyChain.one(SeriesIsMissing))

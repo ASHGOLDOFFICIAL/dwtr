@@ -8,12 +8,14 @@ import shared.errors.RepositoryError.*
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayToken
 import translations.domain.model.audioplay.{
+  ActorRole,
   AudioPlay,
   AudioPlaySeason,
   AudioPlaySeries,
   AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
+  CastMember,
 }
 import translations.domain.shared.ExternalResourceType.*
 import translations.domain.shared.{
@@ -56,7 +58,7 @@ final class AudioPlayRepositoryImplTest
   private def makeCoverUrl(url: String): Option[ImageUrl] =
     Some(ImageUrl.unsafe(URI.create(url).toURL))
 
-  private val resources = List(
+  private val resources = Set(
     ExternalResource(Purchase, URI.create("https://test.org/1").toURL),
     ExternalResource(Download, URI.create("https://test.org/2").toURL),
     ExternalResource(Streaming, URI.create("https://test.org/1").toURL),
@@ -68,7 +70,7 @@ final class AudioPlayRepositoryImplTest
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea66"),
     title = AudioPlayTitle.unsafe("Title"),
     synopsis = Synopsis.unsafe("Synopsis"),
-    writers = List(
+    writers = Set(
       Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950481"),
       Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950482"),
       Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950483"),
@@ -76,6 +78,23 @@ final class AudioPlayRepositoryImplTest
       Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950485"),
       Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950486"),
       Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950487"),
+    ),
+    cast = Set(
+      CastMember.unsafe(
+        actor = Uuid.unsafe("adfeccac-0c8e-4a6c-a0b3-08684e6bd336"),
+        roles = Set(ActorRole.unsafe("Hero"), ActorRole.unsafe("Narator")),
+        main = true,
+      ),
+      CastMember.unsafe(
+        actor = Uuid.unsafe("64729185-54b2-46f6-97d3-97678a4802a7"),
+        roles = Set(ActorRole.unsafe("Villian")),
+        main = true,
+      ),
+      CastMember.unsafe(
+        actor = Uuid.unsafe("e0ee5ca8-d5ca-4b1a-a0e6-719a9ed3b18f"),
+        roles = Set(ActorRole.unsafe("Some guy")),
+        main = false,
+      ),
     ),
     releaseDate = makeReleaseDate(2000, 10, 10),
     series = makeSeries("1e0a7f74-8143-4477-ae0f-33547de9c53f", "Series"),
@@ -88,10 +107,10 @@ final class AudioPlayRepositoryImplTest
   private val updatedAudioPlayTest = audioPlayTest
     .update(
       title = AudioPlayTitle.unsafe("Updated"),
-      writers = List(Uuid.unsafe("c5c1f3b9-175c-4fa2-800d-c9c20cb44539")),
+      writers = Set(Uuid.unsafe("c5c1f3b9-175c-4fa2-800d-c9c20cb44539")),
       coverUrl = makeCoverUrl("https://cdn.test.org/1"),
       externalResources =
-        List(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
+        Set(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
     )
     .toOption
     .get
@@ -122,7 +141,10 @@ final class AudioPlayRepositoryImplTest
       }
 
       "retrieve audio plays without resources" in stand { repo =>
-        val without = audioPlayTest.update(externalResources = Nil).toOption.get
+        val without = audioPlayTest
+          .update(externalResources = Set.empty)
+          .toOption
+          .get
         for
           _ <- repo.persist(without)
           audio <- repo.get(without.id)
@@ -130,7 +152,7 @@ final class AudioPlayRepositoryImplTest
       }
 
       "retrieve audio plays without writers" in stand { repo =>
-        val without = audioPlayTest.update(writers = Nil).toOption.get
+        val without = audioPlayTest.update(writers = Set.empty).toOption.get
         for
           _ <- repo.persist(without)
           audio <- repo.get(without.id)
@@ -204,25 +226,33 @@ final class AudioPlayRepositoryImplTest
       title = AudioPlayTitle.unsafe("Audio Play 1"),
       synopsis = Synopsis.unsafe("Synopsis 1"),
       releaseDate = makeReleaseDate(1999, 10, 3),
-      writers = Nil,
+      writers = Set.empty,
+      cast = Set.empty,
       series = makeSeries("e810039b-c44c-405f-a360-e44fadc43ead", "Series"),
       seriesSeason = None,
       seriesNumber = makeSeriesNumber(2),
       coverUrl = makeCoverUrl("https://cdn.test.org/23"),
-      externalResources = List(
-        ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
+      externalResources =
+        Set(ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
     ),
     AudioPlay.unsafe(
       id = Uuid.unsafe("0198d217-859b-71b7-947c-dd2548d7f8f4"),
       title = AudioPlayTitle.unsafe("Audio Play 2"),
       synopsis = Synopsis.unsafe("Synopsis 2"),
       releaseDate = makeReleaseDate(2024, 3, 15),
-      writers = Nil,
+      writers = Set.empty,
+      cast = Set(
+        CastMember.unsafe(
+          actor = Uuid.unsafe("2eb87946-4c6c-40a8-ae80-a05f0df355f8"),
+          roles = Set(ActorRole.unsafe("Whatever")),
+          main = false,
+        ),
+      ),
       series = None,
       seriesSeason = None,
       seriesNumber = None,
       coverUrl = None,
-      externalResources = List(
+      externalResources = Set(
         ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
     ),
     AudioPlay.unsafe(
@@ -230,12 +260,13 @@ final class AudioPlayRepositoryImplTest
       title = AudioPlayTitle.unsafe("Audio Play 3"),
       synopsis = Synopsis.unsafe("Synopsis 3"),
       releaseDate = makeReleaseDate(2007, 7, 8),
-      writers = List(Uuid.unsafe("8b78e607-7afe-434c-a426-63a4512f3bf5")),
+      cast = Set.empty,
+      writers = Set(Uuid.unsafe("8b78e607-7afe-434c-a426-63a4512f3bf5")),
       series = None,
       seriesSeason = None,
       seriesNumber = None,
       coverUrl = makeCoverUrl("https://cdn.test.org/53"),
-      externalResources = List(
+      externalResources = Set(
         ExternalResource(Streaming, URI.create("https://audio.com/3").toURL)),
     ),
   )

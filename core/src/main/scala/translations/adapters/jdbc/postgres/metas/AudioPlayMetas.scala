@@ -2,32 +2,47 @@ package org.aulune
 package translations.adapters.jdbc.postgres.metas
 
 
+import translations.adapters.jdbc.postgres.metas.SharedMetas.jsonbMeta
 import translations.domain.model.audioplay.{
+  ActorRole,
   AudioPlay,
   AudioPlaySeason,
   AudioPlaySeriesName,
   AudioPlaySeriesNumber,
-  AudioPlayTitle
+  AudioPlayTitle,
+  CastMember,
 }
-import translations.domain.shared.ExternalResourceType
+import translations.domain.model.person.Person
+import translations.domain.shared.{ExternalResource, ExternalResourceType, Uuid}
 
 import doobie.Meta
-import doobie.postgres.implicits.unliftedUnboxedIntegerArrayType
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.{
+  deriveConfiguredDecoder,
+  deriveConfiguredEncoder,
+}
+import io.circe.syntax.given
+import io.circe.{Decoder, Encoder}
+
+import java.net.URL
 
 
 /** [[Meta]] instances for [[AudioPlay]]. */
 private[postgres] object AudioPlayMetas:
-  given Meta[AudioPlayTitle] = Meta[String]
-    .imap(AudioPlayTitle.unsafe)(identity)
+  given actorRoleMeta: Meta[ActorRole] =
+    Meta[String].imap(ActorRole.unsafe)(identity)
 
-  given Meta[AudioPlaySeason] = Meta[Int]
-    .imap(AudioPlaySeason.unsafe)(identity)
+  given audioPlayTitleMeta: Meta[AudioPlayTitle] =
+    Meta[String].imap(AudioPlayTitle.unsafe)(identity)
 
-  given Meta[AudioPlaySeriesName] = Meta[String]
-    .imap(AudioPlaySeriesName.unsafe)(identity)
+  given audioPlaySeasonMeta: Meta[AudioPlaySeason] =
+    Meta[Int].imap(AudioPlaySeason.unsafe)(identity)
 
-  given Meta[AudioPlaySeriesNumber] = Meta[Int]
-    .imap(AudioPlaySeriesNumber.unsafe)(identity)
+  given audioPlaySeriesNameMeta: Meta[AudioPlaySeriesName] =
+    Meta[String].imap(AudioPlaySeriesName.unsafe)(identity)
+
+  given audioPlaySeriesNumberMeta: Meta[AudioPlaySeriesNumber] =
+    Meta[Int].imap(AudioPlaySeriesNumber.unsafe)(identity)
 
   private val resourceTypeToInt = ExternalResourceType.values.map {
     case t @ ExternalResourceType.Purchase  => t -> 1
@@ -38,8 +53,34 @@ private[postgres] object AudioPlayMetas:
   }.toMap
   private val resourceTypeFromInt = resourceTypeToInt.map(_.swap)
 
-  given Meta[ExternalResourceType] = Meta[Int]
+  given externalResourceTypeMeta: Meta[ExternalResourceType] = Meta[Int]
     .imap(resourceTypeFromInt.apply)(resourceTypeToInt.apply)
 
-  given Meta[Array[ExternalResourceType]] = Meta[Array[Int]]
-    .imap(_.map(resourceTypeFromInt.apply))(_.map(resourceTypeToInt.apply))
+  given castMemberMeta: Meta[CastMember] = jsonbMeta.imap(json =>
+    json.as[CastMember].fold(throw _, identity))(_.asJson)
+  given castMembersMeta: Meta[Set[CastMember]] = jsonbMeta.imap(json =>
+    json.as[Set[CastMember]].fold(throw _, identity))(_.asJson)
+
+  given externalResourceMeta: Meta[ExternalResource] = jsonbMeta.imap(json =>
+    json.as[ExternalResource].fold(throw _, identity))(_.asJson)
+  given externalResourcesMeta: Meta[Set[ExternalResource]] = jsonbMeta.imap(
+    json => json.as[Set[ExternalResource]].fold(throw _, identity))(_.asJson)
+
+  given writersMeta: Meta[Set[Uuid[Person]]] = jsonbMeta.imap(json =>
+    json.as[Set[Uuid[Person]]].fold(throw _, identity))(_.asJson)
+
+  private given Configuration = Configuration.default.withSnakeCaseMemberNames
+  private given [A]: Decoder[Uuid[A]] = Decoder.decodeUUID.map(Uuid[A])
+  private given [A]: Encoder[Uuid[A]] = Encoder.encodeUUID.contramap(identity)
+  private given Decoder[ActorRole] = Decoder.decodeString.map(ActorRole.unsafe)
+  private given Encoder[ActorRole] = Encoder.encodeString.contramap(identity)
+  private given Decoder[ExternalResourceType] =
+    Decoder.decodeInt.map(resourceTypeFromInt)
+  private given Encoder[ExternalResourceType] =
+    Encoder.encodeInt.contramap(resourceTypeToInt)
+  private given Decoder[URL] = Decoder.decodeURI.map(_.toURL)
+  private given Encoder[URL] = Encoder.encodeURI.contramap(_.toURI)
+  private given Decoder[CastMember] = deriveConfiguredDecoder
+  private given Encoder[CastMember] = deriveConfiguredEncoder
+  private given Decoder[ExternalResource] = deriveConfiguredDecoder
+  private given Encoder[ExternalResource] = deriveConfiguredEncoder

@@ -127,6 +127,7 @@ val doobieDeps = Seq(
   "org.tpolecat" %% "doobie-core",
   "org.tpolecat" %% "doobie-hikari",
   "org.tpolecat" %% "doobie-postgres",
+  "org.tpolecat" %% "doobie-postgres-circe",
 ).map(_ % doobieVersion)
 
 

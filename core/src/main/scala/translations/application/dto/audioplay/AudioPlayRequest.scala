@@ -23,9 +23,9 @@ final case class AudioPlayRequest(
     title: String,
     synopsis: String,
     releaseDate: LocalDate,
-    writers: List[UUID],
+    writers: Set[UUID],
     seriesId: Option[UUID],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
-    externalResources: List[ExternalResourceDto],
+    externalResources: Set[ExternalResourceDto],
 )

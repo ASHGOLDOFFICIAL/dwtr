@@ -15,11 +15,11 @@ import translations.domain.model.audioplay.{
   AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
+  CastMember,
 }
 import translations.domain.model.person.Person
 import translations.domain.shared.{
   ExternalResource,
-  ExternalResourceType,
   ImageUrl,
   ReleaseDate,
   Synopsis,
@@ -31,9 +31,8 @@ import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
-import doobie.{ConnectionIO, Transactor, Update}
+import doobie.{ConnectionIO, Transactor}
 
-import java.net.URL
 import java.sql.SQLException
 
 
@@ -48,11 +47,8 @@ object AudioPlayRepositoryImpl:
   ): F[AudioPlayRepository[F]] = (for
     _ <- createSeriesTable
     _ <- createAudioPlaysTable
-    _ <- createWritersTable
-    _ <- createExternalResourcesTable
-  yield ())
+  yield new AudioPlayRepositoryImpl[F](transactor))
     .transact(transactor)
-    .as(new AudioPlayRepositoryImpl[F](transactor))
 
   private val createSeriesTable = sql"""
     |CREATE TABLE IF NOT EXISTS audio_play_series (
@@ -66,33 +62,15 @@ object AudioPlayRepositoryImpl:
     |  title         VARCHAR(255) NOT NULL,
     |  synopsis      TEXT         NOT NULL,
     |  release_date  DATE         NOT NULL,
+    |  writers       JSONB        NOT NULL,
+    |  cast_members  JSONB        NOT NULL,
     |  series_id     UUID
     |                REFERENCES audio_play_series(id)
     |                ON DELETE RESTRICT,
     |  series_season INTEGER,
     |  series_number INTEGER,
     |  cover_url     TEXT,
-    |  _added_at     TIMESTAMPTZ NOT NULL DEFAULT now()
-    |)""".stripMargin.update.run
-
-  private val createWritersTable = sql"""
-    |CREATE TABLE IF NOT EXISTS audio_play_writers (
-    |  audio_play_id UUID
-    |                REFERENCES audio_plays(id)
-    |                ON DELETE CASCADE,
-    |  person_id     UUID,
-    |  CONSTRAINT audio_play_writers_pk PRIMARY KEY(audio_play_id, person_id)
-    |)""".stripMargin.update.run
-
-  private val createExternalResourcesTable = sql"""
-    |CREATE TABLE IF NOT EXISTS audio_play_resources (
-    |  audio_play_id UUID    NOT NULL
-    |                REFERENCES audio_plays(id)
-    |                ON DELETE CASCADE,
-    |  _resource_id  SERIAL  NOT NULL,
-    |  type          INTEGER NOT NULL,
-    |  url           TEXT    NOT NULL,
-    |  CONSTRAINT audio_play_identity PRIMARY KEY(audio_play_id, _resource_id)
+    |  resources     JSONB        NOT NULL
     |)""".stripMargin.update.run
 
 
@@ -111,24 +89,23 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     val insertAudioPlay = sql"""
       |INSERT INTO audio_plays (
       |  id, title, synopsis, release_date,
+      |  writers, cast_members,
       |  series_id, series_season, series_number,
-      |  cover_url
+      |  cover_url, resources
       |)
       |VALUES (
       |  ${elem.id}, ${elem.title}, ${elem.synopsis}, ${elem.releaseDate},
+      |  ${elem.writers}, ${elem.cast},
       |  ${elem.series.map(_.id)}, ${elem.seriesSeason}, ${elem.seriesNumber},
-      |  ${elem.coverUrl}
+      |  ${elem.coverUrl}, ${elem.externalResources}
       |)""".stripMargin.update.run
 
     val transaction =
       for
         _ <- insertSeriesIfMissing(elem.series)
         _ <- insertAudioPlay
-        _ <- insertWriters(elem)
-        _ <- insertResources(elem)
-      yield ()
+      yield elem
     transaction
-      .as(elem)
       .transact(transactor)
       .handleErrorWith(toRepositoryError)
   end persist
@@ -148,10 +125,13 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |SET title         = ${elem.title},
       |    synopsis      = ${elem.synopsis},
       |    release_date  = ${elem.releaseDate},
+      |    writers       = ${elem.writers},
+      |    cast_members  = ${elem.cast},
       |    series_id     = ${elem.series.map(_.id)},
       |    series_season = ${elem.seriesSeason},
       |    series_number = ${elem.seriesNumber},
-      |    cover_url     = ${elem.coverUrl}
+      |    cover_url     = ${elem.coverUrl},
+      |    resources     = ${elem.externalResources}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
 
@@ -161,10 +141,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     val transaction =
       for
         rows <- updateAudioPlay
-        _ <- insertSeriesIfMissing(elem.series)
         _ <- checkIfAny(rows)
-        _ <- deleteWriters(elem) >> insertWriters(elem)
-        _ <- deleteResources(elem) >> insertResources(elem)
+        _ <- insertSeriesIfMissing(elem.series)
       yield elem
 
     transaction.transact(transactor).handleErrorWith(toRepositoryError)
@@ -208,42 +186,31 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       AudioPlayTitle,
       Synopsis,
       ReleaseDate,
-      Array[Uuid[Person]],
+      Set[Uuid[Person]],
+      Set[CastMember],
       Option[Uuid[AudioPlaySeries]],
       Option[AudioPlaySeriesName],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
       Option[ImageUrl],
-      Array[ExternalResourceType],
-      Array[URL],
+      Set[ExternalResource],
   )
 
   private val selectBase = fr"""
     |SELECT ap.id,
-    |       ap.title,
-    |       ap.synopsis,
-    |       ap.release_date,
-    |       COALESCE(writers, '{}'),
-    |       ap.series_id,
-    |       s.name,
-    |       ap.series_season,
-    |       ap.series_number,
-    |       ap.cover_url,
-    |       COALESCE(types, '{}'),
-    |       COALESCE(urls, '{}')
+    |    ap.title,
+    |    ap.synopsis,
+    |    ap.release_date,
+    |    ap.writers,
+    |    ap.cast_members,
+    |    ap.series_id,
+    |    s.name AS series_name,
+    |    ap.series_season,
+    |    ap.series_number,
+    |    ap.cover_url,
+    |    ap.resources
     |FROM audio_plays ap
-    |LEFT JOIN audio_play_series    s ON ap.series_id    = s.id
-    |LEFT JOIN LATERAL (
-    |     SELECT ARRAY_AGG(DISTINCT person_id) AS writers
-    |     FROM audio_play_writers
-    |     WHERE audio_play_id = ap.id
-    |) w ON TRUE
-    |LEFT JOIN LATERAL (
-    |     SELECT ARRAY_AGG(type ORDER BY _resource_id) AS types,
-    |            ARRAY_AGG(url  ORDER BY _resource_id) AS urls
-    |     FROM audio_play_resources
-    |     WHERE audio_play_id = ap.id
-    |) r ON TRUE
+    |LEFT JOIN audio_play_series s ON ap.series_id = s.id
     |"""
 
   private def insertSeriesIfMissing(series: Option[AudioPlaySeries]) =
@@ -255,60 +222,29 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
         |""".stripMargin.update.run.void
       case None => ().pure[ConnectionIO]
 
-  /** Query to delete all writers of this audio play. */
-  private def deleteWriters(audioPlay: AudioPlay) = sql"""
-    |DELETE FROM audio_play_writers
-    |WHERE audio_play_id = ${audioPlay.id}
-    |""".stripMargin.update.run
-
-  /** Query to insert writers of this audio play. */
-  private def insertWriters(audioPlay: AudioPlay) =
-    Update[(Uuid[AudioPlay], Uuid[Person])]("""
-      |INSERT INTO audio_play_writers (audio_play_id, person_id)
-      |VALUES (?, ?)
-      |""".stripMargin)
-      .updateMany(audioPlay.writers.map(writer => (audioPlay.id, writer)))
-
-  /** Query to delete all resources of this audio play. */
-  private def deleteResources(audioPlay: AudioPlay) = sql"""
-    |DELETE FROM audio_play_resources
-    |WHERE audio_play_id = ${audioPlay.id}
-    |""".stripMargin.update.run
-
-  /** Query to insert all resources of this audio play. */
-  private def insertResources(audioPlay: AudioPlay) =
-    Update[(Uuid[AudioPlay], ExternalResourceType, URL)]("""
-      |INSERT INTO audio_play_resources (audio_play_id, type, url)
-      |VALUES (?, ?, ?)
-      |""".stripMargin)
-      .updateMany(audioPlay.externalResources.map { er =>
-        (audioPlay.id, er.resourceType, er.url)
-      })
-
   /** Makes audio play from given data. */
   private def toAudioPlay(
       uuid: Uuid[AudioPlay],
       title: AudioPlayTitle,
       synopsis: Synopsis,
       releaseDate: ReleaseDate,
-      writerIds: Array[Uuid[Person]],
+      writerIds: Set[Uuid[Person]],
+      cast: Set[CastMember],
       seriesId: Option[Uuid[AudioPlaySeries]],
       seriesName: Option[AudioPlaySeriesName],
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
-      types: Array[ExternalResourceType],
-      urls: Array[URL],
+      resources: Set[ExternalResource],
   ): AudioPlay =
     val series = seriesId.zip(seriesName).map(AudioPlaySeries.unsafe)
-    val resources: List[ExternalResource] =
-      types.zip(urls).map(ExternalResource.apply).toList
     AudioPlay.unsafe(
       id = uuid,
       title = title,
       synopsis = synopsis,
       releaseDate = releaseDate,
-      writers = writerIds.toList,
+      writers = writerIds,
+      cast = cast,
       series = series,
       seriesSeason = season,
       seriesNumber = number,
