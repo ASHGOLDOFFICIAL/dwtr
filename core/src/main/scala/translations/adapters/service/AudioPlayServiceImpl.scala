@@ -7,10 +7,10 @@ import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.PaginationParams
-import shared.service.AuthorizationService
-import shared.service.AuthorizationService.requirePermissionOrDeny
+import shared.permission.PermissionClientService
+import shared.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.AudioPlayPermission.Write
+import translations.application.AudioPlayPermission.Modify
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -41,16 +41,16 @@ import java.util.UUID
 /** [[AudioPlayService]] implementation.
  *  @param pagination pagination config.
  *  @param repo audio play repository.
- *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
+ *  @param permissionService [[PermissionClientService]] instance.
  *  @tparam F effect type.
  */
 final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     pagination: Config.App.Pagination,
     repo: AudioPlayRepository[F],
     personService: PersonService[F],
-    authService: AuthorizationService[F, AudioPlayPermission],
+    permissionService: PermissionClientService[F],
 ) extends AudioPlayService[F]:
-  given AuthorizationService[F, AudioPlayPermission] = authService
+  private given PermissionClientService[F] = permissionService
 
   override def findById(
       id: UUID,
@@ -74,7 +74,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       user: AuthenticatedUser,
       request: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
         series <- getSeriesOrThrow(seriesId)
@@ -93,7 +93,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       user: AuthenticatedUser,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[AudioPlay](id)
       for result <- repo.delete(uuid).attempt
       yield result.leftMap(toApplicationError)

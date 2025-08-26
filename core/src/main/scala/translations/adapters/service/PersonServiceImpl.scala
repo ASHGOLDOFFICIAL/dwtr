@@ -6,9 +6,9 @@ import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
+import shared.permission.PermissionClientService
+import shared.permission.PermissionClientService.requirePermissionOrDeny
 import shared.repositories.transformFP
-import shared.service.AuthorizationService
-import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.application.AudioPlayPermission.*
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
@@ -26,14 +26,14 @@ import java.util.UUID
 
 /** [[PersonService]] implementation.
  *  @param repo person repository.
- *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
+ *  @param permissionService [[PermissionClientService]] instance.
  *  @tparam F effect type.
  */
 final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     repo: PersonRepository[F],
-    authService: AuthorizationService[F, AudioPlayPermission],
+    permissionService: PermissionClientService[F],
 ) extends PersonService[F]:
-  given AuthorizationService[F, AudioPlayPermission] = authService
+  given PermissionClientService[F] = permissionService
 
   override def findById(id: UUID): F[Option[PersonResponse]] =
     val uuid = Uuid[Person](id)
@@ -44,7 +44,7 @@ final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
       user: AuthenticatedUser,
       request: PersonRequest,
   ): F[Either[ApplicationServiceError, PersonResponse]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       (for
         id <- UUIDGen.randomUUID[F].map(Uuid[Person])
         person <- request
@@ -59,7 +59,7 @@ final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
       id: UUID,
       request: PersonRequest,
   ): F[Either[ApplicationServiceError, PersonResponse]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[Person](id)
       (for
         updatedOpt <- repo.transformFP(uuid) { old =>
@@ -78,7 +78,7 @@ final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
       user: AuthenticatedUser,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[Person](id)
       for result <- repo.delete(uuid).attempt
       yield result.leftMap(toApplicationError)

@@ -1,13 +1,13 @@
 package org.aulune
 package translations.application
 
+import shared.permission.Permission
+
 
 /** Permissions to operation on audio plays. */
-enum AudioPlayPermission:
+enum AudioPlayPermission(val name: String) extends Permission:
   /** Permission to make writing operations. */
-  case Write
+  case Modify extends AudioPlayPermission("modify")
 
-  /** Permission to see download links associated with audio plays. Temporary
-   *  solution.
-   */
-  case SeeDownloadLinks
+  /** Permission to download audio plays. */
+  case SeeDownloadLinks extends AudioPlayPermission("download")

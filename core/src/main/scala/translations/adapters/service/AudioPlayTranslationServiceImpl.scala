@@ -8,14 +8,15 @@ import shared.errors.ApplicationServiceError.BadRequest
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
+import shared.permission.PermissionClientService
+import shared.permission.PermissionClientService.requirePermissionOrDeny
 import shared.repositories.transformF
-import shared.service.AuthorizationService
-import shared.service.AuthorizationService.requirePermissionOrDeny
 import translations.adapters.service.mappers.{
   AudioPlayTranslationTypeMapper,
   LanguageMapper,
 }
-import translations.application.TranslationPermission.*
+import translations.application.AudioPlayPermission.*
+import translations.application.AudioPlayTranslationService
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
@@ -26,10 +27,6 @@ import translations.application.repositories.TranslationRepository.{
   AudioPlayTranslationIdentity,
   AudioPlayTranslationToken,
   given,
-}
-import translations.application.{
-  AudioPlayTranslationService,
-  TranslationPermission,
 }
 import translations.domain.errors.TranslationValidationError
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
@@ -47,10 +44,9 @@ import java.util.UUID
 
 
 /** [[AudioPlayTranslationService]] implementation.
- *
  *  @param pagination pagination config.
  *  @param repo audio play repository.
- *  @param authService [[AuthorizationService]] for [[TranslationPermission]]s.
+ *  @param permissionService [[PermissionClientService]] instance.
  *  @tparam F effect type.
  */
 final class AudioPlayTranslationServiceImpl[F[
@@ -58,9 +54,9 @@ final class AudioPlayTranslationServiceImpl[F[
 ]: MonadThrow: Clock: SecureRandom](
     pagination: Config.App.Pagination,
     repo: TranslationRepository[F],
-    authService: AuthorizationService[F, TranslationPermission],
+    permissionService: PermissionClientService[F],
 ) extends AudioPlayTranslationService[F]:
-  given AuthorizationService[F, TranslationPermission] = authService
+  private given PermissionClientService[F] = permissionService
 
   override def findById(
       originalId: UUID,
@@ -95,7 +91,7 @@ final class AudioPlayTranslationServiceImpl[F[
       tc: AudioPlayTranslationRequest,
       originalId: UUID,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
-    requirePermissionOrDeny(Create, user) {
+    requirePermissionOrDeny(Modify, user) {
       for
         id <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
         now <- Clock[F].realTimeInstant
@@ -113,7 +109,7 @@ final class AudioPlayTranslationServiceImpl[F[
       id: UUID,
       tc: AudioPlayTranslationRequest,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
-    requirePermissionOrDeny(Update, user) {
+    requirePermissionOrDeny(Modify, user) {
       val tId = identity(originalId, id)
       for result <- repo.transformF(tId)(tc.update(_).toOption)
       yield result.toRight(BadRequest).map(_.toResponse)
@@ -124,7 +120,7 @@ final class AudioPlayTranslationServiceImpl[F[
       originalId: UUID,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
-    requirePermissionOrDeny(Delete, user) {
+    requirePermissionOrDeny(Modify, user) {
       val tId = identity(originalId, id)
       for result <- repo.delete(tId).attemptHandle
       yield result.leftMap(toApplicationError)

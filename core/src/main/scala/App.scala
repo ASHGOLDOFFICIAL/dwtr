@@ -2,18 +2,18 @@ package org.aulune
 
 
 import auth.AuthApp
+import permissions.PermissionsApp
 import shared.auth.AuthenticationService
+import shared.permission.PermissionClientService
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   PersonRepositoryImpl,
   TranslationRepositoryImpl,
 }
 import translations.adapters.service.{
-  AudioPlayAuthorizationService,
   AudioPlayServiceImpl,
   AudioPlayTranslationServiceImpl,
   PersonServiceImpl,
-  TranslationAuthorizationService,
 }
 import translations.api.http.{AudioPlaysController, PersonsController}
 
@@ -51,8 +51,11 @@ object App extends IOApp.Simple:
   override def run: IO[Unit] =
     for
       authApp <- AuthApp.build(config.auth, transactor)
-      translationsEndpoints <-
-        makeTranslationsEndpoints[IO](authApp.clientAuthentication, transactor)
+      permissionApp <- PermissionsApp.build(transactor)
+      translationsEndpoints <- makeTranslationsEndpoints[IO](
+        authApp.clientAuthentication,
+        permissionApp.clientPermission,
+        transactor)
       endpoints = authApp.endpoints ++ translationsEndpoints
       _ <- makeServer[IO](endpoints).use(_ => IO.never)
     yield ()
@@ -61,33 +64,32 @@ object App extends IOApp.Simple:
       _,
   ]: MonadCancelThrow: Clock: SecureRandom](
       authServ: AuthenticationService[F],
+      permissionServ: PermissionClientService[F],
       transactor: Transactor[F],
   ): F[List[ServerEndpoint[Any, F]]] =
     for
       personRepo <- PersonRepositoryImpl.build[F](transactor)
-      audioAuth = new AudioPlayAuthorizationService[F]
-      personSev = new PersonServiceImpl[F](personRepo, audioAuth)
+      personServ = new PersonServiceImpl[F](personRepo, permissionServ)
 
       transRepo <- TranslationRepositoryImpl.build[F](transactor)
-      transAuth = new TranslationAuthorizationService[F]
       transServ = new AudioPlayTranslationServiceImpl[F](
         config.app.pagination,
         transRepo,
-        transAuth)
+        permissionServ)
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ = new AudioPlayServiceImpl[F](
         config.app.pagination,
         audioRepo,
-        personSev,
-        audioAuth)
+        personServ,
+        permissionServ)
 
       audioEndpoints = new AudioPlaysController[F](
         config.app.pagination,
         audioServ,
         authServ,
         transServ).endpoints
-      personEndpoints = new PersonsController[F](personSev, authServ).endpoints
+      personEndpoints = new PersonsController[F](personServ, authServ).endpoints
     yield audioEndpoints ++ personEndpoints
 
   private def makeServer[F[_]: Async](
