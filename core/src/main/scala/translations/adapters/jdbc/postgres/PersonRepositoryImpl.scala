@@ -2,6 +2,7 @@ package org.aulune
 package translations.adapters.jdbc.postgres
 
 
+import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.errors.RepositoryError
 import shared.errors.RepositoryError.{AlreadyExists, NothingToUpdate}
 import shared.model.Uuid

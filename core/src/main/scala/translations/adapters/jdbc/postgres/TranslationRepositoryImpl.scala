@@ -2,6 +2,7 @@ package org.aulune
 package translations.adapters.jdbc.postgres
 
 
+import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.adapters.doobie.*
 import shared.errors.RepositoryError
 import shared.model.Uuid

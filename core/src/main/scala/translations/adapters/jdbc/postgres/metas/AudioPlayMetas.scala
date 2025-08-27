@@ -2,8 +2,8 @@ package org.aulune
 package translations.adapters.jdbc.postgres.metas
 
 
+import shared.adapters.jdbc.postgres.metas.SharedMetas.jsonbMeta
 import shared.model.Uuid
-import translations.adapters.jdbc.postgres.metas.SharedMetas.jsonbMeta
 import translations.domain.model.audioplay.{
   ActorRole,
   AudioPlay,
