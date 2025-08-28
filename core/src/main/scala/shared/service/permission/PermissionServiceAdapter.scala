@@ -15,7 +15,7 @@ import cats.Functor
 import cats.syntax.all.given
 
 
-/** Adapts [[PermissionService]] to [[PermissionClientService]]
+/** Adapts [[PermissionService]] to [[PermissionClientService]].
  *  @param service service to adapt.
  *  @tparam F effect type.
  */
