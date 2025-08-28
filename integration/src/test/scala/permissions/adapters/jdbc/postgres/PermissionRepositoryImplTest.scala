@@ -91,6 +91,23 @@ final class PermissionRepositoryImplTest
     }
   }
 
+  "upsert method " - {
+    "should " - {
+      "persist non-existent permissions" in stand { repo =>
+        for
+          result <- repo.upsert(testPermission)
+        yield result shouldBe testPermission
+      }
+
+      "update existent permissions" in stand { repo =>
+        for
+          _ <- repo.persist(testPermission)
+          result <- repo.upsert(updatedTestPermission)
+        yield result shouldBe updatedTestPermission
+      }
+    }
+  }
+
   "update method" - {
     "should " - {
       "update permissions" in stand { repo =>
@@ -208,7 +225,7 @@ final class PermissionRepositoryImplTest
         yield result shouldBe false
       }
 
-      "throws FailedPrecondition if permission doesn't exist" in stand { repo =>
+      "throw FailedPrecondition if permission doesn't exist" in stand { repo =>
         for result <- repo
             .revokePermission(userId, testPermissionIdentity)
             .attempt

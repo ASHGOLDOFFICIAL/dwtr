@@ -55,7 +55,7 @@ final class PermissionServiceImplTest
   private val mockRepo = mock[PermissionRepository[IO]]
   private def stand: (PermissionService[IO] => IO[Assertion]) => IO[Assertion] =
     testCase =>
-      (mockRepo.persist _)
+      (mockRepo.upsert _)
         .expects(where(hasAdminPermissionIdentity))
         .onCall((p: Permission) => p.pure[IO])
       PermissionServiceImpl
@@ -101,7 +101,7 @@ final class PermissionServiceImplTest
   "registerPermission method " - {
     "should " - {
       "add new permissions" in stand { service =>
-        (mockRepo.persist _)
+        (mockRepo.upsert _)
           .expects(testPermission)
           .returning(testPermission.pure)
         for result <- service.registerPermission(createRequest)
@@ -109,12 +109,12 @@ final class PermissionServiceImplTest
       }
 
       "be idempotent" in stand { service =>
-        (mockRepo.persist _)
+        (mockRepo.upsert _)
           .expects(testPermission)
           .returning(testPermission.pure)
-        (mockRepo.persist _)
+        (mockRepo.upsert _)
           .expects(testPermission)
-          .returning(IO.raiseError(RepositoryError.AlreadyExists))
+          .returning(testPermission.pure)
 
         for
           _ <- service.registerPermission(createRequest)
