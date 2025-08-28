@@ -94,8 +94,7 @@ final class PermissionRepositoryImplTest
   "upsert method " - {
     "should " - {
       "persist non-existent permissions" in stand { repo =>
-        for
-          result <- repo.upsert(testPermission)
+        for result <- repo.upsert(testPermission)
         yield result shouldBe testPermission
       }
 
@@ -180,7 +179,7 @@ final class PermissionRepositoryImplTest
         yield result shouldBe false
       }
 
-      "throws FailedPrecondition if permission doesn't exist" in stand { repo =>
+      "throw FailedPrecondition if permission doesn't exist" in stand { repo =>
         for result <- repo.hasPermission(userId, testPermissionIdentity).attempt
         yield result shouldBe FailedPrecondition.asLeft
       }
@@ -197,7 +196,7 @@ final class PermissionRepositoryImplTest
         yield result shouldBe true
       }
 
-      "throws FailedPrecondition if permission doesn't exist" in stand { repo =>
+      "throw FailedPrecondition if permission doesn't exist" in stand { repo =>
         for result <- repo
             .grantPermission(userId, testPermissionIdentity)
             .attempt

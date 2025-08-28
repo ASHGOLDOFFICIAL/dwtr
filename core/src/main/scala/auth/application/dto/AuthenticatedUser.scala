@@ -1,7 +1,6 @@
 package org.aulune
 package auth.application.dto
 
-
 import java.util.UUID
 
 

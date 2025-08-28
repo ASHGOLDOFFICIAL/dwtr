@@ -5,7 +5,7 @@ package permissions.adapters.jdbc.postgres
 import permissions.domain.{
   PermissionDescription,
   PermissionName,
-  PermissionNamespace
+  PermissionNamespace,
 }
 
 import doobie.Meta

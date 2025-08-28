@@ -6,7 +6,7 @@ import permissions.application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
   CreatePermissionRequest,
-  PermissionResource
+  PermissionResource,
 }
 import shared.errors.ApplicationServiceError
 

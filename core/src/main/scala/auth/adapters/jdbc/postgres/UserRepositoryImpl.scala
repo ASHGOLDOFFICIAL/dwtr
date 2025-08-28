@@ -89,7 +89,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       .void
       .handleErrorWith(toRepositoryError)
 
-  override def getByUsername(username: Username): F[Option[User]] =sql"""
+  override def getByUsername(username: Username): F[Option[User]] = sql"""
     |SELECT id, username, password, google_id
     |FROM users
     |WHERE username = $username""".stripMargin
