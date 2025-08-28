@@ -51,7 +51,7 @@ object PermissionServiceImpl:
       PermissionDescription.unsafe(
         "Permission that overrides any other permission."),
     )
-    repo.persist(adminPermission).map { permission =>
+    repo.upsert(adminPermission).map { permission =>
       new PermissionServiceImpl(permission, repo)
     }
 
@@ -71,7 +71,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
   ): F[Either[ApplicationServiceError, PermissionResource]] = (for
     domain <- EitherT
       .fromOption(PermissionMapper.fromRequest(request), BadRequest)
-    result <- EitherT(persistPermission(domain))
+    result <- EitherT(upsertPermission(domain))
     response = PermissionMapper.toResponse(result)
   yield response).value
 
@@ -88,11 +88,10 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
       response = toCheckResponse(request, adminCheck || permCheck)
     yield response).value
 
-  private def persistPermission(
+  private def upsertPermission(
       permission: Permission,
   ): F[Either[ApplicationServiceError, Permission]] = repo
-    .persist(permission)
-    .handleError { case RepositoryError.AlreadyExists => permission }
+    .upsert(permission)
     .attempt
     .map(_.leftMap(toApplicationError))
 

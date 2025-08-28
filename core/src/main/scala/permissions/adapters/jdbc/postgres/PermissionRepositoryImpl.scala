@@ -80,14 +80,27 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 
-  override def persist(permission: Permission): F[Permission] = sql"""
+  override def persist(elem: Permission): F[Permission] = sql"""
     |INSERT INTO permissions (namespace, name, description)
     |VALUES (
-    |  ${permission.namespace},
-    |  ${permission.name},
-    |  ${permission.description}
+    |  ${elem.namespace},
+    |  ${elem.name},
+    |  ${elem.description}
     |)""".stripMargin.update.run
-    .as(permission)
+    .as(elem)
+    .transact(transactor)
+    .handleErrorWith(toRepositoryError)
+
+  override def upsert(elem: Permission): F[Permission] = sql"""
+    |INSERT INTO permissions (namespace, name, description)
+    |VALUES (
+    |  ${elem.namespace},
+    |  ${elem.name},
+    |  ${elem.description}
+    |)
+    |ON CONFLICT (namespace, name) DO UPDATE
+    |SET description = EXCLUDED.description""".stripMargin.update.run
+    .as(elem)
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 

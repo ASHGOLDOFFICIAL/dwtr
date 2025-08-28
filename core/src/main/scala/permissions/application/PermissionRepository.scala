@@ -7,14 +7,15 @@ import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{Permission, PermissionName, PermissionNamespace}
 import shared.errors.RepositoryError.*
 import shared.model.Uuid
-import shared.repositories.GenericRepository
+import shared.repositories.{GenericRepository, Upsert}
 
 
 /** Repository for [[Permission]]s.
  *  @tparam F effect type.
  */
 trait PermissionRepository[F[_]]
-    extends GenericRepository[F, Permission, PermissionIdentity]:
+    extends GenericRepository[F, Permission, PermissionIdentity]
+    with Upsert[F, Permission]:
 
   /** Check if given user has given permission.
    *  @param user user.
