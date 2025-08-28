@@ -11,12 +11,12 @@ import permissions.domain.{
   PermissionNamespace,
 }
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
-import shared.errors.RepositoryError.{
+import shared.model.Uuid
+import shared.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
   NothingToUpdate,
 }
-import shared.model.Uuid
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec

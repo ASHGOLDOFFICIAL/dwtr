@@ -3,12 +3,12 @@ package auth.adapters.jdbc.postgres
 
 
 import auth.adapters.jdbc.postgres.metas.UserMetas.given
-import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import auth.application.repositories.UserRepository
 import auth.domain.model.{User, Username}
-import shared.errors.RepositoryError
-import shared.errors.RepositoryError.*
+import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
+import shared.repositories.RepositoryError
+import shared.repositories.RepositoryError.*
 
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*

@@ -5,8 +5,8 @@ package permissions.application
 import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{Permission, PermissionName, PermissionNamespace}
-import shared.errors.RepositoryError.*
 import shared.model.Uuid
+import shared.repositories.RepositoryError.*
 import shared.repositories.{GenericRepository, Upsert}
 
 

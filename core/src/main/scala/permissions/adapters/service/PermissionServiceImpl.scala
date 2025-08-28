@@ -19,9 +19,10 @@ import permissions.domain.{
   PermissionName,
   PermissionNamespace,
 }
+import shared.errors.ApplicationServiceError
 import shared.errors.ApplicationServiceError.BadRequest
-import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.model.Uuid
+import shared.repositories.RepositoryError
 
 import cats.MonadThrow
 import cats.data.EitherT

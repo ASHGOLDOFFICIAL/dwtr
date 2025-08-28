@@ -16,8 +16,8 @@ import auth.domain.errors.UserValidationError
 import auth.domain.model.{User, Username}
 import shared.errors
 import shared.errors.ApplicationServiceError.BadRequest
-import shared.errors.RepositoryError
 import shared.model.Uuid
+import shared.repositories.RepositoryError
 
 import cats.data.{EitherNec, EitherT, NonEmptyChain, Validated}
 import cats.effect.std.UUIDGen

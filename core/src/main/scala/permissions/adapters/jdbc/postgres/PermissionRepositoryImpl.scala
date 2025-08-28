@@ -13,13 +13,13 @@ import permissions.domain.{
   PermissionNamespace,
 }
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import shared.errors.RepositoryError
-import shared.errors.RepositoryError.{
+import shared.model.Uuid
+import shared.repositories.RepositoryError
+import shared.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
   NothingToUpdate,
 }
-import shared.model.Uuid
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow

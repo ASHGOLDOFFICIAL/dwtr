@@ -1,5 +1,5 @@
 package org.aulune
-package shared.errors
+package shared.repositories
 
 import scala.util.control.NoStackTrace
 

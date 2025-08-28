@@ -3,8 +3,9 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import shared.errors.{ApplicationServiceError, RepositoryError}
+import shared.errors.ApplicationServiceError
 import shared.model.Uuid
+import shared.repositories.RepositoryError
 import shared.service.permission.PermissionClientService
 import translations.application.TranslationPermission.Modify
 import translations.application.dto.person.{PersonRequest, PersonResponse}

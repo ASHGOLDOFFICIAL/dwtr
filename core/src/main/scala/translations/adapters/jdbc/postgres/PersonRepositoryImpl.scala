@@ -3,9 +3,9 @@ package translations.adapters.jdbc.postgres
 
 
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import shared.errors.RepositoryError
-import shared.errors.RepositoryError.{AlreadyExists, NothingToUpdate}
 import shared.model.Uuid
+import shared.repositories.RepositoryError
+import shared.repositories.RepositoryError.{AlreadyExists, NothingToUpdate}
 import translations.adapters.jdbc.postgres.metas.PersonMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.PersonRepository

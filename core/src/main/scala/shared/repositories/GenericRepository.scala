@@ -1,8 +1,6 @@
 package org.aulune
 package shared.repositories
 
-import shared.errors.RepositoryError
-
 
 /** Repository with basic CRUD operations.
  *

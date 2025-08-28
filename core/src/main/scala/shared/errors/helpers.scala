@@ -2,6 +2,8 @@ package org.aulune
 package shared.errors
 
 
+import shared.repositories.RepositoryError
+
 import org.aulune
 import sttp.model.StatusCode
 
