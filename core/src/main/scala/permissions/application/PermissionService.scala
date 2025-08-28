@@ -1,20 +1,35 @@
 package org.aulune
 package permissions.application
 
-import auth.application.dto.AuthenticatedUser
+
+import permissions.application.dto.{
+  CheckPermissionRequest,
+  CheckPermissionResponse,
+  CreatePermissionRequest,
+  PermissionResource
+}
+import shared.errors.ApplicationServiceError
 
 
 /** Service to check user permissions.
  *  @tparam F effect type.
  */
 trait PermissionService[F[_]]:
+  /** Registers new permission. Checking for unregistered permissions will lead
+   *  to error.
+   *  @param request request with permission details.
+   *  @return `Unit` if everything is OK, otherwise error.
+   *  @note registering already existing permission isn't an exceptional
+   *    situation.
+   */
+  def registerPermission(
+      request: CreatePermissionRequest,
+  ): F[Either[ApplicationServiceError, PermissionResource]]
+
   /** Checks if user has permission.
-   *  @param user user who needs permission.
-   *  @param permission required permission.
-   *  @return [[PermissionCheckResult.Granted]] if user has required permission,
-   *    otherwise [[PermissionCheckResult.Denied]].
+   *  @param request request with details of who is requiring what permission.
+   *  @return permission check result.
    */
   def checkPermission(
-      user: AuthenticatedUser,
-      permission: PermissionDto,
-  ): F[PermissionCheckResult]
+      request: CheckPermissionRequest,
+  ): F[Either[ApplicationServiceError, CheckPermissionResponse]]

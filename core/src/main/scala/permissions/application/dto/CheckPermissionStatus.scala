@@ -1,9 +1,9 @@
 package org.aulune
-package permissions.application
+package permissions.application.dto
 
 
 /** Possible outcomes of permission check. */
-enum PermissionCheckResult:
+enum CheckPermissionStatus:
   /** User does have required permission. */
   case Granted
 

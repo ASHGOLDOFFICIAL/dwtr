@@ -25,7 +25,7 @@ import doobie.Transactor
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import org.http4s.{HttpRoutes, server}
-import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
 import sttp.apispec.openapi.Server
@@ -37,7 +37,7 @@ import sttp.tapir.swagger.SwaggerUI
 
 
 object App extends IOApp.Simple:
-  given loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
+  given loggerFactory: Logger[IO] = Slf4jFactory.create[IO].getLogger
 
   private val config = ConfigSource.defaultReference.loadOrThrow[Config]
   private val transactor = Transactor.fromDriverManager[IO](

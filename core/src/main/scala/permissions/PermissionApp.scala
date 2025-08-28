@@ -9,6 +9,7 @@ import shared.service.permission.PermissionClientService
 import cats.effect.Async
 import cats.syntax.all.given
 import doobie.Transactor
+import org.typelevel.log4cats.Logger
 
 
 /** Permission app with client-side service implementation.
@@ -23,13 +24,16 @@ object PermissionApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: Async](
+  def build[F[_]: Async: Logger](
       config: PermissionConfig,
       transactor: Transactor[F],
   ): F[PermissionApp[F]] =
     for
       repository <- PermissionRepositoryImpl.build(transactor)
-      service <- PermissionServiceImpl.build(config.adminPermission, repository)
+      service <- PermissionServiceImpl.build(
+        adminPermissionNamespace = config.adminPermissionNamespace,
+        adminPermissionName = config.adminPermissionName,
+        repo = repository)
     yield new PermissionApp[F]:
       override val clientPermission: PermissionClientService[F] =
         PermissionClientService.make(service)

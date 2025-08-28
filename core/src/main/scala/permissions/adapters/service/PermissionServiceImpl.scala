@@ -3,17 +3,30 @@ package permissions.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import permissions.application.{
-  PermissionCheckResult,
-  PermissionDto,
-  PermissionRepository,
-  PermissionService,
+import permissions.application.PermissionRepository.PermissionIdentity
+import permissions.application.dto.CheckPermissionStatus.{Denied, Granted}
+import permissions.application.dto.{
+  CheckPermissionRequest,
+  CheckPermissionResponse,
+  CheckPermissionStatus,
+  CreatePermissionRequest,
+  PermissionResource,
 }
-import permissions.domain.Permission
+import permissions.application.{PermissionRepository, PermissionService}
+import permissions.domain.{
+  Permission,
+  PermissionDescription,
+  PermissionName,
+  PermissionNamespace,
+}
+import shared.errors.ApplicationServiceError.BadRequest
+import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.model.Uuid
 
-import cats.Monad
+import cats.MonadThrow
+import cats.data.EitherT
 import cats.syntax.all.given
+import org.typelevel.log4cats.Logger
 
 
 /** [[PermissionService]] implementation. */
@@ -23,33 +36,98 @@ object PermissionServiceImpl:
    *  @param repo [[PermissionRepository]] implementation.
    *  @tparam F effect type.
    *  @return [[PermissionService]] implementation.
+   *  @throws IllegalArgumentException if incorrect admin permission params are
+   *    given.
    *  @note Users with admin permission will be granted any other permission.
    */
-  def build[F[_]: Monad](
+  def build[F[_]: MonadThrow: Logger](
+      adminPermissionNamespace: String,
       adminPermissionName: String,
       repo: PermissionRepository[F],
   ): F[PermissionService[F]] =
-    repo.persist(Permission(adminPermissionName)).map { permission =>
+    val adminPermission = Permission.unsafe(
+      PermissionNamespace.unsafe(adminPermissionNamespace),
+      PermissionName.unsafe(adminPermissionName),
+      PermissionDescription.unsafe(
+        "Permission that overrides any other permission."),
+    )
+    repo.persist(adminPermission).map { permission =>
       new PermissionServiceImpl(permission, repo)
     }
 
 
-private final class PermissionServiceImpl[F[_]: Monad](
+private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
     adminPermission: Permission,
     repo: PermissionRepository[F],
 ) extends PermissionService[F]:
 
+  private val adminPermissionIdentity = PermissionIdentity(
+    namespace = adminPermission.namespace,
+    name = adminPermission.name,
+  )
+
+  override def registerPermission(
+      request: CreatePermissionRequest,
+  ): F[Either[ApplicationServiceError, PermissionResource]] = (for
+    domain <- EitherT
+      .fromOption(PermissionMapper.fromRequest(request), BadRequest)
+    result <- EitherT(persistPermission(domain))
+    response = PermissionMapper.toResponse(result)
+  yield response).value
+
   override def checkPermission(
-      user: AuthenticatedUser,
-      permission: PermissionDto,
-  ): F[PermissionCheckResult] =
-    val id = Uuid[AuthenticatedUser](user.id)
-    val domainPermission = Permission(name = permission.name)
-    repo.contains(user = id, permission = adminPermission).flatMap {
-      case true  => PermissionCheckResult.Granted.pure[F]
-      case false =>
-        repo.contains(user = id, permission = domainPermission).map {
-          case true  => PermissionCheckResult.Granted
-          case false => PermissionCheckResult.Denied
-        }
-    }
+      request: CheckPermissionRequest,
+  ): F[Either[ApplicationServiceError, CheckPermissionResponse]] =
+    val id = Uuid[AuthenticatedUser](request.user)
+    val permissionIdentityOpt =
+      PermissionMapper.makeIdentity(request.namespace, request.permission)
+    (for
+      domain <- EitherT.fromOption(permissionIdentityOpt, BadRequest)
+      adminCheck <- EitherT(hasPermission(id, adminPermissionIdentity))
+      permCheck <- EitherT(hasPermission(id, domain))
+      response = toCheckResponse(request, adminCheck || permCheck)
+    yield response).value
+
+  private def persistPermission(
+      permission: Permission,
+  ): F[Either[ApplicationServiceError, Permission]] = repo
+    .persist(permission)
+    .handleError { case RepositoryError.AlreadyExists => permission }
+    .attempt
+    .map(_.leftMap(toApplicationError))
+
+  /** Checks if user has a permission.
+   *  @param id user's ID.
+   *  @param permission required permission identity.
+   */
+  private def hasPermission(
+      id: Uuid[AuthenticatedUser],
+      permission: PermissionIdentity,
+  ): F[Either[ApplicationServiceError, Boolean]] = repo
+    .hasPermission(id, permission)
+    .attempt
+    .map(_.leftMap(toApplicationError))
+
+  private def toApplicationError(
+      throwable: Throwable,
+  ): ApplicationServiceError = throwable match
+    case e: RepositoryError => e match
+        case RepositoryError.FailedPrecondition =>
+          ApplicationServiceError.FailedPrecondition
+        case _ => ApplicationServiceError.Internal
+    case _ => ApplicationServiceError.Internal
+
+  /** Makes check response out of initial request and check result.
+   *
+   *  @param request initial request.
+   *  @param result whether permission is granted or not.
+   */
+  private def toCheckResponse(
+      request: CheckPermissionRequest,
+      result: Boolean,
+  ): CheckPermissionResponse = CheckPermissionResponse(
+    status = if result then Granted else Denied,
+    user = request.user,
+    namespace = request.namespace,
+    permission = request.permission,
+  )

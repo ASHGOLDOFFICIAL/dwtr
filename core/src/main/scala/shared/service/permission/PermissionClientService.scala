@@ -3,21 +3,33 @@ package shared.service.permission
 
 
 import auth.application.dto.AuthenticatedUser
-import permissions.application.{
-  PermissionCheckResult,
-  PermissionDto,
-  PermissionService,
+import permissions.application.PermissionService
+import permissions.application.dto.CheckPermissionStatus.Granted
+import permissions.application.dto.{
+  CheckPermissionRequest,
+  CheckPermissionStatus,
+  CreatePermissionRequest,
 }
 import shared.errors.ApplicationServiceError
 
 import cats.syntax.all.given
 import cats.{FlatMap, Functor, Monad}
 
+import java.util.UUID
+
 
 /** Permission service for use in other modules.
  *  @tparam F effect type.
  */
 trait PermissionClientService[F[_]]:
+  /** Registers new permission.
+   *  @param permission new permission
+   *  @return
+   */
+  def registerPermission(
+      permission: Permission,
+  ): F[Either[ApplicationServiceError, Unit]]
+
   /** Returns authenticated user's info if token is valid.
    *  @param user user who needs permission.
    *  @param permission required permission.
@@ -33,13 +45,7 @@ object PermissionClientService:
    */
   def make[F[_]: Functor](
       service: PermissionService[F],
-  ): PermissionClientService[F] =
-    (user: AuthenticatedUser, permission: Permission) =>
-      val permissionDto = PermissionDto(name = permission.name)
-      for result <- service.checkPermission(user, permissionDto)
-      yield result match
-        case PermissionCheckResult.Granted => true
-        case PermissionCheckResult.Denied  => false
+  ): PermissionClientService[F] = PermissionServiceAdapter[F](service)
 
   /** Conditionally executes one of two actions based on whether the user has
    *  the given permission.
