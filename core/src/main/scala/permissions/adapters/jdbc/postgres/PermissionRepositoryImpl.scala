@@ -181,7 +181,8 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[Unit] =
     def revokeQuery(reference: Int) = sql"""
     |DELETE FROM user_permissions
-    |WHERE user_id = $user""".stripMargin.update.run.void
+    |WHERE user_id = $user
+    |AND reference = $reference""".stripMargin.update.run.void
 
     val transaction =
       for
