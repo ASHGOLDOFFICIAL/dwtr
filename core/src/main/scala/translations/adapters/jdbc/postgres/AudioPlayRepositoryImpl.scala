@@ -2,8 +2,10 @@ package org.aulune
 package translations.adapters.jdbc.postgres
 
 
+import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.errors.RepositoryError
 import shared.errors.RepositoryError.*
+import shared.model.Uuid
 import translations.adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.AudioPlayRepository
@@ -23,7 +25,6 @@ import translations.domain.shared.{
   ImageUrl,
   ReleaseDate,
   Synopsis,
-  Uuid,
 }
 
 import cats.MonadThrow

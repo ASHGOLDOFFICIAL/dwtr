@@ -2,18 +2,18 @@ package org.aulune
 
 
 import auth.AuthApp
-import shared.auth.AuthenticationService
+import permissions.PermissionApp
+import shared.service.auth.AuthenticationClientService
+import shared.service.permission.PermissionClientService
 import translations.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   PersonRepositoryImpl,
   TranslationRepositoryImpl,
 }
 import translations.adapters.service.{
-  AudioPlayAuthorizationService,
   AudioPlayServiceImpl,
   AudioPlayTranslationServiceImpl,
   PersonServiceImpl,
-  TranslationAuthorizationService,
 }
 import translations.api.http.{AudioPlaysController, PersonsController}
 
@@ -25,7 +25,7 @@ import doobie.Transactor
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import org.http4s.{HttpRoutes, server}
-import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
 import sttp.apispec.openapi.Server
@@ -37,7 +37,7 @@ import sttp.tapir.swagger.SwaggerUI
 
 
 object App extends IOApp.Simple:
-  given loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
+  given loggerFactory: Logger[IO] = Slf4jFactory.create[IO].getLogger
 
   private val config = ConfigSource.defaultReference.loadOrThrow[Config]
   private val transactor = Transactor.fromDriverManager[IO](
@@ -51,8 +51,11 @@ object App extends IOApp.Simple:
   override def run: IO[Unit] =
     for
       authApp <- AuthApp.build(config.auth, transactor)
-      translationsEndpoints <-
-        makeTranslationsEndpoints[IO](authApp.clientAuthentication, transactor)
+      permissionApp <- PermissionApp.build(config.permission, transactor)
+      translationsEndpoints <- makeTranslationsEndpoints[IO](
+        authApp.clientAuthentication,
+        permissionApp.clientPermission,
+        transactor)
       endpoints = authApp.endpoints ++ translationsEndpoints
       _ <- makeServer[IO](endpoints).use(_ => IO.never)
     yield ()
@@ -60,34 +63,28 @@ object App extends IOApp.Simple:
   private def makeTranslationsEndpoints[F[
       _,
   ]: MonadCancelThrow: Clock: SecureRandom](
-      authServ: AuthenticationService[F],
+      authServ: AuthenticationClientService[F],
+      permissionServ: PermissionClientService[F],
       transactor: Transactor[F],
   ): F[List[ServerEndpoint[Any, F]]] =
     for
       personRepo <- PersonRepositoryImpl.build[F](transactor)
-      audioAuth = new AudioPlayAuthorizationService[F]
-      personSev = new PersonServiceImpl[F](personRepo, audioAuth)
+      personServ <- PersonServiceImpl.build[F](personRepo, permissionServ)
 
       transRepo <- TranslationRepositoryImpl.build[F](transactor)
-      transAuth = new TranslationAuthorizationService[F]
-      transServ = new AudioPlayTranslationServiceImpl[F](
-        config.app.pagination,
-        transRepo,
-        transAuth)
+      transServ <- AudioPlayTranslationServiceImpl
+        .build[F](config.app.pagination, transRepo, permissionServ)
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
-      audioServ = new AudioPlayServiceImpl[F](
-        config.app.pagination,
-        audioRepo,
-        personSev,
-        audioAuth)
+      audioServ <- AudioPlayServiceImpl
+        .build[F](config.app.pagination, audioRepo, personServ, permissionServ)
 
       audioEndpoints = new AudioPlaysController[F](
         config.app.pagination,
         audioServ,
         authServ,
         transServ).endpoints
-      personEndpoints = new PersonsController[F](personSev, authServ).endpoints
+      personEndpoints = new PersonsController[F](personServ, authServ).endpoints
     yield audioEndpoints ++ personEndpoints
 
   private def makeServer[F[_]: Async](

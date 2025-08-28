@@ -1,7 +1,7 @@
 package org.aulune
 package auth.application.dto
 
-import auth.domain.model.Group
+import java.util.UUID
 
 
 /** ID token payload.
@@ -11,12 +11,12 @@ import auth.domain.model.Group
  *  @param exp expiration time on or after which the ID Token should be
  *    considered invalid.
  *  @param iat time at which the JWT was issued.
- *  @param groups user's groups.
+ *  @param username user's username.
  */
 final case class AccessTokenPayload(
     iss: String,
-    sub: String,
+    sub: UUID,
     exp: Long,
     iat: Long,
-    groups: Set[Group],
+    username: String,
 )

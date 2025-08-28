@@ -1,51 +1,69 @@
 package org.aulune
-package shared.service
+package shared.service.permission
 
 
 import auth.application.dto.AuthenticatedUser
+import permissions.application.PermissionService
+import permissions.application.dto.CheckPermissionStatus.Granted
+import permissions.application.dto.{
+  CheckPermissionRequest,
+  CheckPermissionStatus,
+  CreatePermissionRequest,
+}
 import shared.errors.ApplicationServiceError
 
-import cats.syntax.all.*
-import cats.{FlatMap, Monad}
+import cats.syntax.all.given
+import cats.{FlatMap, Functor, Monad}
+
+import java.util.UUID
 
 
-/** Generic service for managing authorization and permission checks.
- *
- *  Application services are encouraged to implement this trait if they need to
- *  restrict some actions to authenticated users with specific permissions.
- *
+/** Permission service for use in other modules.
  *  @tparam F effect type.
- *  @tparam P permission type (enums are recommended).
  */
-trait AuthorizationService[F[_], P]:
-  /** Checks if the given user has the required permission.
-   *
-   *  @param user authenticated user.
-   *  @param permission permission to check.
-   *  @return a boolean wrapped in the effect [[F]], indicating whether the user
-   *    has the permission.
+trait PermissionClientService[F[_]]:
+  /** Registers new permission.
+   *  @param permission new permission
+   *  @return
    */
-  def hasPermission(user: AuthenticatedUser, permission: P): F[Boolean]
+  def registerPermission(
+      permission: Permission,
+  ): F[Either[ApplicationServiceError, Unit]]
+
+  /** Returns authenticated user's info if token is valid.
+   *  @param user user who needs permission.
+   *  @param permission required permission.
+   */
+  def hasPermission(user: AuthenticatedUser, permission: Permission): F[Boolean]
 
 
-object AuthorizationService:
+object PermissionClientService:
+  /** Builds client-side [[PermissionClientService]] using external
+   *  [[PermissionService]]
+   *  @param service external permission system.
+   *  @tparam F effect type.
+   */
+  def make[F[_]: Functor](
+      service: PermissionService[F],
+  ): PermissionClientService[F] = PermissionServiceAdapter[F](service)
+
   /** Conditionally executes one of two actions based on whether the user has
    *  the given permission.
+   *
    *  @param required permission required to do the action [[onGranted]].
    *  @param from authenticated user requesting the action.
    *  @param notGranted action to perform if the user lacks the permission.
    *  @param onGranted action to perform if the user has the permission.
    *  @param service [[AuthorizationService]] instance (contextual).
    *  @tparam F effect type.
-   *  @tparam P permission type.
    *  @tparam A return type.
    *  @return a result in the effect `F` based on permission verification.
    */
-  def requirePermission[F[_]: FlatMap, P, A](
-      required: P,
+  def requirePermission[F[_]: FlatMap, A](
+      required: Permission,
       from: AuthenticatedUser,
   )(notGranted: => F[A])(onGranted: => F[A])(using
-      service: AuthorizationService[F, P],
+      service: PermissionClientService[F],
   ): F[A] = service.hasPermission(from, required).flatMap {
     case false => notGranted
     case true  => onGranted
@@ -59,16 +77,15 @@ object AuthorizationService:
    *  @param granted action to perform if the permission check passes.
    *  @param service [[AuthorizationService]] instance (contextual).
    *  @tparam M effect type.
-   *  @tparam P permission type.
    *  @tparam A successful return type.
    *  @return either [[ApplicationServiceError.PermissionDenied]] or the
    *    successful result, wrapped in [[M]].
    */
-  def requirePermissionOrDeny[M[_]: Monad, P, A](
-      required: P,
+  def requirePermissionOrDeny[M[_]: Monad, A](
+      required: Permission,
       from: AuthenticatedUser,
   )(granted: => M[Either[ApplicationServiceError, A]])(using
-      service: AuthorizationService[M, P],
+      service: PermissionClientService[M],
   ): M[Either[ApplicationServiceError, A]] = requirePermission(required, from) {
     ApplicationServiceError.PermissionDenied.asLeft[A].pure[M]
   }(granted)

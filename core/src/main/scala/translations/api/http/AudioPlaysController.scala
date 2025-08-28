@@ -2,10 +2,10 @@ package org.aulune
 package translations.api.http
 
 
-import shared.auth.Authentication.authOnlyEndpoint
-import shared.auth.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.QueryParams
+import shared.service.auth.AuthenticationClientService
+import shared.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import translations.api.http.circe.AudioPlayCodecs.given
 import translations.api.http.tapir.audioplay.AudioPlayExamples.{
   listResponseExample,
@@ -34,7 +34,7 @@ import java.util.UUID
  *
  *  @param pagination pagination config.
  *  @param service [[AudioPlayService]] to use.
- *  @param authService [[AuthenticationService]] to use for restricted
+ *  @param authService [[AuthenticationClientService]] to use for restricted
  *    endpoints.
  *  @param translationService [[AudioPlayTranslationService]] implementation to
  *    create subtree with audio play translations.
@@ -43,10 +43,10 @@ import java.util.UUID
 final class AudioPlaysController[F[_]: Applicative](
     pagination: Config.App.Pagination,
     service: AudioPlayService[F],
-    authService: AuthenticationService[F],
+    authService: AuthenticationClientService[F],
     translationService: AudioPlayTranslationService[F],
 ):
-  private given AuthenticationService[F] = authService
+  private given AuthenticationClientService[F] = authService
 
   private val audioPlayId = path[UUID]("audio_play_id")
     .description("ID of the audio play.")

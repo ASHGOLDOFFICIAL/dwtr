@@ -2,6 +2,7 @@ package org.aulune
 
 
 import auth.AuthConfig
+import permissions.PermissionConfig
 
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.Uri
@@ -12,6 +13,7 @@ import pureconfig.error.ExceptionThrown
 case class Config(
     app: Config.App,
     auth: AuthConfig,
+    permission: PermissionConfig,
     postgres: Config.Postgres,
 ) derives ConfigReader
 

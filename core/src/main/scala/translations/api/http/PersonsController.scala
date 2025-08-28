@@ -2,9 +2,9 @@ package org.aulune
 package translations.api.http
 
 
-import shared.auth.Authentication.authOnlyEndpoint
-import shared.auth.AuthenticationService
 import shared.errors.toErrorResponse
+import shared.service.auth.AuthenticationClientService
+import shared.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import translations.api.http.circe.PersonCodecs.given
 import translations.api.http.tapir.person.PersonExamples.{
   personRequestExample,
@@ -26,15 +26,15 @@ import java.util.UUID
 
 /** Controller with Tapir endpoints for persons.
  *  @param service [[PersonService]] to use.
- *  @param authService [[AuthenticationService]] to use for restricted
+ *  @param authService [[AuthenticationClientService]] to use for restricted
  *    endpoints.
  *  @tparam F effect type.
  */
 final class PersonsController[F[_]: Applicative](
     service: PersonService[F],
-    authService: AuthenticationService[F],
+    authService: AuthenticationClientService[F],
 ):
-  private given AuthenticationService[F] = authService
+  private given AuthenticationClientService[F] = authService
 
   private val personId = path[UUID]("person_id")
     .description("ID of the person")

@@ -13,7 +13,6 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait PersonService[F[_]]:
-  // TODO: change permission types after rewrite.
   /** Find person by given identity.
    *  @param id person identity.
    *  @return requested person if found.
@@ -21,10 +20,11 @@ trait PersonService[F[_]]:
   def findById(id: UUID): F[Option[PersonResponse]]
 
   /** Create new audio play.
+   *
    *  @param user user who performs this action.
    *  @param pr person creation request.
    *  @return created person if success, otherwise error.
-   *  @note user must have [[AudioPlayPermission.Write]] permission.
+   *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def create(
       user: AuthenticatedUser,
@@ -32,11 +32,12 @@ trait PersonService[F[_]]:
   ): F[Either[ApplicationServiceError, PersonResponse]]
 
   /** Updates existing person's info.
+   *
    *  @param user user who performs this action.
    *  @param id person ID.
    *  @param pr new state.
    *  @return updated person info if success, otherwise error.
-   *  @note user must have [[AudioPlayPermission.Write]] permission.
+   *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def update(
       user: AuthenticatedUser,
@@ -45,10 +46,11 @@ trait PersonService[F[_]]:
   ): F[Either[ApplicationServiceError, PersonResponse]]
 
   /** Deletes existing person.
+   *
    *  @param user user who performs this action.
    *  @param id person ID.
    *  @return `Unit` if success, otherwise error.
-   *  @note user must have [[AudioPlayPermission.Write]] permission.
+   *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def delete(
       user: AuthenticatedUser,

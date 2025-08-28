@@ -5,11 +5,15 @@ package translations.adapters.service
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
+import shared.model.Uuid
 import shared.pagination.PaginationParams
-import shared.service.AuthorizationService
-import shared.service.AuthorizationService.requirePermissionOrDeny
+import shared.service.permission.PermissionClientService
+import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.AudioPlayPermission.Write
+import translations.application.TranslationPermission.{
+  DownloadAudioPlays,
+  Modify,
+}
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -23,12 +27,11 @@ import translations.application.repositories.AudioPlayRepository.{
   given,
 }
 import translations.application.{
-  AudioPlayPermission,
   AudioPlayService,
   PersonService,
+  TranslationPermission,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
-import translations.domain.shared.Uuid
 
 import cats.MonadThrow
 import cats.data.Validated
@@ -38,19 +41,41 @@ import cats.syntax.all.*
 import java.util.UUID
 
 
-/** [[AudioPlayService]] implementation.
- *  @param pagination pagination config.
- *  @param repo audio play repository.
- *  @param authService [[AuthorizationService]] for [[AudioPlayPermission]]s.
- *  @tparam F effect type.
- */
-final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
+/** [[AudioPlayService]] implementation. */
+object AudioPlayServiceImpl:
+  /** Builds a service.
+   *  @param pagination pagination config.
+   *  @param repo audio play repository.
+   *  @param personService [[PersonService]] implementation to retrieve cast and
+   *    writers.
+   *  @param permissionService [[PermissionClientService]] implementation to
+   *    perform permission checks.
+   *  @tparam F effect type
+   */
+  def build[F[_]: MonadThrow: SecureRandom](
+      pagination: Config.App.Pagination,
+      repo: AudioPlayRepository[F],
+      personService: PersonService[F],
+      permissionService: PermissionClientService[F],
+  ): F[AudioPlayService[F]] =
+    for
+      _ <- permissionService.registerPermission(Modify)
+      _ <- permissionService.registerPermission(DownloadAudioPlays)
+    yield new AudioPlayServiceImpl[F](
+      pagination,
+      repo,
+      personService,
+      permissionService,
+    )
+
+
+private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     pagination: Config.App.Pagination,
     repo: AudioPlayRepository[F],
     personService: PersonService[F],
-    authService: AuthorizationService[F, AudioPlayPermission],
+    permissionService: PermissionClientService[F],
 ) extends AudioPlayService[F]:
-  given AuthorizationService[F, AudioPlayPermission] = authService
+  private given PermissionClientService[F] = permissionService
 
   override def findById(
       id: UUID,
@@ -74,7 +99,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       user: AuthenticatedUser,
       request: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
         series <- getSeriesOrThrow(seriesId)
@@ -93,7 +118,7 @@ final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       user: AuthenticatedUser,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
-    requirePermissionOrDeny(Write, user) {
+    requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[AudioPlay](id)
       for result <- repo.delete(uuid).attempt
       yield result.leftMap(toApplicationError)

@@ -4,6 +4,7 @@ package translations.application
 
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
+import translations.application.TranslationPermission.*
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
@@ -46,7 +47,7 @@ trait AudioPlayTranslationService[F[_]]:
    *  @param tc translation request.
    *  @param originalId ID of original.
    *  @return created translation if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Create]] permission.
+   *  @note user must have [[Modify]] permission.
    */
   def create(
       user: AuthenticatedUser,
@@ -61,7 +62,7 @@ trait AudioPlayTranslationService[F[_]]:
    *  @param id translation ID.
    *  @param tc new state.
    *  @return updated translation if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Update]] permission.
+   *  @note user must have [[Modify]] permission.
    */
   def update(
       user: AuthenticatedUser,
@@ -76,7 +77,7 @@ trait AudioPlayTranslationService[F[_]]:
    *  @param originalId ID of original.
    *  @param id translation identity.
    *  @return `Unit` if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Delete]] permission.
+   *  @note user must have [[Modify]] permission.
    */
   def delete(
       user: AuthenticatedUser,

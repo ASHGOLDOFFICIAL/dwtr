@@ -3,17 +3,18 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import auth.domain.model.Group.Admin
 import shared.errors.{ApplicationServiceError, RepositoryError}
+import shared.model.Uuid
+import shared.service.permission.PermissionClientService
+import translations.application.TranslationPermission.Modify
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
 import translations.domain.model.person.{FullName, Person}
-import translations.domain.shared.Uuid
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.syntax.all.*
+import cats.syntax.all.given
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
@@ -29,9 +30,8 @@ final class PersonServiceImplTest
     with AsyncMockFactory:
 
   private val mockRepo = mock[PersonRepository[IO]]
-  // TODO: remove it, write something better.
-  private val auth = new AudioPlayAuthorizationService[IO]
-  private val service = new PersonServiceImpl[IO](mockRepo, auth)
+  private val mockPermissions = mock[PermissionClientService[IO]]
+  private val service = new PersonServiceImpl[IO](mockRepo, mockPermissions)
 
   private val generatedUuid =
     UUID.fromString("00000000-0000-0000-0000-000000000001")
@@ -68,42 +68,57 @@ final class PersonServiceImplTest
     }
   }
 
-  private val admin = AuthenticatedUser(
-    username = "admin",
-    groups = Set(Admin),
-  ) // TODO: change to right checks after authorization rewrite.
-  private val nonAdmin = AuthenticatedUser(
-    username = "non-admin",
-    groups = Set.empty,
+  private val user = AuthenticatedUser(
+    id = UUID.fromString("f04eb510-229c-4cdd-bd7b-9691c3b28ae1"),
+    username = "username",
   )
-
   "create method " - {
     "should " - {
       "allow users with permissions to create persons if none exist" in {
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
         // Persisting generated user should work OK.
         (mockRepo.persist _).expects(generated).returning(generated.pure)
-        for result <- service.create(admin, request)
+
+        for result <- service.create(user, request)
         yield result shouldBe PersonResponse(
           id = generated.id,
           name = generated.name).asRight
       }
 
       "return `BadRequest` if creating person with empty name" in {
-        for result <- service.create(admin, emptyNameRequest)
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
+
+        for result <- service.create(user, emptyNameRequest)
         yield result shouldBe ApplicationServiceError.BadRequest.asLeft
       }
 
       "return `AlreadyExists` when creating person with taken identity" in {
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
         // Generated person already exist.
         (mockRepo.persist _)
           .expects(generated)
           .returning(RepositoryError.AlreadyExists.raiseError)
-        for result <- service.create(admin, request)
+
+        for result <- service.create(user, request)
         yield result shouldBe ApplicationServiceError.AlreadyExists.asLeft
       }
 
       "return `PermissionDenied` when users without permissions are trying to create persons" in {
-        for result <- service.create(nonAdmin, request)
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(false))
+
+        for result <- service.create(user, request)
         yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
       }
     }
@@ -115,32 +130,50 @@ final class PersonServiceImplTest
   "update method " - {
     "should " - {
       "allow users with permissions to update persons if they exist" in {
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
         // Checking if person exist should return positive.
         (mockRepo.get _).expects(person.id).returning(person.some.pure)
         // Subsequent update should work as normal.
         (mockRepo.update _).expects(updated).returning(updated.pure)
 
-        for result <- service.update(admin, person.id, updatedRequest)
+        for result <- service.update(user, person.id, updatedRequest)
         yield result shouldBe updatedResponse.asRight
       }
 
       "return `BadRequest` if updating person with empty name" in {
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
         // Checking if person exist should return positive.
         (mockRepo.get _).expects(person.id).returning(person.some.pure)
 
-        for result <- service.update(admin, person.id, emptyNameRequest)
+        for result <- service.update(user, person.id, emptyNameRequest)
         yield result shouldBe ApplicationServiceError.BadRequest.asLeft
       }
 
       "return `NotFound` when updating non-existent person" in {
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
         // Checking if person exist should return negative.
         (mockRepo.get _).expects(person.id).returning(None.pure)
-        for result <- service.update(admin, person.id, request)
+
+        for result <- service.update(user, person.id, request)
         yield result shouldBe ApplicationServiceError.NotFound.asLeft
       }
 
       "return `PermissionDenied` when users without permissions are trying to update persons" in {
-        for result <- service.update(nonAdmin, person.id, request)
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(false))
+
+        for result <- service.update(user, person.id, request)
         yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
       }
     }
@@ -149,14 +182,24 @@ final class PersonServiceImplTest
   "delete method " - {
     "should " - {
       "allow users with permissions to delete existing persons" in {
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(true))
         // Checking if person exist should return positive.
         (mockRepo.delete _).expects(person.id).returning(().pure)
-        for result <- service.delete(admin, person.id)
+
+        for result <- service.delete(user, person.id)
         yield result shouldBe ().asRight
       }
 
       "return `PermissionDenied` when users without permissions are trying to delete persons" in {
-        for result <- service.delete(nonAdmin, person.id)
+        // User has permission.
+        (mockPermissions.hasPermission _)
+          .expects(user, Modify)
+          .returning(IO(false))
+
+        for result <- service.delete(user, person.id)
         yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
       }
     }

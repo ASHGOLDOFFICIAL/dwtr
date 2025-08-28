@@ -8,7 +8,7 @@ import auth.application.dto.{
   IdTokenPayload,
 }
 import auth.application.{AccessTokenService, IdTokenService}
-import auth.domain.model.{AuthenticationToken, Group, User}
+import auth.domain.model.{AuthenticationToken, User}
 
 import cats.Monad
 import cats.data.OptionT
@@ -53,10 +53,11 @@ final class JwtTokenService[F[_]: Clock: Monad](
     val exp = iat + maxExp
     AccessTokenPayload(
       iss = issuer,
-      sub = user.username,
+      sub = user.id,
       exp = exp,
       iat = iat,
-      groups = user.groups)
+      username = user.username,
+    )
 
   override def generateIdToken(user: User): F[AuthenticationToken] =
     Clock[F].realTimeInstant.map { now =>
@@ -133,18 +134,7 @@ final class JwtTokenService[F[_]: Clock: Monad](
   extension (p: AccessTokenPayload)
     /** Makes [[AuthenticatedUser]] out of given payload. */
     private def toAuthenticatedUser: AuthenticatedUser =
-      AuthenticatedUser(p.sub, p.groups)
-
-  private given Encoder[Group] = Encoder.encodeString.contramap {
-    case Group.Trusted => "trusted"
-    case Group.Admin   => "admin"
-  }
-
-  private given Decoder[Group] = Decoder.decodeString.emap {
-    case "trusted" => Group.Trusted.asRight
-    case "admin"   => Group.Admin.asRight
-    case _         => "Unknown role".asLeft
-  }
+      AuthenticatedUser(p.sub, p.username)
 
   private given Encoder[AccessTokenPayload] = Encoder.derived
   private given Decoder[AccessTokenPayload] = Decoder.derived

@@ -2,6 +2,7 @@ package org.aulune
 package translations.domain.model.audioplay
 
 
+import shared.model.Uuid
 import translations.domain.errors.AudioPlayValidationError
 import translations.domain.errors.AudioPlayValidationError.*
 import translations.domain.model.audioplay.AudioPlay.{
@@ -14,7 +15,6 @@ import translations.domain.shared.{
   ImageUrl,
   ReleaseDate,
   Synopsis,
-  Uuid,
 }
 
 import cats.data.{NonEmptyChain, Validated, ValidatedNec}

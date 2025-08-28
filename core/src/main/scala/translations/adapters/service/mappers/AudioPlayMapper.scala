@@ -2,6 +2,7 @@ package org.aulune
 package translations.adapters.service.mappers
 
 
+import shared.model.Uuid
 import shared.pagination.CursorToken
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
@@ -18,7 +19,7 @@ import translations.domain.model.audioplay.{
   AudioPlayTitle,
 }
 import translations.domain.model.person.Person
-import translations.domain.shared.{ReleaseDate, Synopsis, Uuid}
+import translations.domain.shared.{ReleaseDate, Synopsis}
 
 import cats.data.ValidatedNec
 import cats.syntax.all.given

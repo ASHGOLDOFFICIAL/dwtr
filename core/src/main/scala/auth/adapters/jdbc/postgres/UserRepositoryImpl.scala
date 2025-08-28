@@ -3,10 +3,12 @@ package auth.adapters.jdbc.postgres
 
 
 import auth.adapters.jdbc.postgres.metas.UserMetas.given
+import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import auth.application.repositories.UserRepository
-import auth.domain.model.{Group, User, Username}
+import auth.domain.model.{User, Username}
 import shared.errors.RepositoryError
 import shared.errors.RepositoryError.*
+import shared.model.Uuid
 
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
@@ -31,9 +33,9 @@ object UserRepositoryImpl:
 
   private val createUsersTable = sql"""
     |CREATE TABLE IF NOT EXISTS users (
-    |  username  TEXT PRIMARY KEY,
+    |  id        UUID PRIMARY KEY,
+    |  username  TEXT NOT NULL UNIQUE,
     |  password  TEXT,
-    |  groups    TEXT,
     |  google_id TEXT
     |)""".stripMargin.update.run
 
@@ -41,25 +43,29 @@ object UserRepositoryImpl:
 private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F],
 ) extends UserRepository[F]:
-  override def contains(id: String): F[Boolean] =
-    sql"SELECT EXISTS (SELECT 1 FROM users WHERE username = $id)"
+  override def contains(id: Uuid[User]): F[Boolean] =
+    sql"SELECT EXISTS (SELECT 1 FROM users WHERE id = $id)"
       .query[Boolean]
       .unique
       .transact(transactor)
       .handleErrorWith(toRepositoryError)
 
   override def persist(elem: User): F[User] = sql"""
-      |INSERT INTO users (username, password, groups, google_id)
-      |VALUES (${elem.username}, ${elem.hashedPassword}, ${elem.groups}, ${elem.googleId})
-      |""".stripMargin.update.run
+      |INSERT INTO users (id, username, password, google_id)
+      |VALUES (
+      |  ${elem.id},
+      |  ${elem.username},
+      |  ${elem.hashedPassword},
+      |  ${elem.googleId}
+      |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 
-  override def get(id: String): F[Option[User]] = sql"""
-      |SELECT username, password, groups, google_id
+  override def get(id: Uuid[User]): F[Option[User]] = sql"""
+      |SELECT id, username, password, google_id
       |FROM users
-      |WHERE username = $id""".stripMargin
+      |WHERE id = $id""".stripMargin
     .query[SelectResult]
     .map(toUser)
     .option
@@ -70,22 +76,31 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       |UPDATE users
       |SET username  = ${elem.username},
       |    password  = ${elem.hashedPassword},
-      |    groups    = ${elem.groups},
       |    google_id = ${elem.googleId}
-      |WHERE username = ${elem.username}
+      |WHERE id = ${elem.id}
       |""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 
-  override def delete(id: String): F[Unit] =
-    sql"DELETE FROM users WHERE username = $id".update.run
+  override def delete(id: Uuid[User]): F[Unit] =
+    sql"DELETE FROM users WHERE id = $id".update.run
       .transact(transactor)
       .void
       .handleErrorWith(toRepositoryError)
 
+  override def getByUsername(username: Username): F[Option[User]] = sql"""
+    |SELECT id, username, password, google_id
+    |FROM users
+    |WHERE username = $username""".stripMargin
+    .query[SelectResult]
+    .map(toUser)
+    .option
+    .transact(transactor)
+    .handleErrorWith(toRepositoryError)
+
   override def getByGoogleId(id: String): F[Option[User]] = sql"""
-      |SELECT username, password, groups, google_id
+      |SELECT id, username, password, google_id
       |FROM users
       |WHERE google_id = $id""".stripMargin
     .query[SelectResult]
@@ -95,22 +110,22 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .handleErrorWith(toRepositoryError)
 
   private type SelectResult = (
+      Uuid[User],
       Username,
       Option[String],
-      Set[Group],
       Option[String],
   )
 
   /** Makes users from given data. */
   private def toUser(
+      id: Uuid[User],
       username: Username,
       password: Option[String],
-      groups: Set[Group],
       googleId: Option[String],
   ) = User.unsafe(
+    id = id,
     username = username,
     hashedPassword = password,
-    groups = groups,
     googleId = googleId)
 
   /** Converts caught errors to [[RepositoryError]]. */

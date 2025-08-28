@@ -13,11 +13,12 @@ import auth.adapters.service.{
   UserServiceImpl,
 }
 import auth.api.http.{AuthenticationController, UsersController}
-import auth.domain.model.Group.Admin
 import auth.domain.model.{User, Username}
-import shared.auth.AuthenticationService
+import shared.model.Uuid
+import shared.service.auth.AuthenticationClientService
 
 import cats.effect.Async
+import cats.effect.std.UUIDGen
 import cats.syntax.all.*
 import doobie.Transactor
 import org.http4s.ember.client.EmberClientBuilder
@@ -31,7 +32,7 @@ import scala.concurrent.duration.DurationInt
  *  @tparam F effect type.
  */
 trait AuthApp[F[_]]:
-  val clientAuthentication: AuthenticationService[F]
+  val clientAuthentication: AuthenticationClientService[F]
   val endpoints: List[ServerEndpoint[Any, F]]
 
 
@@ -41,7 +42,7 @@ object AuthApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: Async](
+  def build[F[_]: Async: UUIDGen](
       config: AuthConfig,
       transactor: Transactor[F],
   ): F[AuthApp[F]] = EmberClientBuilder.default[F].build.use { httpClient =>
@@ -69,19 +70,20 @@ object AuthApp:
       userEndpoints = new UsersController[F](userServ).endpoints
 
       allEndpoints = authEndpoints ++ userEndpoints
-      clientService = AuthenticationService.make(authServ)
+      clientService = AuthenticationClientService.make(authServ)
 
       adminHash <- hasher.hashPassword(config.admin.password)
+      adminId <- UUIDGen.randomUUID.map(Uuid[User])
       admin = User
         .unsafe(
+          id = adminId,
           username = Username(config.admin.username).get,
           hashedPassword = Some(adminHash),
-          groups = Set(Admin),
           googleId = None,
         ) // TODO: make something better.
       _ <- userRepo.persist(admin).void.handleError(_ => ())
     yield new AuthApp[F]:
-      override val clientAuthentication: AuthenticationService[F] =
+      override val clientAuthentication: AuthenticationClientService[F] =
         clientService
       override val endpoints: List[ServerEndpoint[Any, F]] = allEndpoints
   }

@@ -11,3 +11,9 @@ enum RepositoryError extends NoStackTrace:
 
   /** No element was found to update. */
   case NothingToUpdate
+
+  /** The operation was rejected because the system is not in a state required
+   *  for the operation's execution. For example, some object that is needed to
+   *  complete this operation doesn't exist in the repository.
+   */
+  case FailedPrecondition

@@ -2,6 +2,7 @@ package org.aulune
 package translations.application.repositories
 
 
+import shared.model.Uuid
 import shared.pagination.{TokenDecoder, TokenEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
 import translations.application.repositories.TranslationRepository.{
@@ -9,7 +10,6 @@ import translations.application.repositories.TranslationRepository.{
   AudioPlayTranslationToken,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
-import translations.domain.shared.Uuid
 
 import java.time.Instant
 import java.util.Base64

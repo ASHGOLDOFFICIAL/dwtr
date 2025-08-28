@@ -2,9 +2,9 @@ package org.aulune
 package translations.domain.model.person
 
 
+import shared.model.Uuid
 import translations.domain.errors.PersonValidationError
 import translations.domain.errors.PersonValidationError.*
-import translations.domain.shared.Uuid
 
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*

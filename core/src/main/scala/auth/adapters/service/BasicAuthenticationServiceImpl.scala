@@ -6,7 +6,7 @@ import auth.application.BasicAuthenticationService
 import auth.application.dto.AuthenticationRequest
 import auth.application.dto.AuthenticationRequest.BasicAuthenticationRequest
 import auth.application.repositories.UserRepository
-import auth.domain.model.User
+import auth.domain.model.{User, Username}
 import auth.domain.service.PasswordHashingService
 
 import cats.Monad
@@ -27,7 +27,8 @@ final class BasicAuthenticationServiceImpl[F[_]: Monad](
   override def authenticate(
       credentials: BasicAuthenticationRequest,
   ): F[Option[User]] = (for
-    user <- OptionT(repo.get(credentials.username))
+    username <- OptionT.fromOption(Username(credentials.username))
+    user <- OptionT(repo.getByUsername(username))
     _ <- verifyPassword(user, credentials.password)
   yield user).value
 

@@ -1,28 +1,29 @@
 package org.aulune
-package shared.auth
+package shared.service.auth
 
 
 import auth.application.AuthenticationService as ExternalAuthenticationService
-import org.aulune.auth.application.dto.AuthenticatedUser
+import auth.application.dto.AuthenticatedUser
 
 
 /** Authentication service for use in other modules.
  *
  *  @tparam F effect type.
  */
-trait AuthenticationService[F[_]]:
+trait AuthenticationClientService[F[_]]:
   /** Returns authenticated user's info if token is valid.
    *  @param token user's token.
    */
   def getUserInfo(token: String): F[Option[AuthenticatedUser]]
 
 
-object AuthenticationService:
-  /** Builds client-side [[AuthenticationService]] using external
+object AuthenticationClientService:
+  /** Builds client-side [[AuthenticationClientService]] using external
    *  [[ExternalAuthenticationService]]
    *  @param service external authenticaton system.
    *  @tparam F effect type.
    */
   def make[F[_]](
       service: ExternalAuthenticationService[F],
-  ): AuthenticationService[F] = (token: String) => service.getUserInfo(token)
+  ): AuthenticationClientService[F] =
+    (token: String) => service.getUserInfo(token)

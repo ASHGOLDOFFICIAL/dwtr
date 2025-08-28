@@ -2,10 +2,10 @@ package org.aulune
 package translations.adapters.service.mappers
 
 
+import shared.model.Uuid
 import translations.application.dto.audioplay.CastMemberDto
 import translations.domain.model.audioplay.{ActorRole, CastMember}
 import translations.domain.model.person.Person
-import translations.domain.shared.Uuid
 
 import cats.syntax.all.given
 

@@ -2,8 +2,8 @@ package org.aulune
 package translations.domain.model.audioplay
 
 
+import shared.model.Uuid
 import translations.domain.model.person.Person
-import translations.domain.shared.Uuid
 
 
 /** Cast member representation.
@@ -11,6 +11,7 @@ import translations.domain.shared.Uuid
  *  Following conditions must be true:
  *    - roles should be non-empty.
  *    - roles should not have duplicated.
+ *
  *  @param actor ID of actor (cast member) as a person.
  *  @param roles roles this actor performed.
  *  @param main is this cast member considered part of main cast.

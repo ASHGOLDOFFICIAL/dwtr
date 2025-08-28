@@ -2,7 +2,8 @@ package org.aulune
 package auth.application.repositories
 
 
-import auth.domain.model.User
+import auth.domain.model.{User, Username}
+import shared.model.Uuid
 import shared.repositories.GenericRepository
 
 
@@ -10,5 +11,11 @@ import shared.repositories.GenericRepository
  *  @tparam F effect type.
  */
 trait UserRepository[F[_]]
-    extends GenericRepository[F, User, String]
-    with GoogleIdSearch[F]
+    extends GenericRepository[F, User, Uuid[User]]
+    with GoogleIdSearch[F]:
+
+  /** Finds a user by their unique username.
+   *  @param username user's unique username.
+   *  @return user if found.
+   */
+  def getByUsername(username: Username): F[Option[User]]

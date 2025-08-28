@@ -2,10 +2,10 @@ package org.aulune
 package translations.api.http
 
 
-import shared.auth.Authentication.authOnlyEndpoint
-import shared.auth.AuthenticationService
 import shared.errors.{ApplicationServiceError, toErrorResponse}
 import shared.http.QueryParams
+import shared.service.auth.AuthenticationClientService
+import shared.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import translations.api.http.circe.AudioPlayTranslationCodecs.given
 import translations.api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
   listResponseExample,
@@ -38,7 +38,7 @@ object TranslationsController:
    *  @param tagPrefix prefix of tags for documentation without trailing space.
    *  @param pagination pagination config.
    *  @param service [[AudioPlayTranslationService]] to use.
-   *  @param authService [[AuthenticationService]] to use for restricted
+   *  @param authService [[AuthenticationClientService]] to use for restricted
    *    endpoints.
    *  @tparam F effect type.
    *  @return translations controller.
@@ -48,7 +48,7 @@ object TranslationsController:
       tagPrefix: String,
       pagination: Config.App.Pagination,
       service: AudioPlayTranslationService[F],
-      authService: AuthenticationService[F],
+      authService: AuthenticationClientService[F],
   ): TranslationsController[F] = new TranslationsController[F](
     pagination,
     mountPath,
@@ -62,9 +62,9 @@ private final class TranslationsController[F[_]: Applicative](
     rootPath: EndpointInput[UUID],
     tagPrefix: String,
     service: AudioPlayTranslationService[F],
-    authService: AuthenticationService[F],
+    authService: AuthenticationClientService[F],
 ):
-  private given AuthenticationService[F] = authService
+  private given AuthenticationClientService[F] = authService
 
   private val translationId = path[UUID]("translation_id")
     .description("ID of the translation")

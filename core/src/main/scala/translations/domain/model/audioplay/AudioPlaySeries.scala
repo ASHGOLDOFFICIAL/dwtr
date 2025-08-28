@@ -1,7 +1,7 @@
 package org.aulune
 package translations.domain.model.audioplay
 
-import translations.domain.shared.Uuid
+import shared.model.Uuid
 
 
 /** Audio play series representation.

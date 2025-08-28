@@ -4,8 +4,8 @@ package translations.adapters.jdbc.postgres
 
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
 import shared.errors.RepositoryError.{AlreadyExists, NothingToUpdate}
+import shared.model.Uuid
 import translations.domain.model.person.{FullName, Person}
-import translations.domain.shared.Uuid
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -50,7 +50,12 @@ final class PersonRepositoryImplTest
 
   "get method " - {
     "should " - {
-      "retrieve persons with resources" in stand { repo =>
+      "return `None` for non-existent person" in stand { repo =>
+        for audio <- repo.get(personTest.id)
+        yield audio shouldBe None
+      }
+
+      "retrieve existing persons" in stand { repo =>
         for
           _ <- repo.persist(personTest)
           audio <- repo.get(personTest.id)
@@ -61,11 +66,6 @@ final class PersonRepositoryImplTest
 
   "persist method " - {
     "should " - {
-      "return `None` for non-existent person" in stand { repo =>
-        for audio <- repo.get(personTest.id)
-        yield audio shouldBe None
-      }
-
       "throw error if an person exists" in stand { repo =>
         for
           _ <- repo.persist(personTest)

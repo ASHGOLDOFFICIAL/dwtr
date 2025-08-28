@@ -13,11 +13,14 @@ import auth.application.errors.UserRegistrationError.*
 import auth.application.repositories.UserRepository
 import auth.application.{OAuth2AuthenticationService, UserService}
 import auth.domain.errors.UserValidationError
-import auth.domain.model.User
+import auth.domain.model.{User, Username}
 import shared.errors
+import shared.errors.ApplicationServiceError.BadRequest
 import shared.errors.RepositoryError
+import shared.model.Uuid
 
-import cats.data.{EitherNec, EitherT, NonEmptyChain}
+import cats.data.{EitherNec, EitherT, NonEmptyChain, Validated}
+import cats.effect.std.UUIDGen
 import cats.syntax.all.*
 import cats.{Monad, MonadThrow}
 
@@ -28,7 +31,7 @@ import cats.{Monad, MonadThrow}
  *  @param repo [[UserRepository]] to use.
  *  @tparam F effect type.
  */
-final class UserServiceImpl[F[_]: Monad: MonadThrow](
+final class UserServiceImpl[F[_]: MonadThrow: UUIDGen](
     oauth2Service: OAuth2AuthenticationService[F],
     repo: UserRepository[F],
 ) extends UserService[F]:
@@ -38,7 +41,9 @@ final class UserServiceImpl[F[_]: Monad: MonadThrow](
   ): F[EitherNec[UserRegistrationError, Unit]] = (for
     oid <- getId(request.oauth2)
     _ <- checkIfRegistered(request.oauth2.provider, oid)
-    user <- EitherT.fromEither(createUser(request, oid))
+    id <- EitherT.liftF(UUIDGen[F].randomUUID.map(Uuid[User]))
+    user <- EitherT.fromEither(
+      createUser(id, request, oid).leftMap(fromUserValidation))
     _ <- EitherT(persist(user))
   yield ()).value
 
@@ -68,16 +73,25 @@ final class UserServiceImpl[F[_]: Monad: MonadThrow](
 
   /** Creates user from registration request and third-party id.
    *  @param request registration request.
-   *  @param id third-party ID.
+   *  @param oauth2Id third-party ID.
    *  @return user or NEC of errors.
    */
   private def createUser(
+      id: Uuid[User],
       request: UserRegistrationRequest,
-      id: String,
-  ): EitherNec[UserRegistrationError, User] = User(request.username)
-    .andThen(user => linkAccount(user, request.oauth2.provider, id))
-    .toEither
-    .leftMap(fromUserValidation)
+      oauth2Id: String,
+  ): EitherNec[UserValidationError, User] =
+    for
+      username <- Username(request.username)
+        .toRight(NonEmptyChain.one(UserValidationError.InvalidUsername))
+      userBase <- User(
+        id = id,
+        username = username,
+        hashedPassword = None,
+        googleId = None,
+      ).toEither
+      user <- linkAccount(userBase, request.oauth2.provider, oauth2Id).toEither
+    yield user
 
   /** Persists user. If user already existed (race conditions for example), then
    *  error will be returned in left side.
