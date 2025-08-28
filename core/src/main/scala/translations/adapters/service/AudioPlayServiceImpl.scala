@@ -10,7 +10,10 @@ import shared.pagination.PaginationParams
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.TranslationPermission.Modify
+import translations.application.TranslationPermission.{
+  DownloadAudioPlays,
+  Modify,
+}
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -38,13 +41,35 @@ import cats.syntax.all.*
 import java.util.UUID
 
 
-/** [[AudioPlayService]] implementation.
- *  @param pagination pagination config.
- *  @param repo audio play repository.
- *  @param permissionService [[PermissionClientService]] instance.
- *  @tparam F effect type.
- */
-final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
+/** [[AudioPlayService]] implementation. */
+object AudioPlayServiceImpl:
+  /** Builds a service.
+   *  @param pagination pagination config.
+   *  @param repo audio play repository.
+   *  @param personService [[PersonService]] implementation to retrieve cast and
+   *    writers.
+   *  @param permissionService [[PermissionClientService]] implementation to
+   *    perform permission checks.
+   *  @tparam F effect type
+   */
+  def build[F[_]: MonadThrow: SecureRandom](
+      pagination: Config.App.Pagination,
+      repo: AudioPlayRepository[F],
+      personService: PersonService[F],
+      permissionService: PermissionClientService[F],
+  ): F[AudioPlayService[F]] =
+    for
+      _ <- permissionService.registerPermission(Modify)
+      _ <- permissionService.registerPermission(DownloadAudioPlays)
+    yield new AudioPlayServiceImpl[F](
+      pagination,
+      repo,
+      personService,
+      permissionService,
+    )
+
+
+private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     pagination: Config.App.Pagination,
     repo: AudioPlayRepository[F],
     personService: PersonService[F],

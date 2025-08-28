@@ -24,12 +24,23 @@ import cats.syntax.all.given
 import java.util.UUID
 
 
-/** [[PersonService]] implementation.
- *  @param repo person repository.
- *  @param permissionService [[PermissionClientService]] instance.
- *  @tparam F effect type.
- */
-final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
+/** [[PersonService]] implementation. */
+object PersonServiceImpl:
+  /** Builds a service.
+   *  @param repo person repository.
+   *  @param permissionService [[PermissionClientService]] implementation to
+   *    perform permission checks.
+   *  @tparam F effect type.
+   */
+  def build[F[_]: MonadThrow: UUIDGen](
+      repo: PersonRepository[F],
+      permissionService: PermissionClientService[F],
+  ): F[PersonService[F]] =
+    for _ <- permissionService.registerPermission(Modify)
+    yield new PersonServiceImpl[F](repo, permissionService)
+
+
+private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     repo: PersonRepository[F],
     permissionService: PermissionClientService[F],
 ) extends PersonService[F]:

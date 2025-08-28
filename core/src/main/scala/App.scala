@@ -69,20 +69,15 @@ object App extends IOApp.Simple:
   ): F[List[ServerEndpoint[Any, F]]] =
     for
       personRepo <- PersonRepositoryImpl.build[F](transactor)
-      personServ = new PersonServiceImpl[F](personRepo, permissionServ)
+      personServ <- PersonServiceImpl.build[F](personRepo, permissionServ)
 
       transRepo <- TranslationRepositoryImpl.build[F](transactor)
-      transServ = new AudioPlayTranslationServiceImpl[F](
-        config.app.pagination,
-        transRepo,
-        permissionServ)
+      transServ <- AudioPlayTranslationServiceImpl
+        .build[F](config.app.pagination, transRepo, permissionServ)
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
-      audioServ = new AudioPlayServiceImpl[F](
-        config.app.pagination,
-        audioRepo,
-        personServ,
-        permissionServ)
+      audioServ <- AudioPlayServiceImpl
+        .build[F](config.app.pagination, audioRepo, personServ, permissionServ)
 
       audioEndpoints = new AudioPlaysController[F](
         config.app.pagination,

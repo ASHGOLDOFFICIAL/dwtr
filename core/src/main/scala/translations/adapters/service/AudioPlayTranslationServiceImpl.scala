@@ -15,7 +15,6 @@ import translations.adapters.service.mappers.{
   AudioPlayTranslationTypeMapper,
   LanguageMapper,
 }
-import translations.application.AudioPlayTranslationService
 import translations.application.TranslationPermission.*
 import translations.application.dto.{
   AudioPlayTranslationListResponse,
@@ -27,6 +26,10 @@ import translations.application.repositories.TranslationRepository.{
   AudioPlayTranslationIdentity,
   AudioPlayTranslationToken,
   given,
+}
+import translations.application.{
+  AudioPlayTranslationService,
+  TranslationPermission,
 }
 import translations.domain.errors.TranslationValidationError
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
@@ -43,13 +46,29 @@ import java.time.Instant
 import java.util.UUID
 
 
-/** [[AudioPlayTranslationService]] implementation.
- *  @param pagination pagination config.
- *  @param repo audio play repository.
- *  @param permissionService [[PermissionClientService]] instance.
- *  @tparam F effect type.
- */
-final class AudioPlayTranslationServiceImpl[F[
+/** [[AudioPlayTranslationService]] implementation. */
+object AudioPlayTranslationServiceImpl:
+  /** Builds a service.
+   *  @param pagination pagination config.
+   *  @param repo translation repository.
+   *  @param permissionService [[PermissionClientService]] implementation to
+   *    perform permission checks.
+   *  @tparam F effect type.
+   */
+  def build[F[_]: MonadThrow: Clock: SecureRandom](
+      pagination: Config.App.Pagination,
+      repo: TranslationRepository[F],
+      permissionService: PermissionClientService[F],
+  ): F[AudioPlayTranslationService[F]] =
+    for _ <- permissionService.registerPermission(Modify)
+    yield new AudioPlayTranslationServiceImpl[F](
+      pagination,
+      repo,
+      permissionService,
+    )
+
+
+private final class AudioPlayTranslationServiceImpl[F[
     _,
 ]: MonadThrow: Clock: SecureRandom](
     pagination: Config.App.Pagination,
