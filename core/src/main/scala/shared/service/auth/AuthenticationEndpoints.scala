@@ -26,7 +26,7 @@ object AuthenticationEndpoints:
    */
   private def decodeToken[F[_]: Functor](token: String)(using
       service: AuthenticationClientService[F],
-  ): F[Either[StatusCode, AuthenticatedUser]] =
+  ): F[Either[StatusCode, User]] =
     for result <- service.getUserInfo(token)
     yield result.toRight(StatusCode.Unauthorized)
 
@@ -39,7 +39,7 @@ object AuthenticationEndpoints:
       AuthenticationClientService[F],
   ): PartialServerEndpoint[
     String,
-    AuthenticatedUser,
+    User,
     Unit,
     StatusCode,
     Unit,

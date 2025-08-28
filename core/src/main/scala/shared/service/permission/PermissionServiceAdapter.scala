@@ -5,14 +5,12 @@ package shared.service.permission
 import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionService
 import permissions.application.dto.CheckPermissionStatus.Granted
-import permissions.application.dto.{
-  CheckPermissionRequest,
-  CreatePermissionRequest,
-}
+import permissions.application.dto.{CheckPermissionRequest, CreatePermissionRequest}
 import shared.errors.ApplicationServiceError
 
 import cats.Functor
 import cats.syntax.all.given
+import org.aulune.shared.service.auth.User
 
 
 /** Adapts [[PermissionService]] to [[PermissionClientService]].
@@ -29,7 +27,7 @@ private[permission] final class PermissionServiceAdapter[F[_]: Functor](
     service.registerPermission(makeCreateRequest(permission)).map(_.void)
 
   override def hasPermission(
-      user: AuthenticatedUser,
+      user: User,
       permission: Permission,
   ): F[Boolean] =
     val request = makeCheckRequest(user, permission)
@@ -53,7 +51,7 @@ private[permission] final class PermissionServiceAdapter[F[_]: Functor](
 
   /** Converts client-side [[Permission]] to [[CheckPermissionRequest]]. */
   private def makeCheckRequest(
-      user: AuthenticatedUser,
+      user: User,
       permission: Permission,
   ): CheckPermissionRequest = CheckPermissionRequest(
     namespace = permission.namespace,

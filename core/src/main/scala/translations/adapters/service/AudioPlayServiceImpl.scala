@@ -10,33 +10,19 @@ import shared.pagination.PaginationParams
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.TranslationPermission.{
-  DownloadAudioPlays,
-  Modify,
-}
-import translations.application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
-  CastMemberDto,
-  ListAudioPlaysResponse,
-}
+import translations.application.TranslationPermission.{DownloadAudioPlays, Modify}
+import translations.application.dto.audioplay.{AudioPlayRequest, AudioPlayResponse, CastMemberDto, ListAudioPlaysResponse}
 import translations.application.dto.person.PersonResponse
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.{
-  AudioPlayToken,
-  given,
-}
-import translations.application.{
-  AudioPlayService,
-  PersonService,
-  TranslationPermission,
-}
+import translations.application.repositories.AudioPlayRepository.{AudioPlayToken, given}
+import translations.application.{AudioPlayService, PersonService, TranslationPermission}
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
 import cats.MonadThrow
 import cats.data.Validated
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
+import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 
@@ -96,7 +82,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
         yield AudioPlayMapper.toListResponse(audios).asRight
 
   override def create(
-      user: AuthenticatedUser,
+      user: User,
       request: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Modify, user) {
@@ -115,7 +101,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     }
 
   override def delete(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Modify, user) {

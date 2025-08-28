@@ -11,6 +11,7 @@ import permissions.application.dto.{
   CreatePermissionRequest,
 }
 import shared.errors.ApplicationServiceError
+import shared.service.auth.User
 
 import cats.syntax.all.given
 import cats.{FlatMap, Functor, Monad}
@@ -34,7 +35,7 @@ trait PermissionClientService[F[_]]:
    *  @param user user who needs permission.
    *  @param permission required permission.
    */
-  def hasPermission(user: AuthenticatedUser, permission: Permission): F[Boolean]
+  def hasPermission(user: User, permission: Permission): F[Boolean]
 
 
 object PermissionClientService:
@@ -61,7 +62,7 @@ object PermissionClientService:
    */
   def requirePermission[F[_]: FlatMap, A](
       required: Permission,
-      from: AuthenticatedUser,
+      from: User,
   )(notGranted: => F[A])(onGranted: => F[A])(using
       service: PermissionClientService[F],
   ): F[A] = service.hasPermission(from, required).flatMap {
@@ -83,7 +84,7 @@ object PermissionClientService:
    */
   def requirePermissionOrDeny[M[_]: Monad, A](
       required: Permission,
-      from: AuthenticatedUser,
+      from: User,
   )(granted: => M[Either[ApplicationServiceError, A]])(using
       service: PermissionClientService[M],
   ): M[Either[ApplicationServiceError, A]] = requirePermission(required, from) {
