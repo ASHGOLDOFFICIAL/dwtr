@@ -50,7 +50,7 @@ final class PersonRepositoryImplTest
 
   "get method " - {
     "should " - {
-      "retrieve persons with resources" in stand { repo =>
+      "retrieve persons" in stand { repo =>
         for
           _ <- repo.persist(personTest)
           audio <- repo.get(personTest.id)
