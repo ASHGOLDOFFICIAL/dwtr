@@ -33,9 +33,9 @@ object UserRepositoryImpl:
 
   private val createUsersTable = sql"""
     |CREATE TABLE IF NOT EXISTS users (
-    |  username  TEXT PRIMARY KEY,
+    |  id        UUID PRIMARY KEY,
+    |  username  TEXT NOT NULL UNIQUE,
     |  password  TEXT,
-    |  groups    TEXT,
     |  google_id TEXT
     |)""".stripMargin.update.run
 
@@ -43,8 +43,8 @@ object UserRepositoryImpl:
 private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F],
 ) extends UserRepository[F]:
-  override def contains(id: String): F[Boolean] =
-    sql"SELECT EXISTS (SELECT 1 FROM users WHERE username = $id)"
+  override def contains(id: Uuid[User]): F[Boolean] =
+    sql"SELECT EXISTS (SELECT 1 FROM users WHERE id = $id)"
       .query[Boolean]
       .unique
       .transact(transactor)
@@ -62,10 +62,10 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 
-  override def get(id: String): F[Option[User]] = sql"""
+  override def get(id: Uuid[User]): F[Option[User]] = sql"""
       |SELECT id, username, password, google_id
       |FROM users
-      |WHERE username = $id""".stripMargin
+      |WHERE id = $id""".stripMargin
     .query[SelectResult]
     .map(toUser)
     .option
@@ -77,17 +77,27 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       |SET username  = ${elem.username},
       |    password  = ${elem.hashedPassword},
       |    google_id = ${elem.googleId}
-      |WHERE username = ${elem.username}
+      |WHERE id = ${elem.id}
       |""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 
-  override def delete(id: String): F[Unit] =
-    sql"DELETE FROM users WHERE username = $id".update.run
+  override def delete(id: Uuid[User]): F[Unit] =
+    sql"DELETE FROM users WHERE id = $id".update.run
       .transact(transactor)
       .void
       .handleErrorWith(toRepositoryError)
+
+  override def getByUsername(username: Username): F[Option[User]] =sql"""
+    |SELECT id, username, password, google_id
+    |FROM users
+    |WHERE username = $username""".stripMargin
+    .query[SelectResult]
+    .map(toUser)
+    .option
+    .transact(transactor)
+    .handleErrorWith(toRepositoryError)
 
   override def getByGoogleId(id: String): F[Option[User]] = sql"""
       |SELECT id, username, password, google_id
