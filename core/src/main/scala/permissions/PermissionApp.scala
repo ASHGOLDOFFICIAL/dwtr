@@ -29,7 +29,9 @@ object PermissionApp:
   def build[F[_]: Async: Logger](
       config: PermissionConfig,
       transactor: Transactor[F],
-  )(using Raise[F, RepositoryError]): F[PermissionApp[F]] =
+  )(using
+      Raise[F, RepositoryError],
+  ): F[PermissionApp[F]] =
     for
       repository <- PermissionRepositoryImpl.build(transactor)
       service <- PermissionServiceImpl.build(
