@@ -3,7 +3,7 @@ package auth.api.http.circe
 
 import auth.api.http.circe.AuthenticationCodecs.given
 import auth.application.dto.UserRegistrationRequest
-import shared.http.circe.CirceConfiguration.config
+import commons.http.circe.CirceConfiguration.config
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,

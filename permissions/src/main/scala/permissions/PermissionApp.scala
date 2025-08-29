@@ -3,8 +3,8 @@ package permissions
 
 import permissions.adapters.jdbc.postgres.PermissionRepositoryImpl
 import permissions.adapters.service.PermissionServiceImpl
-import shared.repositories.RepositoryError
-import shared.service.permission.PermissionClientService
+import commons.repositories.RepositoryError
+import commons.service.permission.PermissionClientService
 
 import cats.effect.Async
 import cats.mtl.Raise

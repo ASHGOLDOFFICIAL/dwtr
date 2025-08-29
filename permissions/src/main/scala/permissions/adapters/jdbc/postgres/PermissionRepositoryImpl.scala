@@ -10,11 +10,11 @@ import permissions.domain.{
   PermissionName,
   PermissionNamespace,
 }
-import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import shared.model.Uuid
-import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
-import shared.service.auth.User
+import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
+import commons.model.Uuid
+import commons.repositories.RepositoryError
+import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import commons.service.auth.User
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow

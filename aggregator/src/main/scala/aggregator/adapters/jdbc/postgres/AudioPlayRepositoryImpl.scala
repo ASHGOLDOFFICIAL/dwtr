@@ -1,10 +1,10 @@
 package org.aulune
 package aggregator.adapters.jdbc.postgres
 
-import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import shared.model.Uuid
-import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
+import commons.model.Uuid
+import commons.repositories.RepositoryError
+import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import aggregator.adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import aggregator.adapters.jdbc.postgres.metas.SharedMetas.given
 import aggregator.application.repositories.AudioPlayRepository

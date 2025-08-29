@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.application
 
-import shared.service.permission.Permission
+import commons.service.permission.Permission
 
 
 /** Permissions of aggregator module. */

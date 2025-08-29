@@ -1,9 +1,9 @@
 package org.aulune
 package aggregator.application.repositories
 
-import shared.model.Uuid
-import shared.pagination.{CursorDecoder, CursorEncoder}
-import shared.repositories.{GenericRepository, PaginatedList}
+import commons.model.Uuid
+import commons.pagination.{CursorDecoder, CursorEncoder}
+import commons.repositories.{GenericRepository, PaginatedList}
 import aggregator.application.repositories.AudioPlayRepository.AudioPlayCursor
 import aggregator.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 

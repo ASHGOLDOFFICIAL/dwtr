@@ -3,9 +3,9 @@ package permissions.application
 
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{Permission, PermissionName, PermissionNamespace}
-import shared.model.Uuid
-import shared.repositories.{GenericRepository, Upsert}
-import shared.service.auth.User
+import commons.model.Uuid
+import commons.repositories.{GenericRepository, Upsert}
+import commons.service.auth.User
 
 
 /** Repository for [[Permission]]s.

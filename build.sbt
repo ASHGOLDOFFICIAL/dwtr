@@ -16,8 +16,8 @@ inThisBuild {
 lazy val root = (project in file(".")).aggregate(app, integration)
 
 
-lazy val shared = (project in file("shared")).settings(
-  name := "shared",
+lazy val commons = (project in file("commons")).settings(
+  name := "commons",
   libraryDependencies ++= tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
     "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion,
     "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion,
@@ -33,7 +33,7 @@ lazy val shared = (project in file("shared")).settings(
 
 
 lazy val auth = (project in file("auth"))
-  .dependsOn(shared)
+  .dependsOn(commons)
   .settings(
     name := "auth",
     libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
@@ -49,7 +49,7 @@ lazy val auth = (project in file("auth"))
 
 
 lazy val permissions = (project in file("permissions"))
-  .dependsOn(shared)
+  .dependsOn(commons)
   .settings(
     name := "permissions",
     libraryDependencies ++= testDeps ++ doobieDeps ++ Seq(
@@ -61,7 +61,7 @@ lazy val permissions = (project in file("permissions"))
   )
 
 lazy val aggregator = (project in file("aggregator"))
-  .dependsOn(shared)
+  .dependsOn(commons)
   .settings(
     name := "aggregator",
     libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(

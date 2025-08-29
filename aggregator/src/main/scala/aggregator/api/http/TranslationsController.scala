@@ -2,10 +2,10 @@ package org.aulune
 package aggregator.api.http
 
 
-import shared.errors.toErrorResponse
-import shared.http.QueryParams
-import shared.service.auth.AuthenticationClientService
-import shared.service.auth.AuthenticationEndpoints.authOnlyEndpoint
+import commons.errors.toErrorResponse
+import commons.http.QueryParams
+import commons.service.auth.AuthenticationClientService
+import commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import aggregator.AggregatorConfig
 import aggregator.api.http.circe.AudioPlayTranslationCodecs.given
 import aggregator.api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{

@@ -2,9 +2,9 @@ package org.aulune
 package aggregator
 
 
-import shared.UUIDv7Gen.uuidv7Instance
-import shared.service.auth.AuthenticationClientService
-import shared.service.permission.PermissionClientService
+import commons.UUIDv7Gen.uuidv7Instance
+import commons.service.auth.AuthenticationClientService
+import commons.service.permission.PermissionClientService
 import aggregator.adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   PersonRepositoryImpl,

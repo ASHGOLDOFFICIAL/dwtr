@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.adapters.service.mappers
 
-import shared.model.Uuid
+import commons.model.Uuid
 import aggregator.application.dto.audioplay.CastMemberDto
 import aggregator.domain.model.audioplay.{ActorRole, CastMember}
 import aggregator.domain.model.person.Person

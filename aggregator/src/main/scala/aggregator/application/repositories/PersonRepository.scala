@@ -1,8 +1,8 @@
 package org.aulune
 package aggregator.application.repositories
 
-import shared.model.Uuid
-import shared.repositories.GenericRepository
+import commons.model.Uuid
+import commons.repositories.GenericRepository
 import aggregator.domain.model.audioplay.AudioPlay
 import aggregator.domain.model.person.Person
 

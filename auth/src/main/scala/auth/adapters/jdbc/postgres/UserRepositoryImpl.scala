@@ -4,10 +4,10 @@ package auth.adapters.jdbc.postgres
 import auth.adapters.jdbc.postgres.metas.UserMetas.given
 import auth.application.repositories.UserRepository
 import auth.domain.model.{User, Username}
-import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import shared.model.Uuid
-import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.AlreadyExists
+import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
+import commons.model.Uuid
+import commons.repositories.RepositoryError
+import commons.repositories.RepositoryError.AlreadyExists
 
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*

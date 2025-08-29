@@ -11,7 +11,7 @@ COPY project ./project
 COPY build.sbt .
 RUN sbt update
 
-COPY shared/src ./shared/src
+COPY commons/src ./commons/src
 COPY auth/src ./auth/src
 COPY permissions/src ./permissions/src
 COPY aggregator/src ./aggregator/src

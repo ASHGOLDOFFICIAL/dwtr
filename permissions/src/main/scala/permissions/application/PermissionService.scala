@@ -7,7 +7,7 @@ import permissions.application.dto.{
   CreatePermissionRequest,
   PermissionResource,
 }
-import shared.errors.ApplicationServiceError
+import commons.errors.ApplicationServiceError
 
 
 /** Service to check user permissions.

@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.domain.model.audioplay
 
-import shared.model.Uuid
+import commons.model.Uuid
 import aggregator.domain.model.person.Person
 
 

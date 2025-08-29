@@ -8,7 +8,7 @@ import auth.application.dto.{
   AuthenticationResponse,
   OAuth2Provider,
 }
-import shared.http.circe.CirceConfiguration.config
+import commons.http.circe.CirceConfiguration.config
 
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{

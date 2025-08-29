@@ -1,9 +1,9 @@
 package org.aulune
 package aggregator.adapters.jdbc.postgres
 
-import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import shared.model.Uuid
-import shared.repositories.RepositoryError.FailedPrecondition
+import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
+import commons.model.Uuid
+import commons.repositories.RepositoryError.FailedPrecondition
 import aggregator.adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import aggregator.application.repositories.TranslationRepository
 import aggregator.application.repositories.TranslationRepository.{

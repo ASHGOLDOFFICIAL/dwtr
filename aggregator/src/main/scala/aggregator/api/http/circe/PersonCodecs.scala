@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.api.http.circe
 
-import shared.http.circe.CirceConfiguration.config
+import commons.http.circe.CirceConfiguration.config
 import aggregator.application.dto.person.{PersonRequest, PersonResponse}
 
 import io.circe.generic.extras.semiauto.{

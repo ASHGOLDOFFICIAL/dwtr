@@ -2,8 +2,8 @@ package org.aulune
 package auth.application.repositories
 
 import auth.domain.model.{User, Username}
-import shared.model.Uuid
-import shared.repositories.GenericRepository
+import commons.model.Uuid
+import commons.repositories.GenericRepository
 
 
 /** Repository which stores [[User]] objects.

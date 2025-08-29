@@ -2,9 +2,9 @@ package org.aulune
 package aggregator.adapters.jdbc.postgres
 
 
-import shared.model.Uuid
-import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
-import shared.testing.PostgresTestContainer
+import commons.model.Uuid
+import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import commons.testing.PostgresTestContainer
 import aggregator.application.repositories.AudioPlayRepository
 import aggregator.application.repositories.AudioPlayRepository.AudioPlayCursor
 import aggregator.domain.model.audioplay.{

@@ -2,13 +2,13 @@ package org.aulune
 package aggregator.adapters.service
 
 
-import shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
-import shared.errors.{ApplicationServiceError, toApplicationError}
-import shared.model.Uuid
-import shared.repositories.transformF
-import shared.service.auth.User
-import shared.service.permission.PermissionClientService
-import shared.service.permission.PermissionClientService.requirePermissionOrDeny
+import commons.errors.ApplicationServiceError.{InvalidArgument, NotFound}
+import commons.errors.{ApplicationServiceError, toApplicationError}
+import commons.model.Uuid
+import commons.repositories.transformF
+import commons.service.auth.User
+import commons.service.permission.PermissionClientService
+import commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import aggregator.application.AggregatorPermission.*
 import aggregator.application.dto.person.{PersonRequest, PersonResponse}
 import aggregator.application.repositories.PersonRepository

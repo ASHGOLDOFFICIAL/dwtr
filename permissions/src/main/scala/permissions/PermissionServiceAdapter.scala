@@ -7,9 +7,9 @@ import permissions.application.dto.{
   CheckPermissionRequest,
   CreatePermissionRequest,
 }
-import shared.errors.ApplicationServiceError
-import shared.service.auth.User
-import shared.service.permission.{Permission, PermissionClientService}
+import commons.errors.ApplicationServiceError
+import commons.service.auth.User
+import commons.service.permission.{Permission, PermissionClientService}
 
 import cats.Functor
 import cats.syntax.all.given

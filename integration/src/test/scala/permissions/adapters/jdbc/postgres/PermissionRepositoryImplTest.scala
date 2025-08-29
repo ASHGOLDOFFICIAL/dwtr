@@ -9,8 +9,8 @@ import permissions.domain.{
   PermissionName,
   PermissionNamespace,
 }
-import shared.testing.PostgresTestContainer
-import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import commons.testing.PostgresTestContainer
+import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec

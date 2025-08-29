@@ -17,11 +17,11 @@ import permissions.domain.{
   PermissionName,
   PermissionNamespace,
 }
-import shared.errors.ApplicationServiceError
-import shared.errors.ApplicationServiceError.InvalidArgument
-import shared.model.Uuid
-import shared.repositories.RepositoryError
-import shared.service.auth.User
+import commons.errors.ApplicationServiceError
+import commons.errors.ApplicationServiceError.InvalidArgument
+import commons.model.Uuid
+import commons.repositories.RepositoryError
+import commons.service.auth.User
 
 import cats.MonadThrow
 import cats.data.EitherT

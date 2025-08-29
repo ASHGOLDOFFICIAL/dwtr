@@ -13,9 +13,9 @@ import auth.application.repositories.UserRepository
 import auth.application.{OAuth2AuthenticationService, UserService}
 import auth.domain.errors.UserValidationError
 import auth.domain.model.{User, Username}
-import shared.errors
-import shared.model.Uuid
-import shared.repositories.RepositoryError
+import commons.errors
+import commons.model.Uuid
+import commons.repositories.RepositoryError
 
 import cats.data.{EitherNec, EitherT, NonEmptyChain, Validated}
 import cats.effect.std.UUIDGen

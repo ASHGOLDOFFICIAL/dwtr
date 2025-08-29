@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.adapters.jdbc.postgres.metas
 
-import shared.adapters.jdbc.postgres.metas.SharedMetas.urlMeta
+import commons.adapters.jdbc.postgres.metas.SharedMetas.urlMeta
 import aggregator.domain.shared.{ImageUrl, ReleaseDate, Synopsis}
 
 import cats.Show

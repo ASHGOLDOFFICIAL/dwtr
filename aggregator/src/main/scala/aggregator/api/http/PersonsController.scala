@@ -1,9 +1,9 @@
 package org.aulune
 package aggregator.api.http
 
-import shared.errors.toErrorResponse
-import shared.service.auth.AuthenticationClientService
-import shared.service.auth.AuthenticationEndpoints.authOnlyEndpoint
+import commons.errors.toErrorResponse
+import commons.service.auth.AuthenticationClientService
+import commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import aggregator.api.http.circe.PersonCodecs.given
 import aggregator.api.http.tapir.person.PersonExamples.{
   personRequestExample,

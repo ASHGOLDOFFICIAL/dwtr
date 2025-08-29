@@ -1,9 +1,9 @@
 package org.aulune
 package aggregator.application
 
-import shared.errors.ApplicationServiceError
-import shared.model.Uuid
-import shared.service.auth.User
+import commons.errors.ApplicationServiceError
+import commons.model.Uuid
+import commons.service.auth.User
 import aggregator.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,

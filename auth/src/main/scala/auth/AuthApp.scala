@@ -12,7 +12,7 @@ import auth.adapters.service.{
   UserServiceImpl,
 }
 import auth.api.http.{AuthenticationController, UsersController}
-import shared.service.auth.AuthenticationClientService
+import commons.service.auth.AuthenticationClientService
 
 import cats.effect.Async
 import cats.effect.std.UUIDGen
