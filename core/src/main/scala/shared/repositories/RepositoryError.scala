@@ -6,6 +6,9 @@ import scala.util.control.NoStackTrace
 
 /** Errors that can occur in repository. */
 enum RepositoryError extends NoStackTrace:
+  /** The client specified an invalid argument. */
+  case InvalidArgument
+
   /** The identity of an entity that a client attempted to create is already
    *  taken by another entity.
    */
