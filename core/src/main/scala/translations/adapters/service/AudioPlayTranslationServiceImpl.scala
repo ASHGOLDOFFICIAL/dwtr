@@ -12,6 +12,7 @@ import shared.repositories.transformF
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.{
+  AudioPlayTranslationMapper,
   AudioPlayTranslationTypeMapper,
   LanguageMapper,
 }
@@ -68,9 +69,7 @@ object AudioPlayTranslationServiceImpl:
     )
 
 
-private final class AudioPlayTranslationServiceImpl[F[
-    _,
-]: MonadThrow: Clock: SecureRandom](
+private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
     pagination: Config.App.Pagination,
     repo: TranslationRepository[F],
     permissionService: PermissionClientService[F],
@@ -83,7 +82,7 @@ private final class AudioPlayTranslationServiceImpl[F[
   ): F[Option[AudioPlayTranslationResponse]] =
     val tId = identity(originalId, id)
     for result <- repo.get(tId)
-    yield result.map(_.toResponse)
+    yield result.map(AudioPlayTranslationMapper.toResponse)
 
   override def listAll(
       token: Option[String],
@@ -92,18 +91,9 @@ private final class AudioPlayTranslationServiceImpl[F[
     PaginationParams(pagination.max)(count, token) match
       case Validated.Invalid(_) =>
         ApplicationServiceError.InvalidArgument.asLeft.pure
-      case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
-          .list(pageToken, pageSize)
-          .map { list =>
-            val nextPageToken = list.lastOption.flatMap { elem =>
-              val identity =
-                AudioPlayTranslationIdentity(elem.originalId, elem.id)
-              val token = AudioPlayTranslationToken(identity, elem.addedAt)
-              CursorToken[AudioPlayTranslationToken](token).encode
-            }
-            val elements = list.map(_.toResponse)
-            AudioPlayTranslationListResponse(elements, nextPageToken).asRight
-          }
+      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
+        for translations <- repo.list(pageToken, pageSize)
+        yield AudioPlayTranslationMapper.toListResponse(translations).asRight
 
   override def create(
       user: AuthenticatedUser,
@@ -111,36 +101,14 @@ private final class AudioPlayTranslationServiceImpl[F[
       originalId: UUID,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
     requirePermissionOrDeny(Modify, user) {
-      for
-        id <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
-        now <- Clock[F].realTimeInstant
-        translationOpt = tc.toDomain(originalId, id, now).toOption
-        result <- translationOpt.fold(InvalidArgument.asLeft.pure[F]) {
-          translation =>
-            for either <- repo.persist(translation).attemptHandle
-            yield either.bimap(toApplicationError, _.toResponse)
-        }
-      yield result
-    }
-
-  override def update(
-      user: AuthenticatedUser,
-      originalId: UUID,
-      id: UUID,
-      tc: AudioPlayTranslationRequest,
-  ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
-    requirePermissionOrDeny(Modify, user) {
-      val tId = identity(originalId, id)
       (for
-        updatedOpt <- repo.transformF(tId) { old =>
-          tc.update(old) match
-            case Validated.Valid(a)   => a.pure
-            case Validated.Invalid(e) => InvalidArgument.raiseError
-        }
-        updated <- updatedOpt match
-          case Some(translation) => translation.pure
-          case None              => NotFound.raiseError[F, AudioPlayTranslation]
-        response = updated.toResponse
+        id <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
+        original = Uuid[AudioPlay](originalId)
+        translation <- AudioPlayTranslationMapper
+          .fromRequest(tc, original, id)
+          .fold(_ => InvalidArgument.raiseError, _.pure[F])
+        persisted <- repo.persist(translation)
+        response = AudioPlayTranslationMapper.toResponse(persisted)
       yield response).attempt.map(_.leftMap(toApplicationError))
     }
 
@@ -150,8 +118,8 @@ private final class AudioPlayTranslationServiceImpl[F[
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Modify, user) {
-      val tId = identity(originalId, id)
-      for result <- repo.delete(tId).attemptHandle
+      val translationIdentity = identity(originalId, id)
+      for result <- repo.delete(translationIdentity).attempt
       yield result.leftMap(toApplicationError)
     }
 
@@ -167,56 +135,3 @@ private final class AudioPlayTranslationServiceImpl[F[
     val originalUuid = Uuid[AudioPlay](originalId)
     val translationUuid = Uuid[AudioPlayTranslation](id)
     AudioPlayTranslationIdentity(originalUuid, translationUuid)
-
-  extension (tc: AudioPlayTranslationRequest)
-    /** Updates old domain object with fields from request.
-     *  @param old old domain object.
-     *  @return updated domain object if valid.
-     */
-    private def update(
-        old: AudioPlayTranslation,
-    ): ValidatedNec[TranslationValidationError, AudioPlayTranslation] =
-      AudioPlayTranslation
-        .update(
-          initial = old,
-          title = tc.title,
-          translationType = AudioPlayTranslationTypeMapper
-            .toDomain(tc.translationType),
-          language = LanguageMapper.toDomain(tc.language),
-          links = tc.links,
-        )
-
-    /** Converts request to domain object and verifies it.
-     *  @param originalId original work's ID.
-     *  @param id ID assigned to this translation.
-     *  @param addedAt timestamp of when was this resource added.
-     *  @return created domain object if valid.
-     */
-    private def toDomain(
-        originalId: UUID,
-        id: UUID,
-        addedAt: Instant,
-    ): ValidatedNec[TranslationValidationError, AudioPlayTranslation] =
-      AudioPlayTranslation(
-        originalId = originalId,
-        id = id,
-        title = tc.title,
-        translationType = AudioPlayTranslationTypeMapper
-          .toDomain(tc.translationType),
-        language = LanguageMapper.toDomain(tc.language),
-        links = tc.links,
-        addedAt = addedAt,
-      )
-
-  extension (domain: AudioPlayTranslation)
-    /** Converts domain object to response object. */
-    private def toResponse: AudioPlayTranslationResponse =
-      AudioPlayTranslationResponse(
-        originalId = domain.originalId,
-        id = domain.id,
-        title = domain.title,
-        translationType = AudioPlayTranslationTypeMapper
-          .fromDomain(domain.translationType),
-        language = LanguageMapper.fromDomain(domain.language),
-        links = domain.links.toList,
-      )

@@ -2,30 +2,34 @@ package org.aulune
 package translations.adapters.jdbc.postgres
 
 
-import shared.adapters.doobie.*
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
 import shared.repositories.RepositoryError
+import shared.repositories.RepositoryError.FailedPrecondition
 import translations.adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
-import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
   AudioPlayTranslationIdentity,
   AudioPlayTranslationToken,
 }
-import translations.domain.model.audioplay.AudioPlayTranslation
+import translations.domain.model.audioplay.{
+  AudioPlay,
+  AudioPlayTranslation,
+  AudioPlayTranslationType,
+}
+import translations.domain.shared.{Language, TranslatedTitle}
 
+import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
-import cats.syntax.all.*
-import doobie.generic.auto.*
+import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
 import doobie.postgres.implicits.*
 import doobie.syntax.all.*
-import doobie.{Fragment, Meta, Transactor}
+import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode
-import io.circe.syntax.*
+import io.circe.syntax.given
 
 import java.net.URI
 import java.time.Instant
@@ -34,132 +38,148 @@ import java.time.Instant
 /** [[TranslationRepository]] implementation for PostgreSQL. */
 object TranslationRepositoryImpl:
   /** Builds an instance.
-   *
    *  @param transactor [[Transactor]] instance.
    *  @tparam F effect type.
    */
   def build[F[_]: MonadCancelThrow](
       transactor: Transactor[F],
   ): F[TranslationRepository[F]] =
-    for
-      _ <- createTable.update.run.transact(transactor)
-      repo = new TranslationRepositoryImpl[F](transactor)
-    yield repo
+    for _ <- createTranslationsTable.transact(transactor)
+    yield TranslationRepositoryImpl[F](transactor)
 
-  private object ColumnNames:
-    inline val tableName = "translations"
-    inline val originalIdC = "original_id"
-    inline val idC = "id"
-    inline val titleC = "title"
-    inline val typeC = "type"
-    inline val languageC = "language"
-    inline val linksC = "links"
-    inline val addedAtC = "added_at"
-    inline def allColumns: Seq[String] = Seq(
-      originalIdC,
-      idC,
-      titleC,
-      typeC,
-      languageC,
-      linksC,
-      addedAtC,
-    )
-
-  import ColumnNames.*
-  private val createTableSql = s"""
-    |CREATE TABLE IF NOT EXISTS $tableName (
-    |  $originalIdC UUID        NOT NULL,
-    |  $idC         UUID        NOT NULL,
-    |  $titleC      TEXT        NOT NULL,
-    |  $typeC       INTEGER     NOT NULL,
-    |  $languageC   TEXT        NOT NULL,
-    |  $linksC      TEXT        NOT NULL,
-    |  $addedAtC    TIMESTAMPTZ NOT NULL,
-    |  CONSTRAINT audio_play_translation_identity PRIMARY KEY($idC, $originalIdC)
-    |)""".stripMargin
-  private val createTable: Fragment = Fragment.const(createTableSql)
+  private val createTranslationsTable = sql"""
+    |CREATE TABLE IF NOT EXISTS translations (
+    |  original_id UUID    NOT NULL,
+    |  id          UUID    NOT NULL,
+    |  title       TEXT    NOT NULL,
+    |  type        INTEGER NOT NULL,
+    |  language    TEXT    NOT NULL,
+    |  links       TEXT    NOT NULL,
+    |  PRIMARY KEY(id, original_id)
+    |)""".stripMargin.update.run
 
 
 private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F],
 ) extends TranslationRepository[F]:
-  import TranslationRepositoryImpl.ColumnNames.*
 
-  override def contains(id: AudioPlayTranslationIdentity): F[Boolean] = selectF
-    .existsF(
-      selectF(tableName)("1")
-        .whereF(idC, fr"= ${id.id}")
-        .andF(originalIdC, fr"= ${id.originalId}"))
+  override def contains(id: AudioPlayTranslationIdentity): F[Boolean] = sql"""
+    |SELECT EXISTS (
+    |  SELECT 1 FROM translations
+    |  WHERE id = ${id.id}
+    |  AND original_id = ${id.originalId}
+    |)""".stripMargin
     .query[Boolean]
     .unique
     .transact(transactor)
 
   override def persist(
       elem: AudioPlayTranslation,
-  ): F[AudioPlayTranslation] = insertF(tableName)(
-    allColumns.head,
-    allColumns.tail*)
-    .valuesF(
-      fr"${elem.originalId}, ${elem.id}, ${elem.title}, ${elem.translationType}, ${elem.language}, ${elem.links}, ${elem.addedAt}",
-    )
-    .update
-    .run
-    .transact(transactor)
+  ): F[AudioPlayTranslation] = sql"""
+    |INSERT INTO translations (
+    |  original_id, id,
+    |  title, type,
+    |  language, links
+    |)
+    |VALUES (
+    |  ${elem.originalId}, ${elem.id},
+    |  ${elem.title}, ${elem.translationType},
+    |  ${elem.language}, ${elem.links}
+    |)""".stripMargin.update.run
     .as(elem)
+    .transact(transactor)
 
   override def get(
       id: AudioPlayTranslationIdentity,
-  ): F[Option[AudioPlayTranslation]] = selectF(tableName)(allColumns*)
-    .whereF(idC, fr"= ${id.id}")
-    .andF(originalIdC, fr"= ${id.originalId}")
-    .query[AudioPlayTranslation]
-    .option
-    .transact(transactor)
+  ): F[Option[AudioPlayTranslation]] =
+    val query = selectBase ++
+      fr0"WHERE id = ${id.originalId} AND original_id = ${id.originalId}"
+    query
+      .query[SelectResult]
+      .map(toTranslation)
+      .option
+      .transact(transactor)
 
   override def update(
       elem: AudioPlayTranslation,
-  ): F[AudioPlayTranslation] = updateF(tableName)(
-    titleC -> fr"${elem.title}",
-    typeC -> fr"${elem.translationType}",
-    languageC -> fr"${elem.language}",
-    linksC -> fr"${elem.links}")
-    .whereF(idC, fr"= ${elem.id}")
-    .andF(originalIdC, fr"= ${elem.originalId}")
-    .update
-    .run
-    .transact(transactor)
-    .flatMap {
-      case 0 =>
-        RepositoryError.FailedPrecondition.raiseError[F, AudioPlayTranslation]
-      case _ => elem.pure[F]
-    }
+  ): F[AudioPlayTranslation] =
+    val query = sql"""
+      |UPDATE translations
+      |SET title    = ${elem.title},
+      |    type     = ${elem.translationType},
+      |    language = ${elem.language},
+      |    links    = ${elem.links}
+      |WHERE id = ${elem.id} AND original_id = ${elem.originalId}
+      |""".stripMargin.update.run
+
+    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
+      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
+
+    query
+      .flatMap(rows => checkIfAny(rows))
+      .as(elem)
+      .transact(transactor)
+  end update
 
   override def delete(
       id: AudioPlayTranslationIdentity,
-  ): F[Unit] = deleteF(tableName)
-    .whereF(idC, fr"= ${id.id}")
-    .andF(originalIdC, fr"= ${id.originalId}")
-    .update
-    .run
+  ): F[Unit] = sql"""
+    |DELETE FROM translations
+    |WHERE id = ${id.id}
+    |AND original_id = ${id.id}""".update.run.void
     .transact(transactor)
-    .void
 
   override def list(
       startWith: Option[AudioPlayTranslationToken],
       count: Int,
   ): F[List[AudioPlayTranslation]] =
-    val base = selectF(tableName)(allColumns*)
-    val cond = startWith match
-      case Some(s) => base
-          .whereF(addedAtC, fr">= ${s.timestamp}")
-          .andF(originalIdC, fr"= ${s.identity.originalId}")
-          .andF(idC, fr"= ${s.identity.id}")
-      case None => base
-    val fullQuery = cond.orderByF(addedAtC).ascF.limitF(count)
-    fullQuery
-      .query[AudioPlayTranslation]
+    val sort = fr0"LIMIT $count"
+    val full = startWith match
+      case Some(t) => selectBase ++ fr"""
+        |WHERE id > ${t.id}
+        |AND original_id = ${t.originalId}
+        |""".stripMargin ++ sort
+      case None => selectBase ++ sort
+
+    full.stripMargin
+      .query[SelectResult]
+      .map(toTranslation)
       .to[List]
       .transact(transactor)
+  end list
+
+  private type SelectResult = (
+      Uuid[AudioPlay],
+      Uuid[AudioPlayTranslation],
+      TranslatedTitle,
+      AudioPlayTranslationType,
+      Language,
+      NonEmptyList[URI],
+  )
+
+  private val selectBase = fr"""
+    |SELECT 
+    |  original_id, id,
+    |  title, type,
+    |  language, links
+    |FROM translations""".stripMargin
+
+  /** Makes translation from given data. */
+  private def toTranslation(
+      originalId: Uuid[AudioPlay],
+      id: Uuid[AudioPlayTranslation],
+      title: TranslatedTitle,
+      translationType: AudioPlayTranslationType,
+      language: Language,
+      links: NonEmptyList[URI],
+  ): AudioPlayTranslation = AudioPlayTranslation.unsafe(
+    originalId = originalId,
+    id = id,
+    title = title,
+    translationType = translationType,
+    language = language,
+    links = links,
+  )
 
   /* It should only be used here, since other repositories
   may want to encode list of URIs differently. */

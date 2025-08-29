@@ -39,31 +39,26 @@ object TranslationRepository:
   )
 
   /** Token to identify pagination params.
-   *
-   *  @param identity identity of [[AudioPlayTranslation]].
-   *  @param timestamp when translation was added.
+   *  @param originalId ID of original work.
+   *  @param id ID of this translation.
    */
   final case class AudioPlayTranslationToken(
-      identity: AudioPlayTranslationIdentity,
-      timestamp: Instant,
+      originalId: Uuid[AudioPlay],
+      id: Uuid[AudioPlayTranslation],
   )
 
   // TODO: Make better
   given TokenDecoder[AudioPlayTranslationToken] = token =>
     Try {
       val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
-      val Array(originalStr, idStr, timeStr) = raw.split('|')
-      val orig = Uuid[AudioPlay](originalStr).get
+      val Array(originalStr, idStr) = raw.split('|')
+      val originalId = Uuid[AudioPlay](originalStr).get
       val id = Uuid[AudioPlayTranslation](idStr).get
-      val instant = Instant.ofEpochMilli(timeStr.toLong)
-      val identity = AudioPlayTranslationIdentity(orig, id)
-      AudioPlayTranslationToken(identity, instant)
+      AudioPlayTranslationToken(originalId, id)
     }.toOption
 
   given TokenEncoder[AudioPlayTranslationToken] = token =>
-    val raw = s"${token.identity.originalId}|" +
-      s"${token.identity.id}|" +
-      s"${token.timestamp.toEpochMilli}"
+    val raw = s"${token.originalId}|${token.id}"
     Try(
       Base64.getUrlEncoder.withoutPadding.encodeToString(
         raw.getBytes("UTF-8"))).toOption

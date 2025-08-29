@@ -55,22 +55,6 @@ trait AudioPlayTranslationService[F[_]]:
       originalId: UUID,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]]
 
-  /** Updates existing translation.
-   *
-   *  @param user user who performs this action.
-   *  @param originalId ID of original.
-   *  @param id translation ID.
-   *  @param tc new state.
-   *  @return updated translation if success, otherwise error.
-   *  @note user must have [[Modify]] permission.
-   */
-  def update(
-      user: AuthenticatedUser,
-      originalId: UUID,
-      id: UUID,
-      tc: AudioPlayTranslationRequest,
-  ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]]
-
   /** Deletes existing translation.
    *
    *  @param user user who performs this action.

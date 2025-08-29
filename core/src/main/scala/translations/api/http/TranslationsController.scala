@@ -120,22 +120,6 @@ private final class TranslationsController[F[_]: Applicative](
       yield result.leftMap(toErrorResponse)
     }
 
-  private val updateEndpoint = authOnlyEndpoint.put
-    .in(elementPath)
-    .in(jsonBody[AudioPlayTranslationRequest]
-      .description("Translation's new state.")
-      .example(requestExample))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResponse]
-      .description("Updated translation.")
-      .example(responseExample)))
-    .name("UpdateTranslation")
-    .summary("Updates translation resource with given ID.")
-    .tag(tag)
-    .serverLogic { user => (mediaId, id, tc) =>
-      for result <- service.update(user, mediaId, id, tc)
-      yield result.leftMap(toErrorResponse)
-    }
-
   private val deleteEndpoint = authOnlyEndpoint.delete
     .in(elementPath)
     .out(statusCode(StatusCode.NoContent))
@@ -153,7 +137,6 @@ private final class TranslationsController[F[_]: Applicative](
     getEndpoint,
     listEndpoint,
     postEndpoint,
-    updateEndpoint,
     deleteEndpoint,
   )
 
