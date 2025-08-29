@@ -7,6 +7,7 @@ import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.PaginationParams
+import shared.service.auth.User
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
@@ -96,7 +97,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
         yield AudioPlayMapper.toListResponse(audios).asRight
 
   override def create(
-      user: AuthenticatedUser,
+      user: User,
       request: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
     requirePermissionOrDeny(Modify, user) {
@@ -115,7 +116,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
     }
 
   override def delete(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Modify, user) {

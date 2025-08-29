@@ -9,6 +9,7 @@ import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformF
+import shared.service.auth.User
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.{
@@ -106,7 +107,7 @@ private final class AudioPlayTranslationServiceImpl[F[
           }
 
   override def create(
-      user: AuthenticatedUser,
+      user: User,
       tc: AudioPlayTranslationRequest,
       originalId: UUID,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
@@ -123,7 +124,7 @@ private final class AudioPlayTranslationServiceImpl[F[
     }
 
   override def update(
-      user: AuthenticatedUser,
+      user: User,
       originalId: UUID,
       id: UUID,
       tc: AudioPlayTranslationRequest,
@@ -135,7 +136,7 @@ private final class AudioPlayTranslationServiceImpl[F[
     }
 
   override def delete(
-      user: AuthenticatedUser,
+      user: User,
       originalId: UUID,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =

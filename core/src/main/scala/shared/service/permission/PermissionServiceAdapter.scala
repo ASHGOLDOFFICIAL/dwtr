@@ -10,12 +10,13 @@ import permissions.application.dto.{
   CreatePermissionRequest,
 }
 import shared.errors.ApplicationServiceError
+import shared.service.auth.User
 
 import cats.Functor
 import cats.syntax.all.given
 
 
-/** Adapts [[PermissionService]] to [[PermissionClientService]]
+/** Adapts [[PermissionService]] to [[PermissionClientService]].
  *  @param service service to adapt.
  *  @tparam F effect type.
  */
@@ -29,7 +30,7 @@ private[permission] final class PermissionServiceAdapter[F[_]: Functor](
     service.registerPermission(makeCreateRequest(permission)).map(_.void)
 
   override def hasPermission(
-      user: AuthenticatedUser,
+      user: User,
       permission: Permission,
   ): F[Boolean] =
     val request = makeCheckRequest(user, permission)
@@ -53,7 +54,7 @@ private[permission] final class PermissionServiceAdapter[F[_]: Functor](
 
   /** Converts client-side [[Permission]] to [[CheckPermissionRequest]]. */
   private def makeCheckRequest(
-      user: AuthenticatedUser,
+      user: User,
       permission: Permission,
   ): CheckPermissionRequest = CheckPermissionRequest(
     namespace = permission.namespace,

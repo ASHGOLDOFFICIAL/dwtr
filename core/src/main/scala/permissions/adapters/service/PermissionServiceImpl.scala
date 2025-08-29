@@ -2,7 +2,6 @@ package org.aulune
 package permissions.adapters.service
 
 
-import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.application.dto.CheckPermissionStatus.{Denied, Granted}
 import permissions.application.dto.{
@@ -22,6 +21,7 @@ import permissions.domain.{
 import shared.errors.ApplicationServiceError.BadRequest
 import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.model.Uuid
+import shared.service.auth.User
 
 import cats.MonadThrow
 import cats.data.EitherT
@@ -78,7 +78,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
   override def checkPermission(
       request: CheckPermissionRequest,
   ): F[Either[ApplicationServiceError, CheckPermissionResponse]] =
-    val id = Uuid[AuthenticatedUser](request.user)
+    val id = Uuid[User](request.user)
     val permissionIdentityOpt =
       PermissionMapper.makeIdentity(request.namespace, request.permission)
     (for
@@ -100,7 +100,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
    *  @param permission required permission identity.
    */
   private def hasPermission(
-      id: Uuid[AuthenticatedUser],
+      id: Uuid[User],
       permission: PermissionIdentity,
   ): F[Either[ApplicationServiceError, Boolean]] = repo
     .hasPermission(id, permission)

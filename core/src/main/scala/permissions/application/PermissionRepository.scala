@@ -2,12 +2,12 @@ package org.aulune
 package permissions.application
 
 
-import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{Permission, PermissionName, PermissionNamespace}
 import shared.errors.RepositoryError.*
 import shared.model.Uuid
 import shared.repositories.{GenericRepository, Upsert}
+import shared.service.auth.User
 
 
 /** Repository for [[Permission]]s.
@@ -25,7 +25,7 @@ trait PermissionRepository[F[_]]
    *    thrown inside.
    */
   def hasPermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Boolean]
 
@@ -36,7 +36,7 @@ trait PermissionRepository[F[_]]
    *    thrown inside.
    */
   def grantPermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Unit]
 
@@ -48,7 +48,7 @@ trait PermissionRepository[F[_]]
    *  @note This method is idempotent.
    */
   def revokePermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Unit]
 

@@ -13,8 +13,6 @@ import auth.adapters.service.{
   UserServiceImpl,
 }
 import auth.api.http.{AuthenticationController, UsersController}
-import auth.domain.model.{User, Username}
-import shared.model.Uuid
 import shared.service.auth.AuthenticationClientService
 
 import cats.effect.Async
@@ -71,17 +69,6 @@ object AuthApp:
 
       allEndpoints = authEndpoints ++ userEndpoints
       clientService = AuthenticationClientService.make(authServ)
-
-      adminHash <- hasher.hashPassword(config.admin.password)
-      adminId <- UUIDGen.randomUUID.map(Uuid[User])
-      admin = User
-        .unsafe(
-          id = adminId,
-          username = Username(config.admin.username).get,
-          hashedPassword = Some(adminHash),
-          googleId = None,
-        ) // TODO: make something better.
-      _ <- userRepo.persist(admin).void.handleError(_ => ())
     yield new AuthApp[F]:
       override val clientAuthentication: AuthenticationClientService[F] =
         clientService
