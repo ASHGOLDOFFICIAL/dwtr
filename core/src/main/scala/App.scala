@@ -3,23 +3,10 @@ package org.aulune
 
 import auth.AuthApp
 import permissions.PermissionApp
-import shared.service.auth.AuthenticationClientService
-import shared.service.permission.PermissionClientService
-import translations.adapters.jdbc.postgres.{
-  AudioPlayRepositoryImpl,
-  PersonRepositoryImpl,
-  TranslationRepositoryImpl,
-}
-import translations.adapters.service.{
-  AudioPlayServiceImpl,
-  AudioPlayTranslationServiceImpl,
-  PersonServiceImpl,
-}
-import translations.api.http.{AudioPlaysController, PersonsController}
+import translations.AggregatorApp
 
 import cats.effect.kernel.Resource
-import cats.effect.std.SecureRandom
-import cats.effect.{Async, Clock, IO, IOApp, MonadCancelThrow}
+import cats.effect.{Async, IO, IOApp}
 import cats.mtl.Handle.handleForApplicativeError
 import cats.syntax.all.*
 import doobie.Transactor
@@ -52,41 +39,15 @@ object App extends IOApp.Simple:
   override def run: IO[Unit] =
     for
       authApp <- AuthApp.build(config.auth, transactor)
-      permissionApp <- PermissionApp.build(config.permission, transactor)
-      translationsEndpoints <- makeTranslationsEndpoints[IO](
+      permissionApp <- PermissionApp.build(config.permissions, transactor)
+      aggregatorApp <- AggregatorApp.build(
+        config.aggregator,
         authApp.clientAuthentication,
         permissionApp.clientPermission,
         transactor)
-      endpoints = authApp.endpoints ++ translationsEndpoints
+      endpoints = authApp.endpoints ++ aggregatorApp.endpoints
       _ <- makeServer[IO](endpoints).use(_ => IO.never)
     yield ()
-
-  private def makeTranslationsEndpoints[F[
-      _,
-  ]: MonadCancelThrow: Clock: SecureRandom](
-      authServ: AuthenticationClientService[F],
-      permissionServ: PermissionClientService[F],
-      transactor: Transactor[F],
-  ): F[List[ServerEndpoint[Any, F]]] =
-    for
-      personRepo <- PersonRepositoryImpl.build[F](transactor)
-      personServ <- PersonServiceImpl.build[F](personRepo, permissionServ)
-
-      transRepo <- TranslationRepositoryImpl.build[F](transactor)
-      transServ <- AudioPlayTranslationServiceImpl
-        .build[F](config.app.pagination, transRepo, permissionServ)
-
-      audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
-      audioServ <- AudioPlayServiceImpl
-        .build[F](config.app.pagination, audioRepo, personServ, permissionServ)
-
-      audioEndpoints = new AudioPlaysController[F](
-        config.app.pagination,
-        audioServ,
-        authServ,
-        transServ).endpoints
-      personEndpoints = new PersonsController[F](personServ, authServ).endpoints
-    yield audioEndpoints ++ personEndpoints
 
   private def makeServer[F[_]: Async](
       endpoints: List[ServerEndpoint[Any, F]],

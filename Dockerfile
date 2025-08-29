@@ -14,6 +14,7 @@ RUN sbt update
 COPY shared/src ./shared/src
 COPY auth/src ./auth/src
 COPY permissions/src ./permissions/src
+COPY aggregator/src ./aggregator/src
 COPY core/src ./core/src
 RUN sbt core/assembly
 

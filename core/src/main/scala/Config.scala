@@ -3,6 +3,7 @@ package org.aulune
 
 import auth.AuthConfig
 import permissions.PermissionConfig
+import translations.AggregatorConfig
 
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.Uri
@@ -12,9 +13,10 @@ import pureconfig.error.ExceptionThrown
 
 case class Config(
     app: Config.App,
-    auth: AuthConfig,
-    permission: PermissionConfig,
     postgres: Config.Postgres,
+    auth: AuthConfig,
+    permissions: PermissionConfig,
+    aggregator: AggregatorConfig,
 ) derives ConfigReader
 
 
@@ -24,10 +26,7 @@ object Config:
       version: String,
       host: Host,
       port: Port,
-      pagination: App.Pagination,
   )
-  object App:
-    case class Pagination(max: Int, default: Int)
 
   case class Postgres(uri: String, user: String, password: String)
 

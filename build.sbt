@@ -60,9 +60,20 @@ lazy val permissions = (project in file("permissions"))
     ),
   )
 
+lazy val aggregator = (project in file("aggregator"))
+  .dependsOn(shared)
+  .settings(
+    name := "aggregator",
+    libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+    ),
+  )
 
 lazy val core = (project in file("core"))
-  .dependsOn(shared, auth, permissions)
+  .dependsOn(shared, auth, permissions, aggregator)
   .settings(
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
