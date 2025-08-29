@@ -2,7 +2,6 @@ package org.aulune
 package permissions.adapters.jdbc.postgres
 
 
-import auth.application.dto.AuthenticatedUser
 import permissions.adapters.jdbc.postgres.PermissionMetas.given
 import permissions.application.PermissionRepository
 import permissions.application.PermissionRepository.PermissionIdentity
@@ -20,6 +19,7 @@ import shared.errors.RepositoryError.{
   NothingToUpdate,
 }
 import shared.model.Uuid
+import shared.service.auth.User
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
@@ -142,7 +142,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .handleErrorWith(toRepositoryError)
 
   override def hasPermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Boolean] =
     def checkQuery(reference: Int) = sql"""
@@ -167,7 +167,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   end hasPermission
 
   override def grantPermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Unit] =
     def grantQuery(reference: Int) = sql"""
@@ -189,7 +189,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   end grantPermission
 
   override def revokePermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Unit] =
     def revokeQuery(reference: Int) = sql"""

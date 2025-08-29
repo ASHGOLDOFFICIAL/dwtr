@@ -2,7 +2,6 @@ package org.aulune
 package permissions.adapters.jdbc.postgres
 
 
-import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{
   Permission,
@@ -17,6 +16,7 @@ import shared.errors.RepositoryError.{
   NothingToUpdate,
 }
 import shared.model.Uuid
+import shared.service.auth.User
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -131,8 +131,8 @@ final class PermissionRepositoryImplTest
     }
   }
 
-  private val userId = Uuid[AuthenticatedUser](
-    UUID.fromString("d6acb478-b417-4a1c-842a-a2319ae7e026"))
+  private val userId =
+    Uuid[User](UUID.fromString("d6acb478-b417-4a1c-842a-a2319ae7e026"))
 
   "delete method " - {
     "should " - {

@@ -21,6 +21,7 @@ import permissions.domain.{
 }
 import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.model.Uuid
+import shared.service.auth.User
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -129,11 +130,11 @@ final class PermissionServiceImplTest
       "grant permission to those who have it" in stand { service =>
         // Not an admin...
         (mockRepo.hasPermission _)
-          .expects(Uuid[AuthenticatedUser](user.id), adminPermission)
+          .expects(Uuid[User](user.id), adminPermission)
           .returning(false.pure)
         // ...but has a permission.
         (mockRepo.hasPermission _)
-          .expects(Uuid[AuthenticatedUser](user.id), testPermissionIdentity)
+          .expects(Uuid[User](user.id), testPermissionIdentity)
           .returning(true.pure)
 
         for result <- service.checkPermission(checkRequest)
@@ -143,11 +144,11 @@ final class PermissionServiceImplTest
       "deny permission to those who don't have it" in stand { service =>
         // Not an admin...
         (mockRepo.hasPermission _)
-          .expects(Uuid[AuthenticatedUser](user.id), adminPermission)
+          .expects(Uuid[User](user.id), adminPermission)
           .returning(false.pure)
         // ...and doesn't have a permission either.
         (mockRepo.hasPermission _)
-          .expects(Uuid[AuthenticatedUser](user.id), testPermissionIdentity)
+          .expects(Uuid[User](user.id), testPermissionIdentity)
           .returning(false.pure)
 
         for result <- service.checkPermission(checkRequest)
@@ -157,11 +158,11 @@ final class PermissionServiceImplTest
       "grant permission to admin if they have it" in stand { service =>
         // User is an admin...
         (mockRepo.hasPermission _)
-          .expects(Uuid[AuthenticatedUser](user.id), adminPermission)
+          .expects(Uuid[User](user.id), adminPermission)
           .returning(true.pure)
         // ...and does have a required permission.
         (mockRepo.hasPermission _)
-          .expects(Uuid[AuthenticatedUser](user.id), testPermissionIdentity)
+          .expects(Uuid[User](user.id), testPermissionIdentity)
           .returning(true.pure)
 
         for result <- service.checkPermission(checkRequest)
@@ -172,11 +173,11 @@ final class PermissionServiceImplTest
         service =>
           // User is an admin...
           (mockRepo.hasPermission _)
-            .expects(Uuid[AuthenticatedUser](user.id), adminPermission)
+            .expects(Uuid[User](user.id), adminPermission)
             .returning(true.pure)
           // ...but doesn't have a required permission.
           (mockRepo.hasPermission _)
-            .expects(Uuid[AuthenticatedUser](user.id), testPermissionIdentity)
+            .expects(Uuid[User](user.id), testPermissionIdentity)
             .returning(false.pure)
 
           for result <- service.checkPermission(checkRequest)
@@ -187,11 +188,11 @@ final class PermissionServiceImplTest
         service =>
           // User is an admin...
           (mockRepo.hasPermission _)
-            .expects(Uuid[AuthenticatedUser](user.id), adminPermission)
+            .expects(Uuid[User](user.id), adminPermission)
             .returning(true.pure)
           // ...but required permission doesn't exist.
           (mockRepo.hasPermission _)
-            .expects(Uuid[AuthenticatedUser](user.id), testPermissionIdentity)
+            .expects(Uuid[User](user.id), testPermissionIdentity)
             .returning(IO.raiseError(RepositoryError.FailedPrecondition))
 
           for result <- service.checkPermission(checkRequest)
