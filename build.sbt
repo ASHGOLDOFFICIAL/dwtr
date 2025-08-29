@@ -15,25 +15,35 @@ inThisBuild {
 
 lazy val root = (project in file(".")).aggregate(core, integration)
 
+
 lazy val shared = (project in file("shared")).settings(
   name := "shared",
   libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
-    "ch.qos.logback"         % "logback-classic" % logbackVersion,
-    "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion,
-    "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
-    "de.mkammerer"           % "argon2-jvm"      % argon2Version,
     "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-    "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
-    "org.xerial"     % "sqlite-jdbc"     % sqliteVersion,
-    "com.nimbusds"   % "nimbus-jose-jwt" % nimbusJoseJwt,
   ),
 )
 
 
-lazy val core = (project in file("core"))
+lazy val auth = (project in file("auth"))
   .dependsOn(shared)
+  .settings(
+    name := "auth",
+    libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+      "com.github.jwt-scala" %% "jwt-circe"  % jwtVersion,
+      "de.mkammerer"          % "argon2-jvm" % argon2Version,
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
+      "com.nimbusds"   % "nimbus-jose-jwt" % nimbusJoseJwt,
+    ),
+  )
+
+
+lazy val core = (project in file("core"))
+  .dependsOn(shared, auth)
   .settings(
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
