@@ -35,30 +35,10 @@ extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
    *  @param id ID of entity to be updated.
    *  @return updated element if element existed.
    */
-  def transformFP(id: Id)(f: E => M[E]): M[Option[E]] =
+  def transformF(id: Id)(f: E => M[E]): M[Option[E]] =
     for
       elemOpt <- repo.get(id)
       updatedOpt <- elemOpt.traverse(f)
-      pairOpt = elemOpt.zip(updatedOpt)
-      result <- pairOpt.traverse { (elem, updated) =>
-        if elem == updated then elem.pure[M]
-        else repo.update(updated)
-      }
-    yield result
-
-  // TODO: delete it.
-  /** Updates element to result of [[f]] if not `None`.
-   *
-   *  If function [[f]] results in the same value, the entity is not persisted.
-   *
-   *  @param f function to be applied to element.
-   *  @param id ID of entity to be updated.
-   *  @return updated element if element existed.
-   */
-  def transformF(id: Id)(f: E => Option[E]): M[Option[E]] =
-    for
-      elemOpt <- repo.get(id)
-      updatedOpt <- elemOpt.flatMap(f).pure[M]
       pairOpt = elemOpt.zip(updatedOpt)
       result <- pairOpt.traverse { (elem, updated) =>
         if elem == updated then elem.pure[M]

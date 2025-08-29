@@ -6,7 +6,7 @@ import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
-import shared.repositories.transformFP
+import shared.repositories.transformF
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.application.TranslationPermission.*
@@ -73,7 +73,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[Person](id)
       (for
-        updatedOpt <- repo.transformFP(uuid) { old =>
+        updatedOpt <- repo.transformF(uuid) { old =>
           request.update(old) match
             case Validated.Valid(a)   => a.pure
             case Validated.Invalid(e) => BadRequest.raiseError

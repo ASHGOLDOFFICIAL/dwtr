@@ -4,7 +4,7 @@ package translations.adapters.service
 
 import auth.application.dto.AuthenticatedUser
 import shared.UUIDv7Gen.uuidv7Instance
-import shared.errors.ApplicationServiceError.BadRequest
+import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
@@ -130,8 +130,17 @@ private final class AudioPlayTranslationServiceImpl[F[
   ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
     requirePermissionOrDeny(Modify, user) {
       val tId = identity(originalId, id)
-      for result <- repo.transformF(tId)(tc.update(_).toOption)
-      yield result.toRight(BadRequest).map(_.toResponse)
+      (for
+        updatedOpt <- repo.transformF(tId) { old =>
+          tc.update(old) match
+            case Validated.Valid(a)   => a.pure
+            case Validated.Invalid(e) => BadRequest.raiseError
+        }
+        updated <- updatedOpt match
+          case Some(translation) => translation.pure
+          case None              => NotFound.raiseError[F, AudioPlayTranslation]
+        response = updated.toResponse
+      yield response).attempt.map(_.leftMap(toApplicationError))
     }
 
   override def delete(
