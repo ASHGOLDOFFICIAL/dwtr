@@ -3,24 +3,18 @@ package permissions.adapters.jdbc.postgres
 
 
 import permissions.application.PermissionRepository.PermissionIdentity
-import permissions.domain.{
-  Permission,
-  PermissionDescription,
-  PermissionName,
-  PermissionNamespace,
-}
-import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
-import shared.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-  NothingToUpdate,
-}
+import permissions.domain.{Permission, PermissionDescription, PermissionName, PermissionNamespace}
+import shared.testing.PostgresTestContainer
+import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
+import cats.mtl.Handle.handleForApplicativeError
+import org.aulune.shared.model.Uuid
+import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 
@@ -116,7 +110,7 @@ final class PermissionRepositoryImplTest
 
       "throw error for non-existent permissions" in stand { repo =>
         for updated <- repo.update(testPermission).attempt
-        yield updated shouldBe Left(NothingToUpdate)
+        yield updated shouldBe Left(FailedPrecondition)
       }
 
       "be idempotent" in stand { repo =>

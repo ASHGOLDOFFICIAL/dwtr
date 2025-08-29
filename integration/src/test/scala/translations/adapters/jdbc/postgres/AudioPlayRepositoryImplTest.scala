@@ -2,7 +2,9 @@ package org.aulune
 package translations.adapters.jdbc.postgres
 
 
-import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
+import shared.model.Uuid
+import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import shared.testing.PostgresTestContainer
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.domain.model.audioplay.{
@@ -185,7 +187,7 @@ final class AudioPlayRepositoryImplTest
 
       "throw error for non-existent audio plays" in stand { repo =>
         for updated <- repo.update(audioPlayTest).attempt
-        yield updated shouldBe Left(NothingToUpdate)
+        yield updated shouldBe Left(FailedPrecondition)
       }
 
       "be idempotent" in stand { repo =>

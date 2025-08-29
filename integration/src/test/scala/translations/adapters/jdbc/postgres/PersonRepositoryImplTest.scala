@@ -2,8 +2,9 @@ package org.aulune
 package translations.adapters.jdbc.postgres
 
 
-import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
-import shared.repositories.RepositoryError.{AlreadyExists, NothingToUpdate}
+import shared.model.Uuid
+import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import shared.testing.PostgresTestContainer
 import translations.domain.model.person.{FullName, Person}
 
 import cats.effect.IO
@@ -85,7 +86,7 @@ final class PersonRepositoryImplTest
 
       "throw error for non-existent person" in stand { repo =>
         for updated <- repo.update(personTest).attempt
-        yield updated shouldBe Left(NothingToUpdate)
+        yield updated shouldBe Left(FailedPrecondition)
       }
 
       "be idempotent" in stand { repo =>

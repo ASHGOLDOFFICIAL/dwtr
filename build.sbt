@@ -18,12 +18,19 @@ lazy val root = (project in file(".")).aggregate(core, integration)
 
 lazy val shared = (project in file("shared")).settings(
   name := "shared",
-  libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+  libraryDependencies ++= tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion,
+    "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion,
+    "org.postgresql" % "postgresql"  % postgresqlVersion,
+    "org.scalamock" %% "scalamock" % scalamockVersion,
+    "org.scalatest" %% "scalatest" % scalatestVersion,
     "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+    "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
     "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
   ),
 )
+
 
 lazy val auth = (project in file("auth"))
   .dependsOn(shared)
@@ -40,6 +47,7 @@ lazy val auth = (project in file("auth"))
     ),
   )
 
+
 lazy val permissions = (project in file("permissions"))
   .dependsOn(shared)
   .settings(
@@ -48,9 +56,10 @@ lazy val permissions = (project in file("permissions"))
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
     ),
   )
+
 
 lazy val core = (project in file("core"))
   .dependsOn(shared, auth, permissions)

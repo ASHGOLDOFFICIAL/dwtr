@@ -2,7 +2,11 @@ package org.aulune
 package translations.adapters.service
 
 
-import shared.errors.RepositoryError
+import shared.errors.ApplicationServiceError
+import shared.model.Uuid
+import shared.repositories.RepositoryError
+import shared.service.auth.User
+import shared.service.permission.PermissionClientService
 import translations.application.TranslationPermission.Modify
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
@@ -85,14 +89,14 @@ final class PersonServiceImplTest
           name = generated.name).asRight
       }
 
-      "return `BadRequest` if creating person with empty name" in {
+      "return `InvalidArgument` if creating person with empty name" in {
         // User has permission.
         (mockPermissions.hasPermission _)
           .expects(user, Modify)
           .returning(IO(true))
 
         for result <- service.create(user, emptyNameRequest)
-        yield result shouldBe ApplicationServiceError.BadRequest.asLeft
+        yield result shouldBe ApplicationServiceError.InvalidArgument.asLeft
       }
 
       "return `AlreadyExists` when creating person with taken identity" in {
@@ -140,7 +144,7 @@ final class PersonServiceImplTest
         yield result shouldBe updatedResponse.asRight
       }
 
-      "return `BadRequest` if updating person with empty name" in {
+      "return `InvalidArgument` if updating person with empty name" in {
         // User has permission.
         (mockPermissions.hasPermission _)
           .expects(user, Modify)
@@ -149,7 +153,7 @@ final class PersonServiceImplTest
         (mockRepo.get _).expects(person.id).returning(person.some.pure)
 
         for result <- service.update(user, person.id, emptyNameRequest)
-        yield result shouldBe ApplicationServiceError.BadRequest.asLeft
+        yield result shouldBe ApplicationServiceError.InvalidArgument.asLeft
       }
 
       "return `NotFound` when updating non-existent person" in {

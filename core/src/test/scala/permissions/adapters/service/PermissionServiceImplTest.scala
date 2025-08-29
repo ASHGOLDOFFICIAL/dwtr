@@ -19,9 +19,15 @@ import permissions.domain.{
   PermissionName,
   PermissionNamespace,
 }
+import shared.errors.ApplicationServiceError
+import shared.model.Uuid
+import shared.repositories.RepositoryError
+import shared.service.auth.User
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.mtl.Handle.handleForApplicativeError
+import cats.mtl.Raise
 import cats.syntax.all.given
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
@@ -53,9 +59,9 @@ final class PermissionServiceImplTest
   private val mockRepo = mock[PermissionRepository[IO]]
   private def stand: (PermissionService[IO] => IO[Assertion]) => IO[Assertion] =
     testCase =>
-      (mockRepo.upsert _)
-        .expects(where(hasAdminPermissionIdentity))
-        .onCall((p: Permission) => p.pure[IO])
+      (mockRepo.upsert(_: Permission)(using _: Raise[IO, RepositoryError]))
+        .expects(argThat(hasAdminPermissionIdentity), *)
+        .onCall((p: Permission, _: Raise[IO, RepositoryError]) => IO.pure(p))
       PermissionServiceImpl
         .build[IO](adminNamespace, adminName, mockRepo)
         .flatMap(testCase)
@@ -99,19 +105,19 @@ final class PermissionServiceImplTest
   "registerPermission method " - {
     "should " - {
       "add new permissions" in stand { service =>
-        (mockRepo.upsert _)
-          .expects(testPermission)
+        (mockRepo.upsert(_: Permission)(using _: Raise[IO, RepositoryError]))
+          .expects(testPermission, *)
           .returning(testPermission.pure)
         for result <- service.registerPermission(createRequest)
         yield result shouldBe permissionResource.asRight
       }
 
       "be idempotent" in stand { service =>
-        (mockRepo.upsert _)
-          .expects(testPermission)
+        (mockRepo.upsert(_: Permission)(using _: Raise[IO, RepositoryError]))
+          .expects(testPermission, *)
           .returning(testPermission.pure)
-        (mockRepo.upsert _)
-          .expects(testPermission)
+        (mockRepo.upsert(_: Permission)(using _: Raise[IO, RepositoryError]))
+          .expects(testPermission, *)
           .returning(testPermission.pure)
 
         for

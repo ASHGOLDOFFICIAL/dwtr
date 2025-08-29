@@ -1,5 +1,5 @@
 package org.aulune
-package shared.adapters.repositories.jdbc.postgres
+package shared.testing
 
 
 import cats.effect.IO
@@ -8,8 +8,8 @@ import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.zaxxer.hikari.HikariConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.transactor.Transactor
+import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
-import org.scalatest.{Assertion, ParallelTestExecution}
 
 
 trait PostgresTestContainer extends AsyncFreeSpec with TestContainerForEach:
