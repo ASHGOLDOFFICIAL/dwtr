@@ -3,7 +3,7 @@ package org.aulune
 
 import auth.AuthConfig
 import permissions.PermissionConfig
-import translations.AggregatorConfig
+import aggregator.AggregatorConfig
 
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.Uri

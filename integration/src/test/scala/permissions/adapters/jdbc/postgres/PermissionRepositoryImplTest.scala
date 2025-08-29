@@ -3,7 +3,12 @@ package permissions.adapters.jdbc.postgres
 
 
 import permissions.application.PermissionRepository.PermissionIdentity
-import permissions.domain.{Permission, PermissionDescription, PermissionName, PermissionNamespace}
+import permissions.domain.{
+  Permission,
+  PermissionDescription,
+  PermissionName,
+  PermissionNamespace,
+}
 import shared.testing.PostgresTestContainer
 import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 

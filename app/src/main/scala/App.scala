@@ -3,7 +3,7 @@ package org.aulune
 
 import auth.AuthApp
 import permissions.PermissionApp
-import translations.AggregatorApp
+import aggregator.AggregatorApp
 
 import cats.effect.kernel.Resource
 import cats.effect.{Async, IO, IOApp}
