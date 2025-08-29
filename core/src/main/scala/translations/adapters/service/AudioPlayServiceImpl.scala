@@ -3,25 +3,44 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
+import shared.errors.ApplicationServiceError.{
+  FailedPrecondition,
+  InvalidArgument,
+  NotFound,
+}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.PaginationParams
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.TranslationPermission.{DownloadAudioPlays, Modify}
-import translations.application.dto.audioplay.{AudioPlayRequest, AudioPlayResponse, CastMemberDto, ListAudioPlaysResponse}
+import translations.application.TranslationPermission.{
+  DownloadAudioPlays,
+  Modify,
+}
+import translations.application.dto.audioplay.{
+  AudioPlayRequest,
+  AudioPlayResponse,
+  CastMemberDto,
+  ListAudioPlaysResponse,
+}
 import translations.application.dto.person.PersonResponse
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.{AudioPlayToken, given}
-import translations.application.{AudioPlayService, PersonService, TranslationPermission}
+import translations.application.repositories.AudioPlayRepository.{
+  AudioPlayToken,
+  given,
+}
+import translations.application.{
+  AudioPlayService,
+  PersonService,
+  TranslationPermission,
+}
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
 import cats.MonadThrow
 import cats.data.Validated
 import cats.effect.std.{SecureRandom, UUIDGen}
-import cats.syntax.all.*
-import org.aulune.shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
+import cats.syntax.all.given
 
 import java.util.UUID
 
@@ -120,22 +139,22 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       yield ()
     }
 
-  /** Throws [[NotFound]] if at least one of the cast members don't exist.
+  /** Throws [[FailedPrecondition]] if at least one of the cast members don't
+   *  exist.
    *  @param uuids cast UUIDs.
    */
   private def checkCastExistence(uuids: List[CastMemberDto]): F[Unit] =
     uuids.traverseVoid { castMember =>
       for
         actorOpt <- personService.findById(castMember.actor)
-        _ <- MonadThrow[F].fromOption(actorOpt, NotFound)
+        _ <- MonadThrow[F].fromOption(actorOpt, FailedPrecondition)
       yield ()
     }
 
   /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
-   *  audio play series with it.
-   *
-   *  If [[seriesId]] is not `None` but there's no [[AudioPlaySeries]] found
-   *  with it, then it will throw [[NotFound]].
+   *  audio play series with it. If [[seriesId]] is not `None` but there's no
+   *  [[AudioPlaySeries]] found with it, then it will throw
+   *  [[FailedPrecondition]].
    *  @param seriesId audio play series ID.
    */
   private def getSeriesOrThrow(
@@ -143,6 +162,6 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
   ): F[Option[AudioPlaySeries]] = seriesId.traverse { id =>
     for
       seriesOpt <- repo.getSeries(id)
-      series <- MonadThrow[F].fromOption(seriesOpt, NotFound)
+      series <- MonadThrow[F].fromOption(seriesOpt, FailedPrecondition)
     yield series
   }
