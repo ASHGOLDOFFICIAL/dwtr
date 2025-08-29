@@ -11,4 +11,4 @@ final case class AggregatorConfig(
 
 
 object AggregatorConfig:
-  case class Pagination(max: Int, default: Int)
+  final case class Pagination(max: Int, default: Int)

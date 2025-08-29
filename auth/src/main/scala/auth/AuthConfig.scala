@@ -7,7 +7,7 @@ package auth
  *  @param admin admin user to create.
  *  @param oauth OAuth2 clients' infos.
  */
-case class AuthConfig(
+final case class AuthConfig(
     issuer: String,
     key: String,
     admin: AuthConfig.Admin,
@@ -16,12 +16,12 @@ case class AuthConfig(
 
 
 object AuthConfig:
-  case class Admin(username: String, password: String)
+  final case class Admin(username: String, password: String)
 
-  case class OAuth2(google: OAuth2.GoogleClient)
+  final case class OAuth2(google: OAuth2.GoogleClient)
 
   object OAuth2:
-    case class GoogleClient(
+    final case class GoogleClient(
         clientId: String,
         secret: String,
         redirectUrl: String,
