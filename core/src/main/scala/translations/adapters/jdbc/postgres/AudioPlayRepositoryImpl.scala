@@ -137,7 +137,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |""".stripMargin.update.run
 
     def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(NothingToUpdate)
+      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
 
     val transaction =
       for

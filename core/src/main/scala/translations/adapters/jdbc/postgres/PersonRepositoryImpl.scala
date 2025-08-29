@@ -5,7 +5,7 @@ package translations.adapters.jdbc.postgres
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
 import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.{AlreadyExists, NothingToUpdate}
+import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import translations.adapters.jdbc.postgres.metas.PersonMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.PersonRepository
@@ -75,7 +75,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       |""".stripMargin.update.run
 
     def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(NothingToUpdate)
+      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
 
     query
       .flatMap(rows => checkIfAny(rows))

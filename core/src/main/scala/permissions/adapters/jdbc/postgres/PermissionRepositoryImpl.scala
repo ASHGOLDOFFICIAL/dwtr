@@ -18,7 +18,6 @@ import shared.repositories.RepositoryError
 import shared.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
-  NothingToUpdate,
 }
 
 import cats.MonadThrow
@@ -123,7 +122,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |AND name = ${elem.name}""".stripMargin.update.run
 
     def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(NothingToUpdate)
+      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
 
     val transaction =
       for
