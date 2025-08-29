@@ -2,21 +2,11 @@ package org.aulune
 package shared.service.permission
 
 
-import auth.application.dto.AuthenticatedUser
-import permissions.application.PermissionService
-import permissions.application.dto.CheckPermissionStatus.Granted
-import permissions.application.dto.{
-  CheckPermissionRequest,
-  CheckPermissionStatus,
-  CreatePermissionRequest,
-}
 import shared.errors.ApplicationServiceError
 import shared.service.auth.User
 
 import cats.syntax.all.given
-import cats.{FlatMap, Functor, Monad}
-
-import java.util.UUID
+import cats.{FlatMap, Monad}
 
 
 /** Permission service for use in other modules.
@@ -39,15 +29,6 @@ trait PermissionClientService[F[_]]:
 
 
 object PermissionClientService:
-  /** Builds client-side [[PermissionClientService]] using external
-   *  [[PermissionService]]
-   *  @param service external permission system.
-   *  @tparam F effect type.
-   */
-  def make[F[_]: Functor](
-      service: PermissionService[F],
-  ): PermissionClientService[F] = PermissionServiceAdapter[F](service)
-
   /** Conditionally executes one of two actions based on whether the user has
    *  the given permission.
    *

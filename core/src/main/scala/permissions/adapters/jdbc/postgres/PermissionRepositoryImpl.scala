@@ -13,9 +13,9 @@ import permissions.domain.{
 }
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
-import shared.service.auth.User
 import shared.repositories.RepositoryError
 import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import shared.service.auth.User
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow

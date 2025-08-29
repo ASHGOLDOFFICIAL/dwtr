@@ -1,5 +1,5 @@
 package org.aulune
-package shared.service.permission
+package permissions
 
 
 import auth.application.dto.AuthenticatedUser
@@ -11,6 +11,7 @@ import permissions.application.dto.{
 }
 import shared.errors.ApplicationServiceError
 import shared.service.auth.User
+import shared.service.permission.{Permission, PermissionClientService}
 
 import cats.Functor
 import cats.syntax.all.given
@@ -20,7 +21,7 @@ import cats.syntax.all.given
  *  @param service service to adapt.
  *  @tparam F effect type.
  */
-private[permission] final class PermissionServiceAdapter[F[_]: Functor](
+private[permissions] final class PermissionServiceAdapter[F[_]: Functor](
     service: PermissionService[F],
 ) extends PermissionClientService[F]:
 

@@ -2,8 +2,6 @@ package org.aulune
 package shared.service.auth
 
 
-import auth.application.dto.AuthenticatedUser
-
 import cats.syntax.all.*
 import cats.{Applicative, Functor}
 import sttp.model.StatusCode
@@ -18,11 +16,11 @@ object AuthenticationEndpoints:
     .bearerFormat("JWT")
     .description("Bearer token identifying the user")
 
-  /** Decode token to [[AuthenticatedUser]].
+  /** Decode token to [[User]].
    *  @param token token string.
    *  @param service [[AuthenticationClientService]] instance to authenticate.
    *  @tparam F effect type.
-   *  @return [[AuthenticatedUser]] or error status code.
+   *  @return [[User]] or error status code.
    */
   private def decodeToken[F[_]: Functor](token: String)(using
       service: AuthenticationClientService[F],

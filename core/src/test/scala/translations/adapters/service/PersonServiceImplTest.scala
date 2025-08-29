@@ -2,12 +2,7 @@ package org.aulune
 package translations.adapters.service
 
 
-import shared.errors.{ApplicationServiceError, RepositoryError}
-import shared.errors.ApplicationServiceError
-import shared.model.Uuid
-import shared.service.auth.User
-import shared.repositories.RepositoryError
-import shared.service.permission.PermissionClientService
+import shared.errors.RepositoryError
 import translations.application.TranslationPermission.Modify
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository

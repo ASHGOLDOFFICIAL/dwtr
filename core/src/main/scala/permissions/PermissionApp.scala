@@ -4,13 +4,13 @@ package permissions
 
 import permissions.adapters.jdbc.postgres.PermissionRepositoryImpl
 import permissions.adapters.service.PermissionServiceImpl
+import shared.repositories.RepositoryError
 import shared.service.permission.PermissionClientService
 
 import cats.effect.Async
 import cats.mtl.Raise
 import cats.syntax.all.given
 import doobie.Transactor
-import org.aulune.shared.repositories.RepositoryError
 import org.typelevel.log4cats.Logger
 
 
@@ -40,4 +40,4 @@ object PermissionApp:
         repo = repository)
     yield new PermissionApp[F]:
       override val clientPermission: PermissionClientService[F] =
-        PermissionClientService.make(service)
+        PermissionServiceAdapter[F](service)

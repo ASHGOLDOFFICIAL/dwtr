@@ -56,21 +56,19 @@ object AuthApp:
       basicLogin = new BasicAuthenticationServiceImpl[F](userRepo, hasher)
 
       tokenServ = new JwtTokenService[F](config.issuer, config.key, 24.hours)
-      authServ = AuthenticationServiceImpl(
+      service = new AuthenticationServiceImpl(
         userRepo,
         tokenServ,
         tokenServ,
         basicLogin,
         oauthService)
-      authEndpoints = new AuthenticationController[F](authServ).endpoints
+      authEndpoints = new AuthenticationController[F](service).endpoints
 
       userServ = new UserServiceImpl[F](oauthService, userRepo)
       userEndpoints = new UsersController[F](userServ).endpoints
-
       allEndpoints = authEndpoints ++ userEndpoints
-      clientService = AuthenticationClientService.make(authServ)
     yield new AuthApp[F]:
       override val clientAuthentication: AuthenticationClientService[F] =
-        clientService
+        AuthenticationServiceAdapter[F](service)
       override val endpoints: List[ServerEndpoint[Any, F]] = allEndpoints
   }

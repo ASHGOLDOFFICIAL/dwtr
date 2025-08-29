@@ -21,8 +21,8 @@ import permissions.domain.{
 import shared.errors.ApplicationServiceError
 import shared.errors.ApplicationServiceError.InvalidArgument
 import shared.model.Uuid
-import shared.service.auth.User
 import shared.repositories.RepositoryError
+import shared.service.auth.User
 
 import cats.MonadThrow
 import cats.data.EitherT

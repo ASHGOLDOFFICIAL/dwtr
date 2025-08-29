@@ -5,7 +5,7 @@ package translations.adapters.jdbc.postgres
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
 import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.*
+import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import translations.adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.AudioPlayRepository

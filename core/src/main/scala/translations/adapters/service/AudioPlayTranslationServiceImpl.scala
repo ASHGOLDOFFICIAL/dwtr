@@ -2,12 +2,15 @@ package org.aulune
 package translations.adapters.service
 
 
-import auth.application.dto.AuthenticatedUser
 import shared.UUIDv7Gen.uuidv7Instance
-import shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
+import shared.errors.ApplicationServiceError.{
+  FailedPrecondition,
+  InvalidArgument,
+  NotFound,
+}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
-import shared.pagination.{Cursor, PaginationParams}
+import shared.pagination.PaginationParams
 import shared.repositories.transformF
 import shared.service.auth.User
 import shared.service.permission.PermissionClientService

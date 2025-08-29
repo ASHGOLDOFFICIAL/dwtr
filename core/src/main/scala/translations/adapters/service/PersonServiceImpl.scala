@@ -2,11 +2,16 @@ package org.aulune
 package translations.adapters.service
 
 
-import auth.application.dto.AuthenticatedUser
-import shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
+import shared.errors.ApplicationServiceError.{
+  FailedPrecondition,
+  InvalidArgument,
+  NotFound,
+}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
+import shared.pagination.PaginationParams
 import shared.repositories.transformF
+import shared.service.auth.User
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.application.TranslationPermission.*
@@ -21,7 +26,6 @@ import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 

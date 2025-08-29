@@ -19,10 +19,6 @@ import permissions.domain.{
   PermissionName,
   PermissionNamespace,
 }
-import shared.errors.ApplicationServiceError
-import shared.model.Uuid
-import shared.service.auth.User
-import shared.repositories.RepositoryError
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec

@@ -3,7 +3,6 @@ package translations.adapters.jdbc.postgres
 
 
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
-import shared.model.Uuid
 import shared.repositories.RepositoryError.{AlreadyExists, NothingToUpdate}
 import translations.domain.model.person.{FullName, Person}
 

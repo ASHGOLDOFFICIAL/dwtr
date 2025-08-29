@@ -2,7 +2,7 @@ package org.aulune
 package translations.api.http
 
 
-import shared.errors.{ApplicationServiceError, toErrorResponse}
+import shared.errors.toErrorResponse
 import shared.http.QueryParams
 import shared.service.auth.AuthenticationClientService
 import shared.service.auth.AuthenticationEndpoints.authOnlyEndpoint

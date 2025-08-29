@@ -8,7 +8,7 @@ import auth.domain.model.{User, Username}
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
 import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.*
+import shared.repositories.RepositoryError.AlreadyExists
 
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*

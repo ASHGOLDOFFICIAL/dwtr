@@ -1,9 +1,10 @@
 package org.aulune
-package shared.service.auth
+package auth
 
 
 import auth.application.AuthenticationService
 import auth.application.dto.AuthenticatedUser
+import shared.service.auth.{AuthenticationClientService, User}
 
 import cats.Functor
 import cats.syntax.all.given

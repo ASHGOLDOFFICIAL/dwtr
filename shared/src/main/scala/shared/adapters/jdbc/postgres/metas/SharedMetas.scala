@@ -4,22 +4,17 @@ package shared.adapters.jdbc.postgres.metas
 
 import shared.model.Uuid
 
-import cats.Show
-import cats.syntax.all.given
 import doobie.Meta
 import doobie.postgres.implicits.{
-  JavaLocalDateMeta,
   UuidType,
   unliftedStringArrayType,
   unliftedUUIDArrayType,
 }
+import io.circe.Json
 import io.circe.parser.parse
-import io.circe.syntax.given
-import io.circe.{Decoder, Encoder, Json}
 import org.postgresql.util.PGobject
 
 import java.net.{URI, URL}
-import java.time.LocalDate
 import java.util.UUID
 
 

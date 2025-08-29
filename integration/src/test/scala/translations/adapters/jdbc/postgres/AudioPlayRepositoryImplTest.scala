@@ -3,9 +3,6 @@ package translations.adapters.jdbc.postgres
 
 
 import shared.adapters.repositories.jdbc.postgres.PostgresTestContainer
-import shared.model.Uuid
-import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.*
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.domain.model.audioplay.{

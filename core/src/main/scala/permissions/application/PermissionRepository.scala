@@ -5,7 +5,6 @@ package permissions.application
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{Permission, PermissionName, PermissionNamespace}
 import shared.model.Uuid
-import shared.repositories.RepositoryError.*
 import shared.repositories.{GenericRepository, Upsert}
 import shared.service.auth.User
 

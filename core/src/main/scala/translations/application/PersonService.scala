@@ -2,11 +2,10 @@ package org.aulune
 package translations.application
 
 
-import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
+import shared.model.Uuid
+import shared.service.auth.User
 import translations.application.dto.person.{PersonRequest, PersonResponse}
-
-import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 

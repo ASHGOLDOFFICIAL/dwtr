@@ -2,7 +2,6 @@ package org.aulune
 package translations.adapters.service
 
 
-import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError.{
   FailedPrecondition,
   InvalidArgument,
