@@ -9,14 +9,29 @@ import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
 import shared.repositories.transformF
+import shared.service.auth.User
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
-import translations.adapters.service.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
+import translations.adapters.service.mappers.{
+  AudioPlayTranslationTypeMapper,
+  LanguageMapper,
+}
 import translations.application.TranslationPermission.*
-import translations.application.dto.{AudioPlayTranslationListResponse, AudioPlayTranslationRequest, AudioPlayTranslationResponse}
+import translations.application.dto.{
+  AudioPlayTranslationListResponse,
+  AudioPlayTranslationRequest,
+  AudioPlayTranslationResponse,
+}
 import translations.application.repositories.TranslationRepository
-import translations.application.repositories.TranslationRepository.{AudioPlayTranslationIdentity, AudioPlayTranslationToken, given}
-import translations.application.{AudioPlayTranslationService, TranslationPermission}
+import translations.application.repositories.TranslationRepository.{
+  AudioPlayTranslationIdentity,
+  AudioPlayTranslationToken,
+  given,
+}
+import translations.application.{
+  AudioPlayTranslationService,
+  TranslationPermission,
+}
 import translations.domain.errors.TranslationValidationError
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
@@ -27,7 +42,6 @@ import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.mtl.Handle
 import cats.mtl.syntax.all.*
 import cats.syntax.all.*
-import org.aulune.shared.service.auth.User
 
 import java.time.Instant
 import java.util.UUID

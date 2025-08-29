@@ -4,10 +4,13 @@ package translations.application
 
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
+import shared.service.auth.User
 import translations.application.TranslationPermission.*
-import translations.application.dto.{AudioPlayTranslationListResponse, AudioPlayTranslationRequest, AudioPlayTranslationResponse}
-
-import org.aulune.shared.service.auth.User
+import translations.application.dto.{
+  AudioPlayTranslationListResponse,
+  AudioPlayTranslationRequest,
+  AudioPlayTranslationResponse,
+}
 
 import java.util.UUID
 

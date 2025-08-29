@@ -7,22 +7,37 @@ import shared.errors.ApplicationServiceError.*
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.PaginationParams
+import shared.service.auth.User
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import translations.adapters.service.mappers.AudioPlayMapper
-import translations.application.TranslationPermission.{DownloadAudioPlays, Modify}
-import translations.application.dto.audioplay.{AudioPlayRequest, AudioPlayResponse, CastMemberDto, ListAudioPlaysResponse}
+import translations.application.TranslationPermission.{
+  DownloadAudioPlays,
+  Modify,
+}
+import translations.application.dto.audioplay.{
+  AudioPlayRequest,
+  AudioPlayResponse,
+  CastMemberDto,
+  ListAudioPlaysResponse,
+}
 import translations.application.dto.person.PersonResponse
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.{AudioPlayToken, given}
-import translations.application.{AudioPlayService, PersonService, TranslationPermission}
+import translations.application.repositories.AudioPlayRepository.{
+  AudioPlayToken,
+  given,
+}
+import translations.application.{
+  AudioPlayService,
+  PersonService,
+  TranslationPermission,
+}
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
 import cats.MonadThrow
 import cats.data.Validated
 import cats.effect.std.{SecureRandom, UUIDGen}
 import cats.syntax.all.*
-import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 

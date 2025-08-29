@@ -5,12 +5,15 @@ package shared.service.permission
 import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionService
 import permissions.application.dto.CheckPermissionStatus.Granted
-import permissions.application.dto.{CheckPermissionRequest, CreatePermissionRequest}
+import permissions.application.dto.{
+  CheckPermissionRequest,
+  CreatePermissionRequest,
+}
 import shared.errors.ApplicationServiceError
+import shared.service.auth.User
 
 import cats.Functor
 import cats.syntax.all.given
-import org.aulune.shared.service.auth.User
 
 
 /** Adapts [[PermissionService]] to [[PermissionClientService]].
