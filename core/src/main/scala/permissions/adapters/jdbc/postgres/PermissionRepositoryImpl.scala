@@ -15,20 +15,20 @@ import permissions.domain.{
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
 import shared.repositories.RepositoryError
-import shared.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-}
+import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
+import cats.mtl.Raise
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
 import doobie.postgres.sqlstate
+import doobie.postgres.sqlstate.class23.UNIQUE_VIOLATION
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
 
 import java.sql.SQLException
+import scala.util.control.NonFatal
 
 
 /** [[PermissionRepository]] implementation via PostgreSQL. */
@@ -77,7 +77,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .query[Boolean]
     .unique
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .adaptErr(toRepositoryError)
 
   override def persist(elem: Permission): F[Permission] = sql"""
     |INSERT INTO permissions (namespace, name, description)
@@ -88,9 +88,11 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .adaptErr(toRepositoryError)
 
-  override def upsert(elem: Permission): F[Permission] = sql"""
+  override def upsert(elem: Permission)(using
+      Raise[F, RepositoryError],
+  ): F[Permission] = sql"""
     |INSERT INTO permissions (namespace, name, description)
     |VALUES (
     |  ${elem.namespace},
@@ -101,7 +103,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |SET description = EXCLUDED.description""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .adaptErr(toRepositoryError)
 
   override def get(id: PermissionIdentity): F[Option[Permission]] = sql"""
     |SELECT namespace, name, description
@@ -112,7 +114,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .map(toPermission)
     .option
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .adaptErr(toRepositoryError)
 
   override def update(elem: Permission): F[Permission] =
     val updateQuery = sql"""
@@ -130,7 +132,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
         _ <- checkIfAny(rows)
       yield elem
 
-    transaction.transact(transactor).handleErrorWith(toRepositoryError)
+    transaction.transact(transactor).adaptErr(toRepositoryError)
   end update
 
   override def delete(id: PermissionIdentity): F[Unit] = sql"""
@@ -138,7 +140,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |WHERE namespace = ${id.namespace}
     |AND name = ${id.name}""".stripMargin.update.run.void
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .adaptErr(toRepositoryError)
 
   override def hasPermission(
       user: Uuid[AuthenticatedUser],
@@ -162,7 +164,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
 
     transaction
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .adaptErr(toRepositoryError)
   end hasPermission
 
   override def grantPermission(
@@ -184,7 +186,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
 
     transaction
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .adaptErr(toRepositoryError)
   end grantPermission
 
   override def revokePermission(
@@ -207,7 +209,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
 
     transaction
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .adaptErr(toRepositoryError)
   end revokePermission
 
   /** Finds permission's reference ID.
@@ -238,9 +240,11 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     description = description,
   )
 
-  /** Converts caught errors to [[RepositoryError]]. */
-  private def toRepositoryError[A](err: Throwable) = err match
-    case e: RepositoryError => e.raiseError[F, A]
-    case e: SQLException    => e.getSQLState match
-        case sqlstate.class23.UNIQUE_VIOLATION.value =>
-          AlreadyExists.raiseError[F, A]
+  /** Converts non fatal errors to [[RepositoryError]]. */
+  private val toRepositoryError: PartialFunction[Throwable, RepositoryError] = {
+    case NonFatal(err) => err match
+        case e: SQLException if e.getSQLState == UNIQUE_VIOLATION.value =>
+          AlreadyExists
+        case _                  => RepositoryError.Internal
+        case e: RepositoryError => e
+  }

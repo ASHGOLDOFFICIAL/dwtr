@@ -5,28 +5,19 @@ package permissions.adapters.service
 import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.application.dto.CheckPermissionStatus.{Denied, Granted}
-import permissions.application.dto.{
-  CheckPermissionRequest,
-  CheckPermissionResponse,
-  CheckPermissionStatus,
-  CreatePermissionRequest,
-  PermissionResource,
-}
+import permissions.application.dto.{CheckPermissionRequest, CheckPermissionResponse, CheckPermissionStatus, CreatePermissionRequest, PermissionResource}
 import permissions.application.{PermissionRepository, PermissionService}
-import permissions.domain.{
-  Permission,
-  PermissionDescription,
-  PermissionName,
-  PermissionNamespace,
-}
+import permissions.domain.{Permission, PermissionDescription, PermissionName, PermissionNamespace}
 import shared.errors.ApplicationServiceError
 import shared.errors.ApplicationServiceError.BadRequest
 import shared.model.Uuid
 import shared.repositories.RepositoryError
 
-import cats.MonadThrow
+import cats.{Functor, MonadThrow}
 import cats.data.EitherT
+import cats.mtl.{Handle, Raise}
 import cats.syntax.all.given
+import cats.mtl.Handle.handleForApplicativeError
 import org.typelevel.log4cats.Logger
 
 
@@ -45,7 +36,7 @@ object PermissionServiceImpl:
       adminPermissionNamespace: String,
       adminPermissionName: String,
       repo: PermissionRepository[F],
-  ): F[PermissionService[F]] =
+  )(using Raise[F, RepositoryError]): F[PermissionService[F]] =
     val adminPermission = Permission.unsafe(
       PermissionNamespace.unsafe(adminPermissionNamespace),
       PermissionName.unsafe(adminPermissionName),

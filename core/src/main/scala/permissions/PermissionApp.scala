@@ -7,8 +7,10 @@ import permissions.adapters.service.PermissionServiceImpl
 import shared.service.permission.PermissionClientService
 
 import cats.effect.Async
+import cats.mtl.Raise
 import cats.syntax.all.given
 import doobie.Transactor
+import org.aulune.shared.repositories.RepositoryError
 import org.typelevel.log4cats.Logger
 
 
@@ -27,7 +29,7 @@ object PermissionApp:
   def build[F[_]: Async: Logger](
       config: PermissionConfig,
       transactor: Transactor[F],
-  ): F[PermissionApp[F]] =
+  )(using Raise[F, RepositoryError]): F[PermissionApp[F]] =
     for
       repository <- PermissionRepositoryImpl.build(transactor)
       service <- PermissionServiceImpl.build(

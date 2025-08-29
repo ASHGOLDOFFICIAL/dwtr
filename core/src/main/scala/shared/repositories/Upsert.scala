@@ -1,8 +1,11 @@
 package org.aulune
 package shared.repositories
 
+import cats.mtl.Raise
+
 
 /** Upsert operation for repository.
+ *
  *  @tparam F effect type.
  *  @tparam E element type.
  */
@@ -12,4 +15,6 @@ trait Upsert[F[_], E]:
    *  @param elem element to persist.
    *  @return element if success, otherwise error.
    */
-  def upsert(elem: E): F[E]
+  def upsert(elem: E)(using
+      Raise[F, RepositoryError],
+  ): F[E]

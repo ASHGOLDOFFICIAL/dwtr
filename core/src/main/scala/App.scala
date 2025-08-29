@@ -20,6 +20,7 @@ import translations.api.http.{AudioPlaysController, PersonsController}
 import cats.effect.kernel.Resource
 import cats.effect.std.SecureRandom
 import cats.effect.{Async, Clock, IO, IOApp, MonadCancelThrow}
+import cats.mtl.Handle.handleForApplicativeError
 import cats.syntax.all.*
 import doobie.Transactor
 import org.http4s.ember.server.EmberServerBuilder
