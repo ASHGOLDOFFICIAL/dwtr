@@ -3,16 +3,17 @@ package shared.adapters.repositories.jdbc.postgres
 
 
 import cats.effect.IO
-import com.dimafeng.testcontainers.{ForEachTestContainer, PostgreSQLContainer}
+import com.dimafeng.testcontainers.PostgreSQLContainer
+import com.dimafeng.testcontainers.scalatest.TestContainerForEach
 import com.zaxxer.hikari.HikariConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.transactor.Transactor
-import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.{Assertion, ParallelTestExecution}
 
 
-trait PostgresTestContainer extends AsyncFreeSpec with ForEachTestContainer:
-  override val container: PostgreSQLContainer = PostgreSQLContainer()
+trait PostgresTestContainer extends AsyncFreeSpec with TestContainerForEach:
+  override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def()
 
   type Init[A] = Transactor[IO] => IO[A]
   type TestCase[A] = A => IO[Assertion]
@@ -24,17 +25,19 @@ trait PostgresTestContainer extends AsyncFreeSpec with ForEachTestContainer:
    */
   def makeStand[A](init: Init[A]): TestCase[A] => IO[Assertion] =
     (app: TestCase[A]) =>
-      val config = new HikariConfig()
-      config.setDriverClassName(container.driverClassName)
-      config.setJdbcUrl(container.jdbcUrl)
-      config.setUsername(container.username)
-      config.setPassword(container.password)
-      config.setMaximumPoolSize(1)
-      val transactor = HikariTransactor.fromHikariConfig[IO](config, None)
+      withContainers { container =>
+        val config = new HikariConfig()
+        config.setDriverClassName(container.driverClassName)
+        config.setJdbcUrl(container.jdbcUrl)
+        config.setUsername(container.username)
+        config.setPassword(container.password)
+        config.setMaximumPoolSize(1)
+        val transactor = HikariTransactor.fromHikariConfig[IO](config, None)
 
-      transactor.use { t =>
-        for
-          service <- init(t)
-          result <- app(service)
-        yield result
+        transactor.use { t =>
+          for
+            service <- init(t)
+            result <- app(service)
+          yield result
+        }
       }
