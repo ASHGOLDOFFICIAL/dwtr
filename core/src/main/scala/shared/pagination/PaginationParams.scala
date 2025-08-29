@@ -14,7 +14,7 @@ import cats.syntax.all.*
  */
 final case class PaginationParams[A] private (
     pageSize: Int,
-    pageToken: Option[CursorToken[A]],
+    pageToken: Option[Cursor[A]],
 )
 
 
@@ -26,10 +26,10 @@ object PaginationParams:
     size,
     PaginationValidationError.InvalidPageSize)
 
-  private def validatePageToken[A: TokenDecoder](
+  private def validatePageToken[A: CursorDecoder](
       maybeToken: Option[String],
-  ): ValidationResult[Option[CursorToken[A]]] = maybeToken.traverse { str =>
-    CursorToken
+  ): ValidationResult[Option[Cursor[A]]] = maybeToken.traverse { str =>
+    Cursor
       .decode(str)
       .toValidNec(PaginationValidationError.InvalidPageToken)
   }
@@ -42,7 +42,7 @@ object PaginationParams:
    *  @tparam A page token underlying type.
    *  @return validation result with params.
    */
-  def apply[A: TokenDecoder](maxPageSize: Int)(
+  def apply[A: CursorDecoder](maxPageSize: Int)(
       pageSize: Int,
       pageToken: Option[String],
   ): ValidationResult[PaginationParams[A]] = (

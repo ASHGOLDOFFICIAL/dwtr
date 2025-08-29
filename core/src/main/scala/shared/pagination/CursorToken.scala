@@ -1,23 +1,23 @@
 package org.aulune
 package shared.pagination
 
-/** Cursor token object that can be encoded into string to send somewhere.
+/** Cursor that can be used to correctly resume pagination.
  *  @tparam A underlying type.
  */
-opaque type CursorToken[A] <: A = A
+opaque type Cursor[A] <: A = A
 
 
-object CursorToken:
-  def apply[A](elem: A): CursorToken[A] = elem
+object Cursor:
+  def apply[A](elem: A): Cursor[A] = elem
 
-  /** Decodes string into token.
+  /** Decodes string into cursor.
    *  @param encoded string to decode.
-   *  @tparam A type of token.
-   *  @return cursor token if successfully decoded.
+   *  @tparam A type of cursor.
+   *  @return cursor if successfully decoded.
    */
-  def decode[A: TokenDecoder](encoded: String): Option[CursorToken[A]] =
-    summon[TokenDecoder[A]].decode(encoded).map(CursorToken.apply)
+  def decode[A: CursorDecoder](encoded: String): Option[Cursor[A]] =
+    summon[CursorDecoder[A]].decode(encoded).map(Cursor.apply)
 
-  extension [A: TokenEncoder](token: CursorToken[A])
-    /** Encodes token to string if possible. */
-    def encode: Option[String] = summon[TokenEncoder[A]].encode(token)
+  extension [A: CursorEncoder](token: Cursor[A])
+    /** Encodes cursor to token string. */
+    def encode: String = summon[CursorEncoder[A]].encode(token)

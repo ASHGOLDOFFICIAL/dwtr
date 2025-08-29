@@ -3,13 +3,13 @@ package translations.adapters.service.mappers
 
 
 import shared.model.Uuid
-import shared.pagination.CursorToken
+import shared.pagination.Cursor
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
   ListAudioPlaysResponse,
 }
-import translations.application.repositories.AudioPlayRepository.AudioPlayToken
+import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.domain.errors.AudioPlayValidationError
 import translations.domain.model.audioplay.{
   AudioPlay,
@@ -88,8 +88,8 @@ private[service] object AudioPlayMapper:
    *  @param audios list of domain objects.
    */
   def toListResponse(audios: List[AudioPlay]): ListAudioPlaysResponse =
-    val nextPageToken = audios.lastOption.flatMap { elem =>
-      val token = AudioPlayToken(elem.id)
-      CursorToken[AudioPlayToken](token).encode
+    val nextPageToken = audios.lastOption.map { elem =>
+      val token = AudioPlayCursor(elem.id)
+      Cursor[AudioPlayCursor](token).encode
     }
     ListAudioPlaysResponse(audios.map(toResponse), nextPageToken)

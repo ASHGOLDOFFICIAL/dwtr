@@ -9,7 +9,7 @@ import shared.repositories.RepositoryError.*
 import translations.adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import translations.adapters.jdbc.postgres.metas.SharedMetas.given
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.AudioPlayToken
+import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -156,12 +156,12 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .handleErrorWith(toRepositoryError)
 
   override def list(
-      startWith: Option[AudioPlayToken],
+      cursor: Option[AudioPlayCursor],
       count: Int,
   ): F[List[AudioPlay]] =
     val sort = fr0"LIMIT $count"
-    val full = startWith match
-      case Some(t) => selectBase ++ fr"WHERE ap.id > ${t.identity}" ++ sort
+    val full = cursor match
+      case Some(t) => selectBase ++ fr"WHERE ap.id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
     full.stripMargin

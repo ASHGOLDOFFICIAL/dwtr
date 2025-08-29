@@ -7,7 +7,7 @@ import shared.UUIDv7Gen.uuidv7Instance
 import shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
-import shared.pagination.{CursorToken, PaginationParams}
+import shared.pagination.{Cursor, PaginationParams}
 import shared.repositories.transformF
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
@@ -24,8 +24,8 @@ import translations.application.dto.{
 }
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
+  AudioPlayTranslationCursor,
   AudioPlayTranslationIdentity,
-  AudioPlayTranslationToken,
   given,
 }
 import translations.application.{

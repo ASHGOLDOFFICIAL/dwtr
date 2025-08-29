@@ -7,7 +7,7 @@ import shared.model.Uuid
 import shared.repositories.RepositoryError
 import shared.repositories.RepositoryError.*
 import translations.application.repositories.AudioPlayRepository
-import translations.application.repositories.AudioPlayRepository.AudioPlayToken
+import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.domain.model.audioplay.{
   ActorRole,
   AudioPlay,
@@ -293,8 +293,8 @@ final class AudioPlayRepositoryImplTest
         for
           _ <- persistAudios(repo)
           first <- repo.list(None, 1).map(_.head)
-          token = AudioPlayToken(first.id)
-          rest <- repo.list(Some(token), 1)
+          cursor = AudioPlayCursor(first.id)
+          rest <- repo.list(Some(cursor), 1)
         yield rest.head shouldBe audioPlayTests(1)
       }
     }

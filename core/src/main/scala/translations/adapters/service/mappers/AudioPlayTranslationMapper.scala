@@ -3,7 +3,7 @@ package translations.adapters.service.mappers
 
 
 import shared.model.Uuid
-import shared.pagination.CursorToken
+import shared.pagination.Cursor
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -14,10 +14,10 @@ import translations.application.dto.{
   AudioPlayTranslationRequest,
   AudioPlayTranslationResponse,
 }
-import translations.application.repositories.AudioPlayRepository.AudioPlayToken
+import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.application.repositories.TranslationRepository.{
+  AudioPlayTranslationCursor,
   AudioPlayTranslationIdentity,
-  AudioPlayTranslationToken,
 }
 import translations.domain.errors.{
   AudioPlayValidationError,
@@ -92,9 +92,9 @@ private[service] object AudioPlayTranslationMapper:
   def toListResponse(
       translations: List[AudioPlayTranslation],
   ): AudioPlayTranslationListResponse =
-    val nextPageToken = translations.lastOption.flatMap { elem =>
-      val token = AudioPlayTranslationToken(elem.originalId, elem.id)
-      CursorToken[AudioPlayTranslationToken](token).encode
+    val nextPageToken = translations.lastOption.map { elem =>
+      val token = AudioPlayTranslationCursor(elem.originalId, elem.id)
+      Cursor[AudioPlayTranslationCursor](token).encode
     }
     val elements = translations.map(toResponse)
     AudioPlayTranslationListResponse(elements, nextPageToken)

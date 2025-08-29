@@ -2,11 +2,11 @@ package org.aulune
 package shared.pagination
 
 
-/** Decoder of token string.
+/** Decoder of cursor string.
  *  @tparam A decoding result.
  */
-trait TokenDecoder[A]:
-  /** Decodes given string into [[A]].
+trait CursorDecoder[A]:
+  /** Decodes given string into cursor of type [[A]].
    *  @param token token as encoded string.
    *  @return [[A]] if decoding is successful.
    */

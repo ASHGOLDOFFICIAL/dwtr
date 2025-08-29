@@ -3,15 +3,16 @@ package translations.application.repositories
 
 
 import shared.model.Uuid
-import shared.pagination.{TokenDecoder, TokenEncoder}
+import shared.pagination.{CursorDecoder, CursorEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
 import translations.application.repositories.TranslationRepository.{
+  AudioPlayTranslationCursor,
   AudioPlayTranslationIdentity,
-  AudioPlayTranslationToken,
 }
 import translations.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
-import java.time.Instant
+import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Base64
 import scala.util.Try
 
@@ -25,7 +26,7 @@ trait TranslationRepository[F[_]]
       F,
       AudioPlayTranslation,
       AudioPlayTranslationIdentity]
-    with PaginatedList[F, AudioPlayTranslation, AudioPlayTranslationToken]
+    with PaginatedList[F, AudioPlayTranslation, AudioPlayTranslationCursor]
 
 
 object TranslationRepository:
@@ -38,27 +39,25 @@ object TranslationRepository:
       id: Uuid[AudioPlayTranslation],
   )
 
-  /** Token to identify pagination params.
+  /** Cursor to resume pagination of translations.
    *  @param originalId ID of original work.
    *  @param id ID of this translation.
    */
-  final case class AudioPlayTranslationToken(
+  final case class AudioPlayTranslationCursor(
       originalId: Uuid[AudioPlay],
       id: Uuid[AudioPlayTranslation],
   )
 
-  // TODO: Make better
-  given TokenDecoder[AudioPlayTranslationToken] = token =>
+  given CursorDecoder[AudioPlayTranslationCursor] = token =>
     Try {
-      val raw = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
+      val decoded = Base64.getUrlDecoder.decode(token)
+      val raw = new String(decoded, UTF_8)
       val Array(originalStr, idStr) = raw.split('|')
       val originalId = Uuid[AudioPlay](originalStr).get
       val id = Uuid[AudioPlayTranslation](idStr).get
-      AudioPlayTranslationToken(originalId, id)
+      AudioPlayTranslationCursor(originalId, id)
     }.toOption
 
-  given TokenEncoder[AudioPlayTranslationToken] = token =>
+  given CursorEncoder[AudioPlayTranslationCursor] = token =>
     val raw = s"${token.originalId}|${token.id}"
-    Try(
-      Base64.getUrlEncoder.withoutPadding.encodeToString(
-        raw.getBytes("UTF-8"))).toOption
+    Base64.getUrlEncoder.withoutPadding.encodeToString(raw.getBytes(UTF_8))

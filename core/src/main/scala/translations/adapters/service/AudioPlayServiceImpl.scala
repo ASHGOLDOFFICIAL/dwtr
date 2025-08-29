@@ -27,7 +27,7 @@ import translations.application.dto.audioplay.{
 import translations.application.dto.person.PersonResponse
 import translations.application.repositories.AudioPlayRepository
 import translations.application.repositories.AudioPlayRepository.{
-  AudioPlayToken,
+  AudioPlayCursor,
   given,
 }
 import translations.application.{
@@ -93,7 +93,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: SecureRandom](
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]] =
-    PaginationParams[AudioPlayToken](pagination.max)(count, token) match
+    PaginationParams[AudioPlayCursor](pagination.max)(count, token) match
       case Validated.Invalid(_) => InvalidArgument.asLeft.pure[F]
       case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
         for audios <- repo.list(pageToken, pageSize)

@@ -9,8 +9,8 @@ package shared.repositories
  */
 trait PaginatedList[F[_], E, -Cursor]:
   /** List contained elements.
-   *  @param startWith optional cursor with information for continued listing.
+   *  @param cursor optional cursor with information for continued listing.
    *  @param count number of elements to return.
    *  @return list of elements.
    */
-  def list(startWith: Option[Cursor], count: Int): F[List[E]]
+  def list(cursor: Option[Cursor], count: Int): F[List[E]]

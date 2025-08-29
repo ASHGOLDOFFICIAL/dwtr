@@ -9,8 +9,8 @@ import shared.repositories.RepositoryError.FailedPrecondition
 import translations.adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import translations.application.repositories.TranslationRepository
 import translations.application.repositories.TranslationRepository.{
+  AudioPlayTranslationCursor,
   AudioPlayTranslationIdentity,
-  AudioPlayTranslationToken,
 }
 import translations.domain.model.audioplay.{
   AudioPlay,
@@ -130,11 +130,11 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
 
   override def list(
-      startWith: Option[AudioPlayTranslationToken],
+      cursor: Option[AudioPlayTranslationCursor],
       count: Int,
   ): F[List[AudioPlayTranslation]] =
     val sort = fr0"LIMIT $count"
-    val full = startWith match
+    val full = cursor match
       case Some(t) => selectBase ++ fr"""
         |WHERE id > ${t.id}
         |AND original_id = ${t.originalId}

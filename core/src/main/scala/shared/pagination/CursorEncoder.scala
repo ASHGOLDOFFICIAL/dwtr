@@ -2,13 +2,12 @@ package org.aulune
 package shared.pagination
 
 
-/** Encoder of [[A]] to string.
- *
+/** Encoder of cursor [[A]] to string.
  *  @tparam A type of objects to encode.
  */
-trait TokenEncoder[A]:
+trait CursorEncoder[A]:
   /** Encodes given [[A]] into string.
    *  @param a [[A]] object.
-   *  @return string if encoding is successful.
+   *  @return encoded string.
    */
-  def encode(a: A): Option[String]
+  def encode(a: A): String

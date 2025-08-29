@@ -3,12 +3,13 @@ package translations.application.repositories
 
 
 import shared.model.Uuid
-import shared.pagination.{TokenDecoder, TokenEncoder}
+import shared.pagination.{CursorDecoder, CursorEncoder}
 import shared.repositories.{GenericRepository, PaginatedList}
-import translations.application.repositories.AudioPlayRepository.AudioPlayToken
+import translations.application.repositories.AudioPlayRepository.AudioPlayCursor
 import translations.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
-import java.time.Instant
+import java.nio.charset.StandardCharsets
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Base64
 import scala.util.Try
 
@@ -18,7 +19,7 @@ import scala.util.Try
  */
 trait AudioPlayRepository[F[_]]
     extends GenericRepository[F, AudioPlay, Uuid[AudioPlay]]
-    with PaginatedList[F, AudioPlay, AudioPlayToken]:
+    with PaginatedList[F, AudioPlay, AudioPlayCursor]:
 
   /** Returns audio play series with given ID if found.
    *  @param id audio play series ID.
@@ -27,20 +28,19 @@ trait AudioPlayRepository[F[_]]
 
 
 object AudioPlayRepository:
-  /** Token to identify pagination params.
-   *  @param identity identity of [[AudioPlay]].
+  /** Cursor to resume pagination of audio plays.
+   *  @param id identity of [[AudioPlay]].
    */
-  final case class AudioPlayToken(identity: Uuid[AudioPlay])
+  final case class AudioPlayCursor(id: Uuid[AudioPlay])
 
-  given TokenDecoder[AudioPlayToken] = token =>
+  given CursorDecoder[AudioPlayCursor] = token =>
     Try {
-      val rawId = new String(Base64.getUrlDecoder.decode(token), "UTF-8")
-      val id = Uuid[AudioPlay](rawId).get
-      AudioPlayToken(id)
+      val decoded = Base64.getUrlDecoder.decode(token)
+      val idString = new String(decoded, UTF_8)
+      val id = Uuid[AudioPlay](idString).get
+      AudioPlayCursor(id)
     }.toOption
 
-  given TokenEncoder[AudioPlayToken] = token =>
-    val raw = token.identity.toString
-    Try(
-      Base64.getUrlEncoder.withoutPadding.encodeToString(
-        raw.getBytes("UTF-8"))).toOption
+  given CursorEncoder[AudioPlayCursor] = token =>
+    val raw = token.id.toString
+    Base64.getUrlEncoder.withoutPadding.encodeToString(raw.getBytes(UTF_8))
