@@ -9,10 +9,10 @@ import shared.repositories.transformF
 import shared.service.auth.User
 import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
-import aggregator.application.TranslationPermission.*
+import aggregator.application.AggregatorPermission.*
 import aggregator.application.dto.person.{PersonRequest, PersonResponse}
 import aggregator.application.repositories.PersonRepository
-import aggregator.application.{PersonService, TranslationPermission}
+import aggregator.application.{PersonService, AggregatorPermission}
 import aggregator.domain.errors.PersonValidationError
 import aggregator.domain.errors.PersonValidationError.InvalidArguments
 import aggregator.domain.model.person.{FullName, Person}

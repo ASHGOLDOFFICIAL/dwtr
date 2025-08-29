@@ -42,7 +42,7 @@ trait AudioPlayService[F[_]]:
    *  @param user user who performs this action.
    *  @param ac audio play request.
    *  @return created audio play if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Modify]] permission.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
       user: User,
@@ -54,7 +54,7 @@ trait AudioPlayService[F[_]]:
    *  @param user user who performs this action.
    *  @param id audio play id.
    *  @return `Unit` if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Modify]] permission.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def delete(
       user: User,

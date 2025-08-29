@@ -10,7 +10,7 @@ import shared.model.Uuid
 import shared.repositories.RepositoryError
 import shared.service.auth.User
 import shared.service.permission.PermissionClientService
-import aggregator.application.TranslationPermission.Modify
+import aggregator.application.AggregatorPermission.Modify
 import aggregator.application.dto.person.{PersonRequest, PersonResponse}
 import aggregator.application.repositories.PersonRepository
 import aggregator.domain.model.person.{FullName, Person}

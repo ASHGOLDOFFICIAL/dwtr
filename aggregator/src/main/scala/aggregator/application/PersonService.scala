@@ -24,7 +24,7 @@ trait PersonService[F[_]]:
    *  @param user user who performs this action.
    *  @param pr person creation request.
    *  @return created person if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Modify]] permission.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
       user: User,
@@ -37,7 +37,7 @@ trait PersonService[F[_]]:
    *  @param id person ID.
    *  @param pr new state.
    *  @return updated person info if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Modify]] permission.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def update(
       user: User,
@@ -50,7 +50,7 @@ trait PersonService[F[_]]:
    *  @param user user who performs this action.
    *  @param id person ID.
    *  @return `Unit` if success, otherwise error.
-   *  @note user must have [[TranslationPermission.Modify]] permission.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def delete(
       user: User,

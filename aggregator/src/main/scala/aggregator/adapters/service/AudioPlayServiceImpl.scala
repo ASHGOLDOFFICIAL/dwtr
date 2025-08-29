@@ -15,7 +15,7 @@ import shared.service.permission.PermissionClientService
 import shared.service.permission.PermissionClientService.requirePermissionOrDeny
 import aggregator.AggregatorConfig
 import aggregator.adapters.service.mappers.AudioPlayMapper
-import aggregator.application.TranslationPermission.{
+import aggregator.application.AggregatorPermission.{
   DownloadAudioPlays,
   Modify,
 }
@@ -34,7 +34,7 @@ import aggregator.application.repositories.AudioPlayRepository.{
 import aggregator.application.{
   AudioPlayService,
   PersonService,
-  TranslationPermission,
+  AggregatorPermission,
 }
 import aggregator.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 

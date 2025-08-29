@@ -4,7 +4,7 @@ package aggregator.application
 import shared.errors.ApplicationServiceError
 import shared.model.Uuid
 import shared.service.auth.User
-import aggregator.application.TranslationPermission.*
+import aggregator.application.AggregatorPermission.*
 import aggregator.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
