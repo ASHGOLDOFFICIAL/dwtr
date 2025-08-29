@@ -5,19 +5,30 @@ package permissions.adapters.service
 import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.application.dto.CheckPermissionStatus.{Denied, Granted}
-import permissions.application.dto.{CheckPermissionRequest, CheckPermissionResponse, CheckPermissionStatus, CreatePermissionRequest, PermissionResource}
+import permissions.application.dto.{
+  CheckPermissionRequest,
+  CheckPermissionResponse,
+  CheckPermissionStatus,
+  CreatePermissionRequest,
+  PermissionResource,
+}
 import permissions.application.{PermissionRepository, PermissionService}
-import permissions.domain.{Permission, PermissionDescription, PermissionName, PermissionNamespace}
+import permissions.domain.{
+  Permission,
+  PermissionDescription,
+  PermissionName,
+  PermissionNamespace,
+}
 import shared.errors.ApplicationServiceError
-import shared.errors.ApplicationServiceError.BadRequest
+import shared.errors.ApplicationServiceError.InvalidArgument
 import shared.model.Uuid
 import shared.repositories.RepositoryError
 
-import cats.{Functor, MonadThrow}
+import cats.MonadThrow
 import cats.data.EitherT
+import cats.mtl.Handle.handleForApplicativeError
 import cats.mtl.{Handle, Raise}
 import cats.syntax.all.given
-import cats.mtl.Handle.handleForApplicativeError
 import org.typelevel.log4cats.Logger
 
 
@@ -36,7 +47,9 @@ object PermissionServiceImpl:
       adminPermissionNamespace: String,
       adminPermissionName: String,
       repo: PermissionRepository[F],
-  )(using Raise[F, RepositoryError]): F[PermissionService[F]] =
+  )(using
+      Raise[F, RepositoryError],
+  ): F[PermissionService[F]] =
     val adminPermission = Permission.unsafe(
       PermissionNamespace.unsafe(adminPermissionNamespace),
       PermissionName.unsafe(adminPermissionName),
@@ -62,7 +75,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
       request: CreatePermissionRequest,
   ): F[Either[ApplicationServiceError, PermissionResource]] = (for
     domain <- EitherT
-      .fromOption(PermissionMapper.fromRequest(request), BadRequest)
+      .fromOption(PermissionMapper.fromRequest(request), InvalidArgument)
     result <- EitherT(upsertPermission(domain))
     response = PermissionMapper.toResponse(result)
   yield response).value
@@ -74,7 +87,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
     val permissionIdentityOpt =
       PermissionMapper.makeIdentity(request.namespace, request.permission)
     (for
-      domain <- EitherT.fromOption(permissionIdentityOpt, BadRequest)
+      domain <- EitherT.fromOption(permissionIdentityOpt, InvalidArgument)
       adminCheck <- EitherT(hasPermission(id, adminPermissionIdentity))
       permCheck <- EitherT(hasPermission(id, domain))
       response = toCheckResponse(request, adminCheck || permCheck)

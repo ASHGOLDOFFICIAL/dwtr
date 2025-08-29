@@ -15,7 +15,6 @@ import auth.application.{OAuth2AuthenticationService, UserService}
 import auth.domain.errors.UserValidationError
 import auth.domain.model.{User, Username}
 import shared.errors
-import shared.errors.ApplicationServiceError.BadRequest
 import shared.model.Uuid
 import shared.repositories.RepositoryError
 

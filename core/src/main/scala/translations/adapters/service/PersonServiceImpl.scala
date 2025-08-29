@@ -3,7 +3,7 @@ package translations.adapters.service
 
 
 import auth.application.dto.AuthenticatedUser
-import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
+import shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.repositories.transformF
@@ -14,6 +14,7 @@ import translations.application.dto.person.{PersonRequest, PersonResponse}
 import translations.application.repositories.PersonRepository
 import translations.application.{PersonService, TranslationPermission}
 import translations.domain.errors.PersonValidationError
+import translations.domain.errors.PersonValidationError.InvalidArguments
 import translations.domain.model.person.{FullName, Person}
 
 import cats.MonadThrow
@@ -60,7 +61,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
         id <- UUIDGen.randomUUID[F].map(Uuid[Person])
         person <- request
           .toDomain(id)
-          .fold(_ => BadRequest.raiseError, _.pure[F])
+          .fold(_ => InvalidArgument.raiseError, _.pure[F])
         persisted <- repo.persist(person)
       yield persisted.toResponse).attempt.map(_.leftMap(toApplicationError))
     }
@@ -76,7 +77,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
         updatedOpt <- repo.transformF(uuid) { old =>
           request.update(old) match
             case Validated.Valid(a)   => a.pure
-            case Validated.Invalid(e) => BadRequest.raiseError
+            case Validated.Invalid(e) => InvalidArgument.raiseError
         }
         updated <- updatedOpt match
           case Some(person) => person.pure
@@ -105,7 +106,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     ): ValidatedNec[PersonValidationError, Person] =
       FullName(request.name).map(name => Person(id = old.id, name = name)) match
         case Some(value) => value
-        case None        => PersonValidationError.InvalidArguments.invalidNec
+        case None        => InvalidArguments.invalidNec
 
     /** Converts request to domain object and verifies it.
      *  @param id ID assigned to this person.
@@ -117,7 +118,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
       name => Person(id = Uuid[Person](id), name = name)
     } match
       case Some(value) => value
-      case None        => PersonValidationError.InvalidArguments.invalidNec
+      case None        => InvalidArguments.invalidNec
 
   extension (domain: Person)
     /** Converts domain object to response object. */

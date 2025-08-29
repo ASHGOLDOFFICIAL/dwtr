@@ -4,7 +4,7 @@ package translations.adapters.service
 
 import auth.application.dto.AuthenticatedUser
 import shared.UUIDv7Gen.uuidv7Instance
-import shared.errors.ApplicationServiceError.{BadRequest, NotFound}
+import shared.errors.ApplicationServiceError.{InvalidArgument, NotFound}
 import shared.errors.{ApplicationServiceError, toApplicationError}
 import shared.model.Uuid
 import shared.pagination.{CursorToken, PaginationParams}
@@ -91,7 +91,7 @@ private final class AudioPlayTranslationServiceImpl[F[
   ): F[Either[ApplicationServiceError, AudioPlayTranslationListResponse]] =
     PaginationParams(pagination.max)(count, token) match
       case Validated.Invalid(_) =>
-        ApplicationServiceError.BadRequest.asLeft.pure
+        ApplicationServiceError.InvalidArgument.asLeft.pure
       case Validated.Valid(PaginationParams(pageSize, pageToken)) => repo
           .list(pageToken, pageSize)
           .map { list =>
@@ -115,9 +115,10 @@ private final class AudioPlayTranslationServiceImpl[F[
         id <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
         now <- Clock[F].realTimeInstant
         translationOpt = tc.toDomain(originalId, id, now).toOption
-        result <- translationOpt.fold(BadRequest.asLeft.pure[F]) { translation =>
-          for either <- repo.persist(translation).attemptHandle
-          yield either.bimap(toApplicationError, _.toResponse)
+        result <- translationOpt.fold(InvalidArgument.asLeft.pure[F]) {
+          translation =>
+            for either <- repo.persist(translation).attemptHandle
+            yield either.bimap(toApplicationError, _.toResponse)
         }
       yield result
     }
@@ -134,7 +135,7 @@ private final class AudioPlayTranslationServiceImpl[F[
         updatedOpt <- repo.transformF(tId) { old =>
           tc.update(old) match
             case Validated.Valid(a)   => a.pure
-            case Validated.Invalid(e) => BadRequest.raiseError
+            case Validated.Invalid(e) => InvalidArgument.raiseError
         }
         updated <- updatedOpt match
           case Some(translation) => translation.pure
