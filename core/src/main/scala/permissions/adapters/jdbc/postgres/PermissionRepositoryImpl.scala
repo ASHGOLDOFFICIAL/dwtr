@@ -245,6 +245,6 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     case NonFatal(err) => err match
         case e: SQLException if e.getSQLState == UNIQUE_VIOLATION.value =>
           AlreadyExists
-        case _                  => RepositoryError.Internal
         case e: RepositoryError => e
+        case _                  => RepositoryError.Internal
   }
