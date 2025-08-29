@@ -6,6 +6,8 @@ import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
 import translations.application.dto.person.{PersonRequest, PersonResponse}
 
+import org.aulune.shared.service.auth.User
+
 import java.util.UUID
 
 
@@ -27,7 +29,7 @@ trait PersonService[F[_]]:
    *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def create(
-      user: AuthenticatedUser,
+      user: User,
       pr: PersonRequest,
   ): F[Either[ApplicationServiceError, PersonResponse]]
 
@@ -40,7 +42,7 @@ trait PersonService[F[_]]:
    *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def update(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
       pr: PersonRequest,
   ): F[Either[ApplicationServiceError, PersonResponse]]
@@ -53,6 +55,6 @@ trait PersonService[F[_]]:
    *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def delete(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]]

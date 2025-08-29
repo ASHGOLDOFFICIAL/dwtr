@@ -5,16 +5,18 @@ package shared.service.auth
 import auth.application.AuthenticationService as ExternalAuthenticationService
 import auth.application.dto.AuthenticatedUser
 
+import cats.Functor
+
 
 /** Authentication service for use in other modules.
  *
  *  @tparam F effect type.
  */
 trait AuthenticationClientService[F[_]]:
-  /** Returns authenticated user's info if token is valid.
+  /** Returns user's info if token is valid.
    *  @param token user's token.
    */
-  def getUserInfo(token: String): F[Option[AuthenticatedUser]]
+  def getUserInfo(token: String): F[Option[User]]
 
 
 object AuthenticationClientService:
@@ -23,7 +25,6 @@ object AuthenticationClientService:
    *  @param service external authenticaton system.
    *  @tparam F effect type.
    */
-  def make[F[_]](
+  def make[F[_]: Functor](
       service: ExternalAuthenticationService[F],
-  ): AuthenticationClientService[F] =
-    (token: String) => service.getUserInfo(token)
+  ): AuthenticationClientService[F] = AuthenticationServiceAdapter[F](service)

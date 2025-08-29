@@ -2,7 +2,6 @@ package org.aulune
 package permissions.adapters.jdbc.postgres
 
 
-import auth.application.dto.AuthenticatedUser
 import permissions.adapters.jdbc.postgres.PermissionMetas.given
 import permissions.application.PermissionRepository
 import permissions.application.PermissionRepository.PermissionIdentity
@@ -14,6 +13,7 @@ import permissions.domain.{
 }
 import shared.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import shared.model.Uuid
+import shared.service.auth.User
 import shared.repositories.RepositoryError
 import shared.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 
@@ -143,7 +143,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .adaptErr(toRepositoryError)
 
   override def hasPermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Boolean] =
     def checkQuery(reference: Int) = sql"""
@@ -168,7 +168,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   end hasPermission
 
   override def grantPermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Unit] =
     def grantQuery(reference: Int) = sql"""
@@ -190,7 +190,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   end grantPermission
 
   override def revokePermission(
-      user: Uuid[AuthenticatedUser],
+      user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Unit] =
     def revokeQuery(reference: Int) = sql"""

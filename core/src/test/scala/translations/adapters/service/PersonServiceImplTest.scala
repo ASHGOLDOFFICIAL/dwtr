@@ -2,9 +2,10 @@ package org.aulune
 package translations.adapters.service
 
 
-import auth.application.dto.AuthenticatedUser
+import shared.errors.{ApplicationServiceError, RepositoryError}
 import shared.errors.ApplicationServiceError
 import shared.model.Uuid
+import shared.service.auth.User
 import shared.repositories.RepositoryError
 import shared.service.permission.PermissionClientService
 import translations.application.TranslationPermission.Modify
@@ -69,7 +70,7 @@ final class PersonServiceImplTest
     }
   }
 
-  private val user = AuthenticatedUser(
+  private val user = User(
     id = UUID.fromString("f04eb510-229c-4cdd-bd7b-9691c3b28ae1"),
     username = "username",
   )

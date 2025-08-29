@@ -21,6 +21,7 @@ import cats.MonadThrow
 import cats.data.{Validated, ValidatedNec}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
+import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 
@@ -53,7 +54,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     yield result.map(_.toResponse)
 
   override def create(
-      user: AuthenticatedUser,
+      user: User,
       request: PersonRequest,
   ): F[Either[ApplicationServiceError, PersonResponse]] =
     requirePermissionOrDeny(Modify, user) {
@@ -67,7 +68,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     }
 
   override def update(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
       request: PersonRequest,
   ): F[Either[ApplicationServiceError, PersonResponse]] =
@@ -87,7 +88,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     }
 
   override def delete(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]] =
     requirePermissionOrDeny(Modify, user) {

@@ -4,6 +4,7 @@ package translations.application
 
 import auth.application.dto.AuthenticatedUser
 import shared.errors.ApplicationServiceError
+import shared.service.auth.User
 import translations.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
@@ -45,7 +46,7 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def create(
-      user: AuthenticatedUser,
+      user: User,
       ac: AudioPlayRequest,
   ): F[Either[ApplicationServiceError, AudioPlayResponse]]
 
@@ -57,6 +58,6 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[TranslationPermission.Modify]] permission.
    */
   def delete(
-      user: AuthenticatedUser,
+      user: User,
       id: UUID,
   ): F[Either[ApplicationServiceError, Unit]]
