@@ -25,7 +25,6 @@ lazy val shared = (project in file("shared")).settings(
   ),
 )
 
-
 lazy val auth = (project in file("auth"))
   .dependsOn(shared)
   .settings(
@@ -41,9 +40,20 @@ lazy val auth = (project in file("auth"))
     ),
   )
 
+lazy val permissions = (project in file("permissions"))
+  .dependsOn(shared)
+  .settings(
+    name := "permissions",
+    libraryDependencies ++= testDeps ++ doobieDeps ++ Seq(
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
+    ),
+  )
 
 lazy val core = (project in file("core"))
-  .dependsOn(shared, auth)
+  .dependsOn(shared, auth, permissions)
   .settings(
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat

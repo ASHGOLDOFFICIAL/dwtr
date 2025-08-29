@@ -1,8 +1,6 @@
 package org.aulune
 package permissions
 
-
-import auth.application.dto.AuthenticatedUser
 import permissions.application.PermissionService
 import permissions.application.dto.CheckPermissionStatus.Granted
 import permissions.application.dto.{

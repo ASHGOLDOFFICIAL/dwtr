@@ -1,7 +1,6 @@
 package org.aulune
 package permissions.adapters.jdbc.postgres
 
-
 import permissions.domain.{
   PermissionDescription,
   PermissionName,

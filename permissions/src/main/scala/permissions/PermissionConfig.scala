@@ -1,7 +1,6 @@
 package org.aulune
 package permissions
 
-
 /** Config for permission app.
  *  @param adminPermissionNamespace namespace admin permission will be placed
  *    in.

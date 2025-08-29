@@ -1,7 +1,6 @@
 package org.aulune
 package permissions.domain
 
-
 /** Permission that can be granted to users.
  *  @param namespace: name space of permission.
  *  @param name permission name.

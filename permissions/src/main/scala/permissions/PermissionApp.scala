@@ -1,7 +1,6 @@
 package org.aulune
 package permissions
 
-
 import permissions.adapters.jdbc.postgres.PermissionRepositoryImpl
 import permissions.adapters.service.PermissionServiceImpl
 import shared.repositories.RepositoryError

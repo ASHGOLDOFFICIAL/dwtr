@@ -1,7 +1,6 @@
 package org.aulune
 package permissions.application
 
-
 import permissions.application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,

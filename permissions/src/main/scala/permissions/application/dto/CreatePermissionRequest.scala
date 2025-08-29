@@ -1,13 +1,12 @@
 package org.aulune
 package permissions.application.dto
 
-
-/** Permission response body.
+/** Permission creation request body.
  *  @param namespace permission namespace.
  *  @param name permission name.
  *  @param description human readable description.
  */
-final case class PermissionResource(
+final case class CreatePermissionRequest(
     namespace: String,
     name: String,
     description: String,

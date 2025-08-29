@@ -1,7 +1,6 @@
 package org.aulune
 package permissions.adapters.service
 
-
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.application.dto.CheckPermissionStatus.{Denied, Granted}
 import permissions.application.dto.{

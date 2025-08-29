@@ -1,7 +1,6 @@
 package org.aulune
 package permissions.adapters.jdbc.postgres
 
-
 import permissions.adapters.jdbc.postgres.PermissionMetas.given
 import permissions.application.PermissionRepository
 import permissions.application.PermissionRepository.PermissionIdentity

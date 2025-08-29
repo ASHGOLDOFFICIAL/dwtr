@@ -1,7 +1,6 @@
 package org.aulune
 package permissions.application.dto
 
-
 /** Possible outcomes of permission check. */
 enum CheckPermissionStatus:
   /** User does have required permission. */
