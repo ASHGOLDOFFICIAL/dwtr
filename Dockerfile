@@ -15,14 +15,14 @@ COPY shared/src ./shared/src
 COPY auth/src ./auth/src
 COPY permissions/src ./permissions/src
 COPY aggregator/src ./aggregator/src
-COPY core/src ./core/src
-RUN sbt core/assembly
+COPY app/src ./app/src
+RUN sbt app/assembly
 
 
 FROM eclipse-temurin:${JRE_TAG}-jre-alpine-${ALPINE_TAG} AS runtime
 RUN apk add argon2-libs
 WORKDIR /usr/app
-COPY --from=build /build/core/target/scala-3.3.6/*.jar ./app.jar
+COPY --from=build /build/app/target/scala-3.3.6/*.jar ./app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
