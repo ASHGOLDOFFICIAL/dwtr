@@ -19,7 +19,7 @@ import permissions.domain.{
   PermissionNamespace,
 }
 import commons.errors.ApplicationServiceError
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 import commons.service.auth.User
 

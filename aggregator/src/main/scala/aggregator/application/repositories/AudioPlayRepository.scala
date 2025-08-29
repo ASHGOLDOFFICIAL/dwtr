@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.application.repositories
 
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.pagination.{CursorDecoder, CursorEncoder}
 import commons.repositories.{GenericRepository, PaginatedList}
 import aggregator.application.repositories.AudioPlayRepository.AudioPlayCursor

@@ -2,7 +2,7 @@ package org.aulune
 package commons.adapters.jdbc.postgres.metas
 
 
-import commons.model.Uuid
+import commons.types.Uuid
 
 import doobie.Meta
 import doobie.postgres.implicits.{

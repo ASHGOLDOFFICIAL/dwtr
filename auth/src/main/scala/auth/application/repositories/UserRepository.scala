@@ -2,7 +2,7 @@ package org.aulune
 package auth.application.repositories
 
 import auth.domain.model.{User, Username}
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.GenericRepository
 
 

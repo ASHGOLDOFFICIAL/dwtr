@@ -4,7 +4,7 @@ package aggregator.adapters.service
 
 import commons.errors.ApplicationServiceError.{InvalidArgument, NotFound}
 import commons.errors.{ApplicationServiceError, toApplicationError}
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.transformF
 import commons.service.auth.User
 import commons.service.permission.PermissionClientService

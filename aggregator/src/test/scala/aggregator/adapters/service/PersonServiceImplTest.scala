@@ -6,7 +6,7 @@ import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import commons.errors.ApplicationServiceError
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 import commons.service.auth.User
 import commons.service.permission.PermissionClientService

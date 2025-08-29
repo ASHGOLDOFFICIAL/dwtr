@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.domain.model.audioplay
 
-import commons.model.Uuid
+import commons.types.Uuid
 
 
 /** Audio play series representation.

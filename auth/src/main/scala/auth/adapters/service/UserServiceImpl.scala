@@ -14,7 +14,7 @@ import auth.application.{OAuth2AuthenticationService, UserService}
 import auth.domain.errors.UserValidationError
 import auth.domain.model.{User, Username}
 import commons.errors
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 
 import cats.data.{EitherNec, EitherT, NonEmptyChain, Validated}

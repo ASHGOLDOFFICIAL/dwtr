@@ -11,7 +11,7 @@ import permissions.domain.{
   PermissionNamespace,
 }
 import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import commons.service.auth.User

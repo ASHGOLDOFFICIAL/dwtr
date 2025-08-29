@@ -3,7 +3,7 @@ package permissions.application
 
 import permissions.application.PermissionRepository.PermissionIdentity
 import permissions.domain.{Permission, PermissionName, PermissionNamespace}
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.{GenericRepository, Upsert}
 import commons.service.auth.User
 

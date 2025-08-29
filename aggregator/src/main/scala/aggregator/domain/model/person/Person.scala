@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.domain.model.person
 
-import commons.model.Uuid
+import commons.types.Uuid
 import aggregator.domain.errors.PersonValidationError
 import aggregator.domain.errors.PersonValidationError.*
 

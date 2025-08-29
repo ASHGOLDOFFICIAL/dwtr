@@ -2,7 +2,7 @@ package org.aulune
 package aggregator.adapters.jdbc.postgres
 
 import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError.FailedPrecondition
 import aggregator.adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import aggregator.application.repositories.TranslationRepository

@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.domain.model.audioplay
 
-import commons.model.Uuid
+import commons.types.Uuid
 import aggregator.domain.errors.TranslationValidationError.*
 import aggregator.domain.errors.{
   AudioPlayValidationError,

@@ -2,7 +2,7 @@ package org.aulune
 package aggregator.application
 
 import commons.errors.ApplicationServiceError
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.service.auth.User
 import aggregator.application.dto.person.{PersonRequest, PersonResponse}
 

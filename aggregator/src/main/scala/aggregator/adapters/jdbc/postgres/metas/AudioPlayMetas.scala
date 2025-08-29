@@ -2,7 +2,7 @@ package org.aulune
 package aggregator.adapters.jdbc.postgres.metas
 
 import commons.adapters.jdbc.postgres.metas.SharedMetas.jsonbMeta
-import commons.model.Uuid
+import commons.types.Uuid
 import aggregator.domain.model.audioplay.{
   ActorRole,
   AudioPlay,

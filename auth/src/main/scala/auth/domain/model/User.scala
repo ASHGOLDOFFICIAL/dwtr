@@ -3,7 +3,7 @@ package auth.domain.model
 
 import auth.domain.errors.UserValidationError
 import auth.domain.model.Username
-import commons.model.Uuid
+import commons.types.Uuid
 
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*

@@ -2,7 +2,7 @@ package org.aulune
 package aggregator.adapters.jdbc.postgres
 
 import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import aggregator.adapters.jdbc.postgres.metas.PersonMetas.given

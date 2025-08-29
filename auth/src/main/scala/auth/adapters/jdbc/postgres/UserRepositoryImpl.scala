@@ -5,7 +5,7 @@ import auth.adapters.jdbc.postgres.metas.UserMetas.given
 import auth.application.repositories.UserRepository
 import auth.domain.model.{User, Username}
 import commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 import commons.repositories.RepositoryError.AlreadyExists
 

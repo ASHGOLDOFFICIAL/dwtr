@@ -4,7 +4,7 @@ package aggregator.adapters.service
 
 import commons.errors.ApplicationServiceError.InvalidArgument
 import commons.errors.{ApplicationServiceError, toApplicationError}
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.pagination.PaginationParams
 import commons.service.auth.User
 import commons.service.permission.PermissionClientService

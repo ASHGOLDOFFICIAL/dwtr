@@ -19,7 +19,7 @@ import permissions.domain.{
 }
 import commons.errors.ApplicationServiceError
 import commons.errors.ApplicationServiceError.InvalidArgument
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.repositories.RepositoryError
 import commons.service.auth.User
 

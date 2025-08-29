@@ -1,5 +1,5 @@
 package org.aulune
-package commons.model
+package commons.types
 
 
 import java.util.UUID

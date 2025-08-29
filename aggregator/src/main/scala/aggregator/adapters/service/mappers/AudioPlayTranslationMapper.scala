@@ -1,7 +1,7 @@
 package org.aulune
 package aggregator.adapters.service.mappers
 
-import commons.model.Uuid
+import commons.types.Uuid
 import commons.pagination.Cursor
 import aggregator.application.dto.audioplay.{
   AudioPlayRequest,
