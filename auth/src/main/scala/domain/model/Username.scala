@@ -14,11 +14,10 @@ object Username:
   def apply(username: String): Option[Username] =
     Option.when(usernameRegex.matches(username))(username)
 
-  /** Creates new username without argument validation.
-   *
-   *  Should only be used within always-valid boundary (persistence layer for
-   *  example).
+  /** Unsafe constructor to use within always-valid boundary.
    *  @param username username.
-   *  @return a username.
+   *  @throws IllegalArgumentException if invalid arguments are given.
    */
-  def unsafeApply(username: String): Username = username
+  def unsafe(username: String): Username = Username(username) match
+    case Some(value) => value
+    case None        => throw new IllegalArgumentException()
