@@ -6,14 +6,18 @@ import adapters.jdbc.postgres.metas.UserMetas.given
 import application.repositories.UserRepository
 import domain.model.{User, Username}
 
+import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.*
-import doobie.Transactor
 import doobie.implicits.*
 import doobie.postgres.sqlstate
+import doobie.{ConnectionIO, Transactor}
 import org.aulune.commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.AlreadyExists
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
 import org.aulune.commons.types.Uuid
 
 import java.sql.SQLException
@@ -72,16 +76,26 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
     .handleErrorWith(toRepositoryError)
 
-  override def update(elem: User): F[User] = sql"""
+  override def update(elem: User): F[User] =
+    val updateQuery = sql"""
       |UPDATE users
       |SET username  = ${elem.username},
       |    password  = ${elem.hashedPassword},
       |    google_id = ${elem.googleId}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
-    .as(elem)
-    .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+
+    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
+      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
+
+    val transaction =
+      for
+        rows <- updateQuery
+        _ <- checkIfAny(rows)
+      yield elem
+
+    transaction.transact(transactor).handleErrorWith(toRepositoryError)
+  end update
 
   override def delete(id: Uuid[User]): F[Unit] =
     sql"DELETE FROM users WHERE id = $id".update.run
