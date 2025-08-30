@@ -18,7 +18,7 @@ final case class Permission private (
       name: PermissionName = name,
       description: PermissionDescription = description,
   ): Option[Permission] =
-    Some(copy(namespace = namespace, name = name, description = description))
+    Permission(namespace = namespace, name = name, description = description)
 
 
 object Permission:

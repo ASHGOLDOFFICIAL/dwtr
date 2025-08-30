@@ -2,8 +2,8 @@ package org.aulune.aggregator
 package domain.model.audioplay
 
 
+import domain.errors.TranslationValidationError
 import domain.errors.TranslationValidationError.*
-import domain.errors.{AudioPlayValidationError, TranslationValidationError}
 import domain.model.audioplay.AudioPlayTranslation.{
   ValidationResult,
   validateState,
@@ -15,8 +15,6 @@ import cats.syntax.all.*
 import org.aulune.commons.types.Uuid
 
 import java.net.URI
-import java.time.Instant
-import java.util.UUID
 
 
 /** Audio play translation representation.
@@ -46,15 +44,14 @@ final case class AudioPlayTranslation private (
       translationType: AudioPlayTranslationType = translationType,
       language: Language = language,
       links: NonEmptyList[URI] = links,
-  ): ValidationResult[AudioPlayTranslation] = validateState(
-    new AudioPlayTranslation(
-      originalId = originalId,
-      id = id,
-      title = title,
-      translationType = translationType,
-      language = language,
-      links = links,
-    ))
+  ): ValidationResult[AudioPlayTranslation] = AudioPlayTranslation(
+    originalId = originalId,
+    id = id,
+    title = title,
+    translationType = translationType,
+    language = language,
+    links = links,
+  )
 
 
 object AudioPlayTranslation:

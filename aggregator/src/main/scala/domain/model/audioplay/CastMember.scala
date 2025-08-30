@@ -36,9 +36,9 @@ object CastMember:
       actor: Uuid[Person],
       roles: List[ActorRole],
       main: Boolean,
-  ): Option[CastMember] = Option.when(roles.nonEmpty) {
-    new CastMember(actor = actor, roles = roles, main = main)
-  }
+  ): Option[CastMember] = validateState(
+    new CastMember(actor = actor, roles = roles, main = main),
+  )
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param actor ID of actor (cast member) as a person.

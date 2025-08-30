@@ -4,7 +4,7 @@ package domain.model.audioplay
 
 import domain.errors.AudioPlayValidationError
 import domain.errors.AudioPlayValidationError.*
-import domain.model.audioplay.AudioPlay.{ValidationResult, validateState}
+import domain.model.audioplay.AudioPlay.ValidationResult
 import domain.model.person.Person
 import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
 
@@ -53,20 +53,19 @@ final case class AudioPlay private (
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
       coverUrl: Option[ImageUrl] = coverUrl,
       externalResources: List[ExternalResource] = externalResources,
-  ): ValidationResult[AudioPlay] = validateState(
-    copy(
-      id = id,
-      title = title,
-      synopsis = synopsis,
-      releaseDate = releaseDate,
-      writers = writers,
-      cast = cast,
-      series = series,
-      seriesSeason = seriesSeason,
-      seriesNumber = seriesNumber,
-      coverUrl = coverUrl,
-      externalResources = externalResources,
-    ))
+  ): ValidationResult[AudioPlay] = AudioPlay(
+    id = id,
+    title = title,
+    synopsis = synopsis,
+    releaseDate = releaseDate,
+    writers = writers,
+    cast = cast,
+    series = series,
+    seriesSeason = seriesSeason,
+    seriesNumber = seriesNumber,
+    coverUrl = coverUrl,
+    externalResources = externalResources,
+  )
 
 
 object AudioPlay:
@@ -120,7 +119,7 @@ object AudioPlay:
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUrl],
       externalResources: List[ExternalResource],
-  ): AudioPlay = apply(
+  ): AudioPlay = AudioPlay(
     id = id,
     title = title,
     synopsis = synopsis,
