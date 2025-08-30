@@ -15,11 +15,10 @@ import application.{OAuth2AuthenticationService, UserService}
 import domain.errors.UserValidationError
 import domain.model.{User, Username}
 
-import cats.data.{EitherNec, EitherT, NonEmptyChain, Validated}
+import cats.MonadThrow
+import cats.data.{EitherNec, EitherT, NonEmptyChain}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.*
-import cats.{Monad, MonadThrow}
-import org.aulune.commons.errors
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 
@@ -112,7 +111,7 @@ final class UserServiceImpl[F[_]: MonadThrow: UUIDGen](
    */
   private def linkAccount(user: User, provider: OAuth2Provider, id: String) =
     provider match
-      case OAuth2Provider.Google => User.linkGoogleId(user, id)
+      case OAuth2Provider.Google => user.update(googleId = Some(id))
 
   /** Converts NEC of [[UserValidationError]] to NEC of
    *  [[UserRegistrationError]].

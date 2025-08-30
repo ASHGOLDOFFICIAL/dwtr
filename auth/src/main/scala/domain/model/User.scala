@@ -3,10 +3,11 @@ package domain.model
 
 
 import domain.errors.UserValidationError
+import domain.model.User.ValidationResult
 import domain.model.Username
 
 import cats.data.{Validated, ValidatedNec}
-import cats.syntax.all.*
+import cats.syntax.all.given
 import org.aulune.commons.types.Uuid
 
 
@@ -21,7 +22,19 @@ final case class User private (
     username: Username,
     hashedPassword: Option[String],
     googleId: Option[String],
-)
+):
+  /** Copies with validation. */
+  def update(
+      id: Uuid[User] = id,
+      username: Username = username,
+      hashedPassword: Option[String] = hashedPassword,
+      googleId: Option[String] = googleId,
+  ): ValidationResult[User] = User(
+    id = id,
+    username = username,
+    hashedPassword = hashedPassword,
+    googleId = googleId,
+  )
 
 
 object User:
@@ -44,15 +57,9 @@ object User:
       hashedPassword = hashedPassword,
       googleId = googleId))
 
-  /** Adds Google account to user with validation.
-   *  @param user user.
-   *  @param id ID in Google's services.
-   *  @return validation result,
+  /** Unsafe constructor for always valid boundary.
+   *  @throws UserValidationError if arguments are invalid.
    */
-  def linkGoogleId(user: User, id: String): ValidationResult[User] =
-    user.copy(googleId = Some(id)).validNec
-
-  /** Unsafe constructor for always valid boundary. */
   def unsafe(
       id: Uuid[User],
       username: Username,
@@ -66,4 +73,8 @@ object User:
     case Validated.Valid(a)   => a
     case Validated.Invalid(e) => throw e.head
 
-  def validateState(user: User): ValidationResult[User] = user.validNec
+  /** Validates object state.
+   *  @param user user to validate.
+   *  @return validation result.
+   */
+  private def validateState(user: User): ValidationResult[User] = user.validNec
