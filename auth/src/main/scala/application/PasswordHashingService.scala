@@ -1,5 +1,5 @@
 package org.aulune.auth
-package domain.service
+package application
 
 
 /** Manages password hashing and verification.

@@ -2,7 +2,7 @@ package org.aulune.auth
 package adapters.service
 
 
-import domain.service.PasswordHashingService
+import application.PasswordHashingService
 
 import cats.effect.{Resource, Sync}
 import cats.syntax.all.*
