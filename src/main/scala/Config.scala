@@ -7,7 +7,7 @@ import permissions.PermissionConfig
 
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.Uri
-import pureconfig.*
+import pureconfig.ConfigReader
 import pureconfig.error.ExceptionThrown
 
 

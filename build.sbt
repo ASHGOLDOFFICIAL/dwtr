@@ -12,7 +12,36 @@ inThisBuild {
 }
 
 
-lazy val root = (project in file(".")).aggregate(app)
+lazy val app = (project in file("."))
+  .dependsOn(auth, permissions, aggregator)
+  .settings(
+    name := "app",
+    idePackagePrefix := Some("org.aulune"),
+    assembly / assemblyMergeStrategy := {
+      case PathList("META-INF", "services", _*) => MergeStrategy.concat
+      case PathList(
+             "META-INF",
+             "maven",
+             "org.webjars",
+             "swagger-ui",
+             "pom.properties") => MergeStrategy.singleOrError
+      case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
+        MergeStrategy.singleOrError
+      case PathList("META-INF", _*) => MergeStrategy.discard
+
+      case "module-info.class" => MergeStrategy.discard
+      case x => (assembly / assemblyMergeStrategy).value.apply(x)
+    },
+    assembly / mainClass := Some("org.aulune.App"),
+    libraryDependencies ++= http4sDeps ++ tapirDeps ++ doobieDeps ++ Seq(
+      "ch.qos.logback"         % "logback-classic" % logbackVersion,
+      "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+    ),
+  )
 
 
 lazy val commons = (project in file("commons")).settings(
@@ -69,38 +98,6 @@ lazy val aggregator = (project in file("aggregator"))
     name := "aggregator",
     idePackagePrefix := Some("org.aulune.aggregator"),
     libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
-      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
-    ),
-  )
-
-
-lazy val app = (project in file("app"))
-  .dependsOn(auth, permissions, aggregator)
-  .settings(
-    name := "app",
-    idePackagePrefix := Some("org.aulune"),
-    assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", "services", _*) => MergeStrategy.concat
-      case PathList(
-             "META-INF",
-             "maven",
-             "org.webjars",
-             "swagger-ui",
-             "pom.properties") => MergeStrategy.singleOrError
-      case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
-        MergeStrategy.singleOrError
-      case PathList("META-INF", _*) => MergeStrategy.discard
-
-      case "module-info.class" => MergeStrategy.discard
-      case x => (assembly / assemblyMergeStrategy).value.apply(x)
-    },
-    assembly / mainClass := Some("org.aulune.App"),
-    libraryDependencies ++= http4sDeps ++ tapirDeps ++ doobieDeps ++ Seq(
-      "ch.qos.logback"         % "logback-classic" % logbackVersion,
-      "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
