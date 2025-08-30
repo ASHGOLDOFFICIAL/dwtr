@@ -4,7 +4,7 @@ package adapters.service
 
 import application.dto.{AccessTokenPayload, AuthenticatedUser, IdTokenPayload}
 import application.{AccessTokenService, IdTokenService}
-import domain.model.{AuthenticationToken, User}
+import domain.model.{TokenString, User}
 
 import cats.Monad
 import cats.data.OptionT
@@ -29,12 +29,13 @@ final class JwtTokenService[F[_]: Clock: Monad](
   private val options = JwtOptions(expiration = false)
   private val algo = JwtAlgorithm.HS256
 
-  override def generateAccessToken(user: User): F[AuthenticationToken] =
+  override def generateAccessToken(user: User): F[TokenString] =
     Clock[F].realTimeInstant.map { now =>
       val exp = now.plusSeconds(maxExp)
       val payload = makeAccessTokenPayload(user, now)
       val claim = JwtCirce.encode(payload.asJson, secretKey, algo)
-      AuthenticationToken(claim)
+      // It shouldn't be empty, otherwise it's exceptional situation.
+      TokenString.unsafe(claim)
     }
 
   /** Makes [[AccessTokenPayload]] for given values.
@@ -55,12 +56,13 @@ final class JwtTokenService[F[_]: Clock: Monad](
       username = user.username,
     )
 
-  override def generateIdToken(user: User): F[AuthenticationToken] =
+  override def generateIdToken(user: User): F[TokenString] =
     Clock[F].realTimeInstant.map { now =>
       val exp = now.plusSeconds(maxExp)
       val payload = makeIdTokenPayload(user, now)
       val claim = JwtCirce.encode(payload.asJson, secretKey, algo)
-      AuthenticationToken(claim)
+      // It shouldn't be empty, otherwise it's exceptional situation.
+      TokenString.unsafe(claim)
     }
 
   /** Makes [[IdTokenPayload]] for given values.
@@ -78,21 +80,21 @@ final class JwtTokenService[F[_]: Clock: Monad](
       iat = iat,
       username = user.username)
 
-  override def decodeAccessToken(token: String): F[Option[AuthenticatedUser]] =
-    (for
-      claim <- decodeClaim(AuthenticationToken(token)).toOptionT
-      payload <- decode[AccessTokenPayload](claim.toJson).toOption.toOptionT
-      expirationValid <- OptionT.liftF(validateExpiration(payload.exp))
-      user <- OptionT.when(expirationValid)(payload.toAuthenticatedUser)
-    yield user).value
+  override def decodeAccessToken(
+      token: TokenString,
+  ): F[Option[AuthenticatedUser]] = (for
+    claim <- decodeClaim(token).toOptionT
+    payload <- decode[AccessTokenPayload](claim.toJson).toOption.toOptionT
+    expirationValid <- OptionT.liftF(validateExpiration(payload.exp))
+    user <- OptionT.when(expirationValid)(payload.toAuthenticatedUser)
+  yield user).value
 
   /** Returns claim if token is successfully decoded.
    *  @param token token.
    */
-  private def decodeClaim(token: AuthenticationToken): Option[JwtClaim] =
-    JwtCirce
-      .decode(token, secretKey, Seq(algo), options)
-      .toOption
+  private def decodeClaim(token: TokenString): Option[JwtClaim] = JwtCirce
+    .decode(token, secretKey, Seq(algo), options)
+    .toOption
 
   /** Validates the expiration claim against the current time.
    *

@@ -19,10 +19,11 @@ import application.{
   IdTokenService,
   OAuth2AuthenticationService,
 }
-import domain.model.User
+import domain.model.{TokenString, User}
 
 import cats.Monad
 import cats.data.OptionT
+import cats.syntax.all.given
 
 
 /** [[AuthenticationService]] implementation.
@@ -54,7 +55,7 @@ final class AuthenticationServiceImpl[F[_]: Monad](
     idToken = idToken)).value
 
   override def getUserInfo(token: String): F[Option[AuthenticatedUser]] =
-    accessTokenService.decodeAccessToken(token)
+    TokenString(token).traverseFilter(accessTokenService.decodeAccessToken)
 
   /** Delegates login request to a service that can manage it.
    *  @param request login request.

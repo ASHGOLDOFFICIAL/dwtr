@@ -3,7 +3,7 @@ package application
 
 
 import application.dto.{AccessTokenPayload, AuthenticatedUser}
-import domain.model.{AuthenticationToken, User}
+import domain.model.{TokenString, User}
 
 
 /** Service that generates and decodes access tokens. Access token payload
@@ -16,9 +16,9 @@ trait AccessTokenService[F[_]]:
   /** Returns [[AuthenticatedUser]] whom this token identifies.
    *  @param token token as string.
    */
-  def decodeAccessToken(token: String): F[Option[AuthenticatedUser]]
+  def decodeAccessToken(token: TokenString): F[Option[AuthenticatedUser]]
 
   /** Generates access token for given user.
    *  @param user user for whom to generate access token.
    */
-  def generateAccessToken(user: User): F[AuthenticationToken]
+  def generateAccessToken(user: User): F[TokenString]
