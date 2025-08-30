@@ -1,6 +1,7 @@
 package org.aulune
 package aggregator.api.http.tapir.audioplay
 
+
 import aggregator.application.dto.ExternalResourceDto
 import aggregator.application.dto.ExternalResourceTypeDto.Purchase
 import aggregator.application.dto.audioplay.{
@@ -8,6 +9,7 @@ import aggregator.application.dto.audioplay.{
   AudioPlayResponse,
   AudioPlaySeriesResponse,
   CastMemberDto,
+  ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
 
@@ -125,6 +127,11 @@ object AudioPlayExamples:
     seriesNumber = seriesNumberExample,
     coverUrl = coverUrlExample,
     externalResources = externalResourcesExample,
+  )
+
+  val listRequestExample: ListAudioPlaysRequest = ListAudioPlaysRequest(
+    pageSize = Some(2),
+    pageToken = nextPageTokenExample,
   )
 
   val listResponseExample: ListAudioPlaysResponse = ListAudioPlaysResponse(

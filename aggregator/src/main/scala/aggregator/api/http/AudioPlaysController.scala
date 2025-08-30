@@ -2,13 +2,10 @@ package org.aulune
 package aggregator.api.http
 
 
-import commons.errors.toErrorResponse
-import commons.http.QueryParams
-import commons.service.auth.AuthenticationClientService
-import commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import aggregator.AggregatorConfig
 import aggregator.api.http.circe.AudioPlayCodecs.given
 import aggregator.api.http.tapir.audioplay.AudioPlayExamples.{
+  listRequestExample,
   listResponseExample,
   requestExample,
   responseExample,
@@ -17,9 +14,14 @@ import aggregator.api.http.tapir.audioplay.AudioPlaySchemas.given
 import aggregator.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
+  ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
 import aggregator.application.{AudioPlayService, AudioPlayTranslationService}
+import commons.errors.toErrorResponse
+import commons.http.QueryParams
+import commons.service.auth.AuthenticationClientService
+import commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -72,7 +74,9 @@ final class AudioPlaysController[F[_]: Applicative](
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(QueryParams.pagination(pagination.default, pagination.max))
+    .in(jsonBody[ListAudioPlaysRequest]
+      .description("Request to list audio plays.")
+      .example(listRequestExample))
     .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
       .example(listResponseExample)))
@@ -80,8 +84,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
-    .serverLogic { (pageSize, pageToken) =>
-      for result <- service.listAll(pageToken, pageSize)
+    .serverLogic { request =>
+      for result <- service.listAll(request)
       yield result.leftMap(toErrorResponse)
     }
 

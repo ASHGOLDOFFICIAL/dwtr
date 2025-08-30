@@ -2,27 +2,14 @@ package org.aulune
 package aggregator.adapters.service
 
 
-import commons.errors.ApplicationServiceError.{
-  FailedPrecondition,
-  InvalidArgument,
-  NotFound
-}
-import commons.errors.{ApplicationServiceError, toApplicationError}
-import commons.types.Uuid
-import commons.pagination.PaginationParams
-import commons.service.auth.User
-import commons.service.permission.PermissionClientService
-import commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import aggregator.AggregatorConfig
 import aggregator.adapters.service.mappers.AudioPlayMapper
-import aggregator.application.AggregatorPermission.{
-  DownloadAudioPlays,
-  Modify,
-}
+import aggregator.application.AggregatorPermission.{DownloadAudioPlays, Modify}
 import aggregator.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
   CastMemberDto,
+  ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
 import aggregator.application.dto.person.PersonResponse
@@ -32,11 +19,22 @@ import aggregator.application.repositories.AudioPlayRepository.{
   given,
 }
 import aggregator.application.{
+  AggregatorPermission,
   AudioPlayService,
   PersonService,
-  AggregatorPermission,
 }
 import aggregator.domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import commons.errors.ApplicationServiceError.{
+  FailedPrecondition,
+  InvalidArgument,
+  NotFound,
+}
+import commons.errors.{ApplicationServiceError, toApplicationError}
+import commons.pagination.PaginationParams
+import commons.service.auth.User
+import commons.service.permission.PermissionClientService
+import commons.service.permission.PermissionClientService.requirePermissionOrDeny
+import commons.types.Uuid
 
 import cats.MonadThrow
 import cats.data.Validated
@@ -91,10 +89,11 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
   yield response).attempt.map(_.leftMap(toApplicationError))
 
   override def listAll(
-      token: Option[String],
-      count: Int,
+      request: ListAudioPlaysRequest,
   ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]] =
-    PaginationParams[AudioPlayCursor](pagination.max)(count, token) match
+    PaginationParams[AudioPlayCursor](pagination.max)(
+      request.pageSize.getOrElse(pagination.default),
+      request.pageToken) match
       case Validated.Invalid(_) => InvalidArgument.asLeft.pure[F]
       case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
         for audios <- repo.list(pageToken, pageSize)
