@@ -1,24 +1,24 @@
-package org.aulune
-package aggregator.adapters.service
+package org.aulune.aggregator
+package adapters.service
 
 
-import org.scalamock.scalatest.AsyncMockFactory
-import org.scalatest.freespec.AsyncFreeSpec
-import org.scalatest.matchers.should.Matchers
-import commons.errors.ApplicationServiceError
-import commons.types.Uuid
-import commons.repositories.RepositoryError
-import commons.service.auth.User
-import commons.service.permission.PermissionClientService
-import aggregator.application.AggregatorPermission.Modify
-import aggregator.application.dto.person.{PersonRequest, PersonResponse}
-import aggregator.application.repositories.PersonRepository
-import aggregator.domain.model.person.{FullName, Person}
+import application.AggregatorPermission.Modify
+import application.dto.person.{PersonRequest, PersonResponse}
+import application.repositories.PersonRepository
+import domain.model.person.{FullName, Person}
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.repositories.RepositoryError
+import org.aulune.commons.service.auth.User
+import org.aulune.commons.service.permission.PermissionClientService
+import org.aulune.commons.types.Uuid
+import org.scalamock.scalatest.AsyncMockFactory
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.util.UUID
 
