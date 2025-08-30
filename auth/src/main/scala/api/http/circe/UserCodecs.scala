@@ -3,7 +3,7 @@ package api.http.circe
 
 
 import api.http.circe.AuthenticationCodecs.given
-import application.dto.UserRegistrationRequest
+import application.dto.CreateUserRequest
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
@@ -13,7 +13,7 @@ import io.circe.{Decoder, Encoder}
 import org.aulune.commons.http.circe.CirceConfiguration.config
 
 
-/** [[Encoder]] and [[Decoder]] instances for user objects' DTOs. */
+/** [[Encoder]] and [[Decoder]] instances for user DTOs. */
 private[api] object UserCodecs:
-  given Encoder[UserRegistrationRequest] = deriveConfiguredEncoder
-  given Decoder[UserRegistrationRequest] = deriveConfiguredDecoder
+  given Encoder[CreateUserRequest] = deriveConfiguredEncoder
+  given Decoder[CreateUserRequest] = deriveConfiguredDecoder

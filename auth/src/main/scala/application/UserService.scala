@@ -2,7 +2,7 @@ package org.aulune.auth
 package application
 
 
-import application.dto.{AuthenticatedUser, UserRegistrationRequest}
+import application.dto.{AuthenticatedUser, CreateUserRequest}
 import application.errors.UserRegistrationError
 
 import cats.data.EitherNec
@@ -18,5 +18,5 @@ trait UserService[F[_]]:
    *  @return `Unit` if user is created, errors otherwise.
    */
   def register(
-      request: UserRegistrationRequest,
+      request: CreateUserRequest,
   ): F[EitherNec[UserRegistrationError, Unit]]

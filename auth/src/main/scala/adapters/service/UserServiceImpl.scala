@@ -5,8 +5,8 @@ package adapters.service
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.{
   AuthenticationRequest,
+  CreateUserRequest,
   OAuth2Provider,
-  UserRegistrationRequest,
 }
 import application.errors.UserRegistrationError
 import application.errors.UserRegistrationError.*
@@ -36,7 +36,7 @@ final class UserServiceImpl[F[_]: MonadThrow: UUIDGen](
 ) extends UserService[F]:
 
   override def register(
-      request: UserRegistrationRequest,
+      request: CreateUserRequest,
   ): F[EitherNec[UserRegistrationError, Unit]] = (for
     oid <- getId(request.oauth2)
     _ <- checkIfRegistered(request.oauth2.provider, oid)
@@ -77,7 +77,7 @@ final class UserServiceImpl[F[_]: MonadThrow: UUIDGen](
    */
   private def createUser(
       id: Uuid[User],
-      request: UserRegistrationRequest,
+      request: CreateUserRequest,
       oauth2Id: String,
   ): EitherNec[UserValidationError, User] =
     for

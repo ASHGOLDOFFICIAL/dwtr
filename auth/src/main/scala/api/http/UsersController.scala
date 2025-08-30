@@ -3,9 +3,9 @@ package api.http
 
 
 import api.http.circe.UserCodecs.given
-import api.http.tapir.examples.UserExamples.registrationRequestExample
+import api.http.tapir.examples.UserExamples.createRequestExample
 import api.http.tapir.schemas.UserSchemas.given
-import application.dto.UserRegistrationRequest
+import application.dto.CreateUserRequest
 import application.errors.UserRegistrationError
 import application.{UserService, errors}
 
@@ -27,9 +27,9 @@ final class UsersController[F[_]: Functor](service: UserService[F]):
 
   private val postEndpoint = endpoint.post
     .in("users")
-    .in(jsonBody[UserRegistrationRequest]
+    .in(jsonBody[CreateUserRequest]
       .description("Registration details.")
-      .example(registrationRequestExample))
+      .example(createRequestExample))
     .out(statusCode(StatusCode.Created))
     .errorOut(statusCode.and(stringBody))
     .name("CreateUser")

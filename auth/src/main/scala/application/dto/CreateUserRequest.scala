@@ -8,7 +8,7 @@ import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
  *  @param username username user choose.
  *  @param oauth2 OAuth2 provider's code to authenticate user.
  */
-final case class UserRegistrationRequest(
+final case class CreateUserRequest(
     username: String,
     oauth2: OAuth2AuthenticationRequest,
 )
