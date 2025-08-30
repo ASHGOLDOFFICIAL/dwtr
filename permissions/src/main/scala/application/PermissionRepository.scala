@@ -1,11 +1,13 @@
-package org.aulune
-package permissions.application
+package org.aulune.permissions
+package application
 
-import permissions.application.PermissionRepository.PermissionIdentity
-import permissions.domain.{Permission, PermissionName, PermissionNamespace}
-import commons.types.Uuid
-import commons.repositories.{GenericRepository, Upsert}
-import commons.service.auth.User
+
+import application.PermissionRepository.PermissionIdentity
+import domain.{Permission, PermissionName, PermissionNamespace}
+
+import org.aulune.commons.repositories.{GenericRepository, Upsert}
+import org.aulune.commons.service.auth.User
+import org.aulune.commons.types.Uuid
 
 
 /** Repository for [[Permission]]s.

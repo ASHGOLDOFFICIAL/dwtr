@@ -1,15 +1,15 @@
-package org.aulune
-package permissions
+package org.aulune.permissions
 
-import permissions.adapters.jdbc.postgres.PermissionRepositoryImpl
-import permissions.adapters.service.PermissionServiceImpl
-import commons.repositories.RepositoryError
-import commons.service.permission.PermissionClientService
+
+import adapters.jdbc.postgres.PermissionRepositoryImpl
+import adapters.service.PermissionServiceImpl
 
 import cats.effect.Async
 import cats.mtl.Raise
 import cats.syntax.all.given
 import doobie.Transactor
+import org.aulune.commons.repositories.RepositoryError
+import org.aulune.commons.service.permission.PermissionClientService
 import org.typelevel.log4cats.Logger
 
 

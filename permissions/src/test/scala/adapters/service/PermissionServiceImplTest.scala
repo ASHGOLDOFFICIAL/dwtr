@@ -1,33 +1,33 @@
-package org.aulune
-package permissions.adapters.service
+package org.aulune.permissions
+package adapters.service
 
 
-import permissions.application.PermissionRepository.PermissionIdentity
-import permissions.application.dto.CheckPermissionStatus.{Denied, Granted}
-import permissions.application.dto.{
+import application.PermissionRepository.PermissionIdentity
+import application.dto.CheckPermissionStatus.{Denied, Granted}
+import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
   CheckPermissionStatus,
   CreatePermissionRequest,
   PermissionResource,
 }
-import permissions.application.{PermissionRepository, PermissionService}
-import permissions.domain.{
+import application.{PermissionRepository, PermissionService}
+import domain.{
   Permission,
   PermissionDescription,
   PermissionName,
   PermissionNamespace,
 }
-import commons.errors.ApplicationServiceError
-import commons.types.Uuid
-import commons.repositories.RepositoryError
-import commons.service.auth.User
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.mtl.Handle.handleForApplicativeError
 import cats.mtl.Raise
 import cats.syntax.all.given
+import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.repositories.RepositoryError
+import org.aulune.commons.service.auth.User
+import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec

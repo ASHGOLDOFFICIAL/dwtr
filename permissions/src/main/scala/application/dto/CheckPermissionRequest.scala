@@ -1,5 +1,5 @@
-package org.aulune
-package permissions.application.dto
+package org.aulune.permissions
+package application.dto
 
 import java.util.UUID
 

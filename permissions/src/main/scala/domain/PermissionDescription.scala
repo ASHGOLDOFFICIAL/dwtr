@@ -1,5 +1,5 @@
-package org.aulune
-package permissions.domain
+package org.aulune.permissions
+package domain
 
 /** Namespace of permission. */
 opaque type PermissionDescription <: String = String

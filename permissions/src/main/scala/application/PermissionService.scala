@@ -1,13 +1,15 @@
-package org.aulune
-package permissions.application
+package org.aulune.permissions
+package application
 
-import permissions.application.dto.{
+
+import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
   CreatePermissionRequest,
-  PermissionResource,
+  PermissionResource
 }
-import commons.errors.ApplicationServiceError
+
+import org.aulune.commons.errors.ApplicationServiceError
 
 
 /** Service to check user permissions.

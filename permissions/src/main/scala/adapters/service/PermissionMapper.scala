@@ -1,9 +1,10 @@
-package org.aulune
-package permissions.adapters.service
+package org.aulune.permissions
+package adapters.service
 
-import permissions.application.PermissionRepository.PermissionIdentity
-import permissions.application.dto.{CreatePermissionRequest, PermissionResource}
-import permissions.domain.{
+
+import application.PermissionRepository.PermissionIdentity
+import application.dto.{CreatePermissionRequest, PermissionResource}
+import domain.{
   Permission,
   PermissionDescription,
   PermissionName,

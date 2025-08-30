@@ -1,11 +1,8 @@
-package org.aulune
-package permissions.adapters.jdbc.postgres
+package org.aulune.permissions
+package adapters.jdbc.postgres
 
-import permissions.domain.{
-  PermissionDescription,
-  PermissionName,
-  PermissionNamespace,
-}
+
+import domain.{PermissionDescription, PermissionName, PermissionNamespace}
 
 import doobie.Meta
 

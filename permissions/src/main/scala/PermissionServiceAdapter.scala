@@ -1,18 +1,18 @@
-package org.aulune
-package permissions
+package org.aulune.permissions
 
-import permissions.application.PermissionService
-import permissions.application.dto.CheckPermissionStatus.Granted
-import permissions.application.dto.{
-  CheckPermissionRequest,
-  CreatePermissionRequest,
-}
-import commons.errors.ApplicationServiceError
-import commons.service.auth.User
-import commons.service.permission.{Permission, PermissionClientService}
+
+import application.PermissionService
+import application.dto.CheckPermissionStatus.Granted
+import application.dto.{CheckPermissionRequest, CreatePermissionRequest}
 
 import cats.Functor
 import cats.syntax.all.given
+import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.service.auth.User
+import org.aulune.commons.service.permission.{
+  Permission,
+  PermissionClientService,
+}
 
 
 /** Adapts [[PermissionService]] to [[PermissionClientService]].

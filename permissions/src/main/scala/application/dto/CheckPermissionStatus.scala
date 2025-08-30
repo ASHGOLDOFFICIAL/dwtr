@@ -1,5 +1,6 @@
-package org.aulune
-package permissions.application.dto
+package org.aulune.permissions
+package application.dto
+
 
 /** Possible outcomes of permission check. */
 enum CheckPermissionStatus:
