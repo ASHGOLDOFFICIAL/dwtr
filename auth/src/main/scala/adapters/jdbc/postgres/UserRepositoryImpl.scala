@@ -40,7 +40,7 @@ object UserRepositoryImpl:
     |  id        UUID PRIMARY KEY,
     |  username  TEXT NOT NULL UNIQUE,
     |  password  TEXT,
-    |  google_id TEXT
+    |  google_id TEXT UNIQUE
     |)""".stripMargin.update.run
 
 

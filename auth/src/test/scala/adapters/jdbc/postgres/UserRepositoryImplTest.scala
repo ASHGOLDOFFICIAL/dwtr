@@ -7,10 +7,7 @@ import domain.model.{User, Username}
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-}
+import org.aulune.commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import org.aulune.commons.testing.PostgresTestContainer
 import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
@@ -78,6 +75,19 @@ final class UserRepositoryImplTest
         for
           _ <- repo.persist(testUser)
           result <- repo.persist(updatedTestUser).attempt
+        yield result shouldBe Left(AlreadyExists)
+      }
+
+      "throw error when adding user with taken Google ID" in stand { repo =>
+        val another = User.unsafe(
+          id = Uuid.unsafe("eab28102-2ecd-4ff2-8572-58143fbe920d"),
+          username = Username.unsafe("another_username"),
+          hashedPassword = None,
+          googleId = Some("google_id")
+        )
+        for
+          _ <- repo.persist(testUser)
+          result <- repo.persist(another).attempt
         yield result shouldBe Left(AlreadyExists)
       }
     }
