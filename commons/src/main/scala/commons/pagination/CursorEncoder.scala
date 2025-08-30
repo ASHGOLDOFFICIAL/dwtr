@@ -11,3 +11,8 @@ trait CursorEncoder[A]:
    *  @return encoded string.
    */
   def encode(a: A): String
+
+
+object CursorEncoder:
+  /** Summons an instance of [[CursorEncoder]]. */
+  def apply[A: CursorEncoder]: CursorEncoder[A] = summon

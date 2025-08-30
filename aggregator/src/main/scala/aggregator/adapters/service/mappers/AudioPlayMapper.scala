@@ -1,12 +1,11 @@
 package org.aulune
 package aggregator.adapters.service.mappers
 
-import commons.types.Uuid
-import commons.pagination.Cursor
+
 import aggregator.application.dto.audioplay.{
   AudioPlayRequest,
   AudioPlayResponse,
-  ListAudioPlaysResponse,
+  ListAudioPlaysResponse
 }
 import aggregator.application.repositories.AudioPlayRepository.AudioPlayCursor
 import aggregator.domain.errors.AudioPlayValidationError
@@ -19,6 +18,8 @@ import aggregator.domain.model.audioplay.{
 }
 import aggregator.domain.model.person.Person
 import aggregator.domain.shared.{ReleaseDate, Synopsis}
+import commons.pagination.CursorEncoder
+import commons.types.Uuid
 
 import cats.data.ValidatedNec
 import cats.syntax.all.given
@@ -88,7 +89,7 @@ private[service] object AudioPlayMapper:
    */
   def toListResponse(audios: List[AudioPlay]): ListAudioPlaysResponse =
     val nextPageToken = audios.lastOption.map { elem =>
-      val token = AudioPlayCursor(elem.id)
-      Cursor[AudioPlayCursor](token).encode
+      val cursor = AudioPlayCursor(elem.id)
+      CursorEncoder[AudioPlayCursor].encode(cursor)
     }
     ListAudioPlaysResponse(audios.map(toResponse), nextPageToken)

@@ -2,8 +2,8 @@ package org.aulune
 package commons.pagination
 
 
-/** Decoder of cursor string.
- *  @tparam A decoding result.
+/** Decoder of token string to cursor.
+ *  @tparam A type of cursor.
  */
 trait CursorDecoder[A]:
   /** Decodes given string into cursor of type [[A]].
@@ -11,3 +11,8 @@ trait CursorDecoder[A]:
    *  @return [[A]] if decoding is successful.
    */
   def decode(token: String): Option[A]
+
+
+object CursorDecoder:
+  /** Summons an instance of [[CursorDecoder]]. */
+  def apply[A: CursorDecoder]: CursorDecoder[A] = summon

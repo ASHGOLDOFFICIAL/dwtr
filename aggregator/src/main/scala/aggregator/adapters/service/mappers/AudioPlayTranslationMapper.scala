@@ -1,43 +1,21 @@
 package org.aulune
 package aggregator.adapters.service.mappers
 
-import commons.types.Uuid
-import commons.pagination.Cursor
-import aggregator.application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
-  ListAudioPlaysResponse,
-}
+
 import aggregator.application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
-  AudioPlayTranslationResponse,
+  AudioPlayTranslationResponse
 }
-import aggregator.application.repositories.AudioPlayRepository.AudioPlayCursor
-import aggregator.application.repositories.TranslationRepository.{
-  AudioPlayTranslationCursor,
-  AudioPlayTranslationIdentity,
-}
-import aggregator.domain.errors.{
-  AudioPlayValidationError,
-  TranslationValidationError,
-}
-import aggregator.domain.model.audioplay.{
-  AudioPlay,
-  AudioPlaySeason,
-  AudioPlaySeries,
-  AudioPlaySeriesNumber,
-  AudioPlayTitle,
-  AudioPlayTranslation,
-}
-import aggregator.domain.model.person.Person
-import aggregator.domain.shared.{ReleaseDate, Synopsis, TranslatedTitle}
+import aggregator.application.repositories.TranslationRepository.AudioPlayTranslationCursor
+import aggregator.domain.errors.TranslationValidationError
+import aggregator.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import aggregator.domain.shared.TranslatedTitle
+import commons.pagination.CursorEncoder
+import commons.types.Uuid
 
 import cats.data.{NonEmptyList, ValidatedNec}
 import cats.syntax.all.given
-
-import java.net.URI
-import java.util.UUID
 
 
 /** Mapper between external audio play translation DTOs and domain's
@@ -92,8 +70,8 @@ private[service] object AudioPlayTranslationMapper:
       translations: List[AudioPlayTranslation],
   ): AudioPlayTranslationListResponse =
     val nextPageToken = translations.lastOption.map { elem =>
-      val token = AudioPlayTranslationCursor(elem.originalId, elem.id)
-      Cursor[AudioPlayTranslationCursor](token).encode
+      val cursor = AudioPlayTranslationCursor(elem.originalId, elem.id)
+      CursorEncoder[AudioPlayTranslationCursor].encode(cursor)
     }
     val elements = translations.map(toResponse)
     AudioPlayTranslationListResponse(elements, nextPageToken)

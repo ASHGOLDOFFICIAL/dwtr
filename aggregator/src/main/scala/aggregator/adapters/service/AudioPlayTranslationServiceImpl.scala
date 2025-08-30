@@ -2,13 +2,6 @@ package org.aulune
 package aggregator.adapters.service
 
 
-import commons.errors.ApplicationServiceError.InvalidArgument
-import commons.errors.{ApplicationServiceError, toApplicationError}
-import commons.types.Uuid
-import commons.pagination.PaginationParams
-import commons.service.auth.User
-import commons.service.permission.PermissionClientService
-import commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import aggregator.AggregatorConfig
 import aggregator.adapters.service.mappers.AudioPlayTranslationMapper
 import aggregator.application.AggregatorPermission.*
@@ -24,10 +17,17 @@ import aggregator.application.repositories.TranslationRepository.{
   given,
 }
 import aggregator.application.{
-  AudioPlayTranslationService,
   AggregatorPermission,
+  AudioPlayTranslationService,
 }
 import aggregator.domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import commons.errors.ApplicationServiceError.InvalidArgument
+import commons.errors.{ApplicationServiceError, toApplicationError}
+import commons.pagination.{PaginationParams, PaginationParamsParser}
+import commons.service.auth.User
+import commons.service.permission.PermissionClientService
+import commons.service.permission.PermissionClientService.requirePermissionOrDeny
+import commons.types.Uuid
 
 import cats.MonadThrow
 import cats.data.Validated
@@ -45,22 +45,28 @@ object AudioPlayTranslationServiceImpl:
    *  @param permissionService [[PermissionClientService]] implementation to
    *    perform permission checks.
    *  @tparam F effect type.
+   *  @throws IllegalArgumentException if pagination params are invalid.
    */
   def build[F[_]: MonadThrow: UUIDGen](
       pagination: AggregatorConfig.Pagination,
       repo: TranslationRepository[F],
       permissionService: PermissionClientService[F],
   ): F[AudioPlayTranslationService[F]] =
-    for _ <- permissionService.registerPermission(Modify)
+    val maybeParser = PaginationParamsParser
+      .build[AudioPlayTranslationCursor](pagination.default, pagination.max)
+    for
+      parser <- MonadThrow[F]
+        .fromOption(maybeParser, new IllegalArgumentException())
+      _ <- permissionService.registerPermission(Modify)
     yield new AudioPlayTranslationServiceImpl[F](
-      pagination,
+      parser,
       repo,
       permissionService,
     )
 
 
 private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
-    pagination: AggregatorConfig.Pagination,
+    paginationParser: PaginationParamsParser[AudioPlayTranslationCursor],
     repo: TranslationRepository[F],
     permissionService: PermissionClientService[F],
 ) extends AudioPlayTranslationService[F]:
@@ -78,11 +84,11 @@ private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
       token: Option[String],
       count: Int,
   ): F[Either[ApplicationServiceError, AudioPlayTranslationListResponse]] =
-    PaginationParams(pagination.max)(count, token) match
+    paginationParser.parse(Some(count), token) match
       case Validated.Invalid(_) =>
         ApplicationServiceError.InvalidArgument.asLeft.pure
-      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
-        for translations <- repo.list(pageToken, pageSize)
+      case Validated.Valid(PaginationParams(pageSize, cursor)) =>
+        for translations <- repo.list(cursor, pageSize)
         yield AudioPlayTranslationMapper.toListResponse(translations).asRight
 
   override def create(

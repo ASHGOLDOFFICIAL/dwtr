@@ -30,7 +30,7 @@ import commons.errors.ApplicationServiceError.{
   NotFound,
 }
 import commons.errors.{ApplicationServiceError, toApplicationError}
-import commons.pagination.PaginationParams
+import commons.pagination.{PaginationParams, PaginationParamsParser}
 import commons.service.auth.User
 import commons.service.permission.PermissionClientService
 import commons.service.permission.PermissionClientService.requirePermissionOrDeny
@@ -53,7 +53,8 @@ object AudioPlayServiceImpl:
    *    writers.
    *  @param permissionService [[PermissionClientService]] implementation to
    *    perform permission checks.
-   *  @tparam F effect type
+   *  @tparam F effect type.
+   *  @throws IllegalArgumentException if pagination params are invalid.
    */
   def build[F[_]: MonadThrow: UUIDGen](
       pagination: AggregatorConfig.Pagination,
@@ -61,11 +62,15 @@ object AudioPlayServiceImpl:
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
   ): F[AudioPlayService[F]] =
+    val maybeParser = PaginationParamsParser
+      .build[AudioPlayCursor](pagination.default, pagination.max)
     for
+      parser <- MonadThrow[F]
+        .fromOption(maybeParser, new IllegalArgumentException())
       _ <- permissionService.registerPermission(Modify)
       _ <- permissionService.registerPermission(DownloadAudioPlays)
     yield new AudioPlayServiceImpl[F](
-      pagination,
+      parser,
       repo,
       personService,
       permissionService,
@@ -73,7 +78,7 @@ object AudioPlayServiceImpl:
 
 
 private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
-    pagination: AggregatorConfig.Pagination,
+    paginationParser: PaginationParamsParser[AudioPlayCursor],
     repo: AudioPlayRepository[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
@@ -91,12 +96,10 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
   override def listAll(
       request: ListAudioPlaysRequest,
   ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]] =
-    PaginationParams[AudioPlayCursor](pagination.max)(
-      request.pageSize.getOrElse(pagination.default),
-      request.pageToken) match
+    paginationParser.parse(request.pageSize, request.pageToken) match
       case Validated.Invalid(_) => InvalidArgument.asLeft.pure[F]
-      case Validated.Valid(PaginationParams(pageSize, pageToken)) =>
-        for audios <- repo.list(pageToken, pageSize)
+      case Validated.Valid(PaginationParams(pageSize, cursor)) =>
+        for audios <- repo.list(cursor, pageSize)
         yield AudioPlayMapper.toListResponse(audios).asRight
 
   override def create(
