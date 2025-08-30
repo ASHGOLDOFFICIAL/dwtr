@@ -2,7 +2,7 @@ package org.aulune
 package aggregator
 
 
-import commons.UUIDv7Gen.uuidv7Instance
+import org.aulune.commons.instances.UUIDv7Gen.uuidv7Instance
 import commons.service.auth.AuthenticationClientService
 import commons.service.permission.PermissionClientService
 import aggregator.adapters.jdbc.postgres.{

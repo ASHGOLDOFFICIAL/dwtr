@@ -1,6 +1,5 @@
 package org.aulune
-package commons
-
+package commons.instances
 
 import cats.Monad
 import cats.effect.kernel.Clock
