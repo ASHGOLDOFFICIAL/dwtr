@@ -3,7 +3,6 @@ import sbtassembly.MergeStrategy
 
 inThisBuild {
   List(
-    idePackagePrefix := Some("org.aulune"),
     name := "dwtr",
     organization := "org.aulune",
     scalaVersion := "3.3.6",
@@ -18,13 +17,14 @@ lazy val root = (project in file(".")).aggregate(app, integration)
 
 lazy val commons = (project in file("commons")).settings(
   name := "commons",
-  libraryDependencies ++= tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+  idePackagePrefix := Some("org.aulune.commons"),
+  libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
     "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion,
-    "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion,
-    "org.postgresql" % "postgresql"  % postgresqlVersion,
-    "org.scalamock" %% "scalamock" % scalamockVersion,
-    "org.scalatest" %% "scalatest" % scalatestVersion,
-    "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+    "com.dimafeng" %% "testcontainers-scala-scalatest"  % testcontainersVersion,
+    "org.postgresql" % "postgresql" % postgresqlVersion,
+    "org.scalamock" %% "scalamock"  % scalamockVersion,
+    "org.scalatest" %% "scalatest"  % scalatestVersion,
+    "org.typelevel" %% "cats-core"  % catsVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
     "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
@@ -36,6 +36,7 @@ lazy val auth = (project in file("auth"))
   .dependsOn(commons)
   .settings(
     name := "auth",
+    idePackagePrefix := Some("org.aulune.auth"),
     libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
       "com.github.jwt-scala" %% "jwt-circe"  % jwtVersion,
       "de.mkammerer"          % "argon2-jvm" % argon2Version,
@@ -52,6 +53,7 @@ lazy val permissions = (project in file("permissions"))
   .dependsOn(commons)
   .settings(
     name := "permissions",
+    idePackagePrefix := Some("org.aulune.permissions"),
     libraryDependencies ++= testDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
@@ -60,10 +62,12 @@ lazy val permissions = (project in file("permissions"))
     ),
   )
 
+
 lazy val aggregator = (project in file("aggregator"))
   .dependsOn(commons)
   .settings(
     name := "aggregator",
+    idePackagePrefix := Some("org.aulune.aggregator"),
     libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
@@ -72,10 +76,12 @@ lazy val aggregator = (project in file("aggregator"))
     ),
   )
 
+
 lazy val app = (project in file("app"))
   .dependsOn(auth, permissions, aggregator)
   .settings(
     name := "app",
+    idePackagePrefix := Some("org.aulune"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList(
@@ -98,7 +104,7 @@ lazy val app = (project in file("app"))
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
     ),
   )
 
