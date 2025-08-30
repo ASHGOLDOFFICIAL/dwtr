@@ -1,25 +1,28 @@
-package org.aulune
-package permissions.adapters.jdbc.postgres
+package org.aulune.permissions
+package adapters.jdbc.postgres
 
 
-import permissions.application.PermissionRepository.PermissionIdentity
-import permissions.domain.{
+import application.PermissionRepository.PermissionIdentity
+import domain.{
   Permission,
   PermissionDescription,
   PermissionName,
   PermissionNamespace,
 }
-import commons.testing.PostgresTestContainer
-import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.mtl.Handle.handleForApplicativeError
 import cats.syntax.all.given
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
+import org.aulune.commons.service.auth.User
+import org.aulune.commons.testing.PostgresTestContainer
+import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import cats.mtl.Handle.handleForApplicativeError
-import org.aulune.shared.model.Uuid
-import org.aulune.shared.service.auth.User
 
 import java.util.UUID
 

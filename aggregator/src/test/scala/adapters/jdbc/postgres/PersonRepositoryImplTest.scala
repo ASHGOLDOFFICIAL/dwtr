@@ -1,14 +1,17 @@
-package org.aulune
-package aggregator.adapters.jdbc.postgres
+package org.aulune.aggregator
+package adapters.jdbc.postgres
 
 
-import commons.types.Uuid
-import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
-import commons.testing.PostgresTestContainer
-import aggregator.domain.model.person.{FullName, Person}
+import domain.model.person.{FullName, Person}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
+import org.aulune.commons.testing.PostgresTestContainer
+import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 

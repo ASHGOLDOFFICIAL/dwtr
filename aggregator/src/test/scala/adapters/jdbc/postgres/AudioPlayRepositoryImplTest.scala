@@ -1,13 +1,10 @@
-package org.aulune
-package aggregator.adapters.jdbc.postgres
+package org.aulune.aggregator
+package adapters.jdbc.postgres
 
 
-import commons.types.Uuid
-import commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
-import commons.testing.PostgresTestContainer
-import aggregator.application.repositories.AudioPlayRepository
-import aggregator.application.repositories.AudioPlayRepository.AudioPlayCursor
-import aggregator.domain.model.audioplay.{
+import application.repositories.AudioPlayRepository
+import application.repositories.AudioPlayRepository.AudioPlayCursor
+import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
   AudioPlaySeason,
@@ -17,16 +14,24 @@ import aggregator.domain.model.audioplay.{
   AudioPlayTitle,
   CastMember,
 }
-import aggregator.domain.shared.ExternalResourceType.*
-import aggregator.domain.shared.{
-  ExternalResource,
-  ImageUrl,
-  ReleaseDate,
-  Synopsis,
+import domain.shared.ExternalResourceType.{
+  Download,
+  Other,
+  Private,
+  Purchase,
+  Streaming,
 }
+import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
+import org.aulune.commons.service.auth.User
+import org.aulune.commons.testing.PostgresTestContainer
+import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 

@@ -12,7 +12,7 @@ inThisBuild {
 }
 
 
-lazy val root = (project in file(".")).aggregate(app, integration)
+lazy val root = (project in file(".")).aggregate(app)
 
 
 lazy val commons = (project in file("commons")).settings(
@@ -109,20 +109,6 @@ lazy val app = (project in file("app"))
   )
 
 
-lazy val integration = (project in file("integration"))
-  .dependsOn(app)
-  .settings(
-    Test / fork := true,
-    publish / skip := true,
-    libraryDependencies ++= testDeps ++ doobieDeps.map(_ % Test) ++ Seq(
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion % Test,
-      "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion % Test,
-      "org.postgresql" % "postgresql"  % postgresqlVersion % Test,
-      "org.typelevel" %% "cats-effect" % catsEffectVersion % Test,
-    ),
-  )
-
-
 scalacOptions ++= Seq(
   "-feature",
   "-deprecation",
@@ -191,7 +177,10 @@ val doobieDeps = Seq(
 
 
 val testDeps = Seq(
-  "org.scalamock" %% "scalamock"                     % scalamockVersion,
-  "org.scalatest" %% "scalatest"                     % scalatestVersion,
+  "com.dimafeng"  %% "testcontainers-scala-scalatest"  % testcontainersVersion,
+  "com.dimafeng"  %% "testcontainers-scala-postgresql" % testcontainersVersion,
+  "org.postgresql" % "postgresql"                      % postgresqlVersion,
+  "org.scalamock" %% "scalamock"                       % scalamockVersion,
+  "org.scalatest" %% "scalatest"                       % scalatestVersion,
   "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
 ).map(_ % Test)
