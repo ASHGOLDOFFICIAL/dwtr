@@ -7,7 +7,10 @@ import domain.model.{User, Username}
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
 import org.aulune.commons.testing.PostgresTestContainer
 import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
@@ -56,15 +59,15 @@ final class UserRepositoryImplTest
   "get method " - {
     "should " - {
       "return `None` for non-existent user" in stand { repo =>
-        for audio <- repo.get(testUser.id)
-        yield audio shouldBe None
+        for user <- repo.get(testUser.id)
+        yield user shouldBe None
       }
 
       "retrieve existing users" in stand { repo =>
         for
           _ <- repo.persist(testUser)
-          audio <- repo.get(testUser.id)
-        yield audio shouldBe Some(testUser)
+          user <- repo.get(testUser.id)
+        yield user shouldBe Some(testUser)
       }
     }
   }
@@ -83,7 +86,7 @@ final class UserRepositoryImplTest
           id = Uuid.unsafe("eab28102-2ecd-4ff2-8572-58143fbe920d"),
           username = Username.unsafe("another_username"),
           hashedPassword = None,
-          googleId = Some("google_id")
+          googleId = Some("google_id"),
         )
         for
           _ <- repo.persist(testUser)
@@ -139,15 +142,15 @@ final class UserRepositoryImplTest
   "getByUsername method " - {
     "should " - {
       "return `None` for non-existent user" in stand { repo =>
-        for audio <- repo.getByUsername(testUser.username)
-          yield audio shouldBe None
+        for user <- repo.getByUsername(testUser.username)
+        yield user shouldBe None
       }
 
       "retrieve existing users" in stand { repo =>
         for
           _ <- repo.persist(testUser)
-          audio <- repo.getByUsername(testUser.username)
-        yield audio shouldBe Some(testUser)
+          user <- repo.getByUsername(testUser.username)
+        yield user shouldBe Some(testUser)
       }
     }
   }
@@ -155,15 +158,15 @@ final class UserRepositoryImplTest
   "getByGoogleId method " - {
     "should " - {
       "return `None` for non-existent user" in stand { repo =>
-        for audio <- repo.getByGoogleId(testUser.googleId.get)
-          yield audio shouldBe None
+        for user <- repo.getByGoogleId(testUser.googleId.get)
+        yield user shouldBe None
       }
 
       "retrieve existing users" in stand { repo =>
         for
           _ <- repo.persist(testUser)
-          audio <- repo.getByGoogleId(testUser.googleId.get)
-        yield audio shouldBe Some(testUser)
+          user <- repo.getByGoogleId(testUser.googleId.get)
+        yield user shouldBe Some(testUser)
       }
     }
   }
