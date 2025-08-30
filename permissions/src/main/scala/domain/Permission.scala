@@ -12,6 +12,7 @@ final case class Permission private (
     name: PermissionName,
     description: PermissionDescription,
 ):
+  /** Copies with validation. */
   def update(
       namespace: PermissionNamespace = namespace,
       name: PermissionName = name,
