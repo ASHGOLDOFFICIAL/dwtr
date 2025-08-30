@@ -2,10 +2,13 @@ package org.aulune.auth
 package adapters.service
 
 
+import adapters.service.inner.{
+  BasicAuthenticationService,
+  PasswordHashingService
+}
 import application.dto.AuthenticationRequest
 import application.dto.AuthenticationRequest.BasicAuthenticationRequest
 import application.repositories.UserRepository
-import application.{BasicAuthenticationService, PasswordHashingService}
 import domain.model.{User, Username}
 
 import cats.Monad

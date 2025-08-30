@@ -2,6 +2,8 @@ package org.aulune.auth
 package adapters.service
 
 
+import adapters.service.inner.OAuth2AuthenticationService
+import application.UserService
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.{
   AuthenticationRequest,
@@ -11,7 +13,6 @@ import application.dto.{
 import application.errors.UserRegistrationError
 import application.errors.UserRegistrationError.*
 import application.repositories.UserRepository
-import application.{OAuth2AuthenticationService, UserService}
 import domain.errors.UserValidationError
 import domain.model.{User, Username}
 

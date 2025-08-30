@@ -1,5 +1,5 @@
 package org.aulune.auth
-package application
+package adapters.service.inner
 
 
 /** Manages password hashing and verification.

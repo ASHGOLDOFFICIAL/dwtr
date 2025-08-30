@@ -2,11 +2,14 @@ package org.aulune.auth
 package adapters.service
 
 
+import adapters.service.inner.{
+  OAuth2AuthenticationService,
+  OAuth2CodeExchangeService
+}
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.OAuth2Provider.Google
 import application.dto.{AuthenticationRequest, OAuth2Provider}
 import application.repositories.GoogleIdSearch
-import application.{OAuth2AuthenticationService, OAuth2CodeExchangeService}
 import domain.model.User
 
 import cats.Monad

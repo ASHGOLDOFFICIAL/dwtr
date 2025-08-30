@@ -2,7 +2,7 @@ package org.aulune.auth
 package adapters.service.oauth2
 
 
-import application.OAuth2CodeExchangeService
+import adapters.service.inner.OAuth2CodeExchangeService
 import application.dto.OAuth2Provider.Google
 
 import cats.effect.Concurrent

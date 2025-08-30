@@ -2,8 +2,8 @@ package org.aulune.auth
 package adapters.service
 
 
+import adapters.service.inner.{AccessTokenService, IdTokenService}
 import application.dto.{AccessTokenPayload, AuthenticatedUser, IdTokenPayload}
-import application.{AccessTokenService, IdTokenService}
 import domain.model.{TokenString, User}
 
 import cats.Monad
