@@ -2,7 +2,7 @@ package org.aulune.auth
 package application
 
 
-import application.dto.{AuthenticatedUser, CreateUserRequest}
+import application.dto.CreateUserRequest
 import application.errors.UserRegistrationError
 
 import cats.data.EitherNec
