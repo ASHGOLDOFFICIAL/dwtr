@@ -1,0 +1,22 @@
+package org.aulune.auth
+package application.dto
+
+import java.util.UUID
+
+
+/** ID token payload.
+ *
+ *  @param iss Issuer Identifier, should be HTTPS URI of our backend.
+ *  @param sub Subject Identifier, should be user's unique ID.
+ *  @param exp expiration time on or after which the ID Token should be
+ *    considered invalid.
+ *  @param iat time at which the JWT was issued.
+ *  @param username user's username.
+ */
+final case class AccessTokenPayload(
+    iss: String,
+    sub: UUID,
+    exp: Long,
+    iat: Long,
+    username: String,
+)
