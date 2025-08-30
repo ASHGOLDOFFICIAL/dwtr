@@ -1,9 +1,9 @@
 package org.aulune
 
 
+import aggregator.AggregatorConfig
 import auth.AuthConfig
 import permissions.PermissionConfig
-import aggregator.AggregatorConfig
 
 import com.comcast.ip4s.{Host, Port}
 import org.http4s.Uri

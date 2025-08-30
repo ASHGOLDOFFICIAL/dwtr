@@ -1,14 +1,14 @@
 package org.aulune
 
 
+import aggregator.AggregatorApp
 import auth.AuthApp
 import permissions.PermissionApp
-import aggregator.AggregatorApp
 
 import cats.effect.kernel.Resource
 import cats.effect.{Async, IO, IOApp}
 import cats.mtl.Handle.handleForApplicativeError
-import cats.syntax.all.*
+import cats.syntax.all.given
 import doobie.Transactor
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
