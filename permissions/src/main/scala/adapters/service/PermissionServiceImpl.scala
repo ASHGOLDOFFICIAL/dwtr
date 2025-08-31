@@ -96,9 +96,9 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
       domain <- EitherT.fromOption(
         permissionIdentityOpt,
         ErrorResponses.invalidPermission)
-      adminCheck <- hasPermission(id, adminPermissionIdentity)
       permCheck <- hasPermission(id, domain)
-      response = toCheckResponse(request, adminCheck || permCheck)
+      adminCheck <- hasPermission(id, adminPermissionIdentity)
+      response = toCheckResponse(request, permCheck || adminCheck)
     yield response).value
 
   /** Checks if user has a permission.

@@ -8,8 +8,12 @@ import application.dto.{
   CreatePermissionRequest,
   PermissionResource
 }
+import application.errors.PermissionServiceError.{
+  InvalidPermission,
+  PermissionNotFound,
+}
 
-import org.aulune.commons.errors.{ErrorResponse, ErrorStatus}
+import org.aulune.commons.errors.ErrorResponse
 
 
 /** Service to check user permissions.
@@ -18,6 +22,11 @@ import org.aulune.commons.errors.{ErrorResponse, ErrorStatus}
 trait PermissionService[F[_]]:
   /** Registers new permission. Checking for unregistered permissions will lead
    *  to error.
+   *
+   *  Errors:
+   *    - [[InvalidPermission]] will be returned when trying to create invalid
+   *      permission.
+   *
    *  @param request request with permission details.
    *  @return `Unit` if everything is OK, otherwise error.
    *  @note registering already existing permission isn't an exceptional
@@ -28,6 +37,13 @@ trait PermissionService[F[_]]:
   ): F[Either[ErrorResponse, PermissionResource]]
 
   /** Checks if user has permission.
+   *
+   *  Errors:
+   *    - [[InvalidPermission]] will be returned when checking for invalid
+   *      permission.
+   *    - [[PermissionNotFound]] will be returned when checking for unregistered
+   *      permission.
+   *
    *  @param request request with details of who is requiring what permission.
    *  @return permission check result.
    */
