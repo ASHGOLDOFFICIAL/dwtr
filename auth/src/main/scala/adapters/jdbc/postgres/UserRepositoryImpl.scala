@@ -3,7 +3,6 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.UserMetas.given
-import application.repositories.UserRepository
 import domain.model.{User, Username}
 
 import cats.MonadThrow
@@ -12,6 +11,7 @@ import cats.syntax.all.*
 import doobie.implicits.*
 import doobie.postgres.sqlstate
 import doobie.{ConnectionIO, Transactor}
+import org.aulune.auth.domain.repositories.UserRepository
 import org.aulune.commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{

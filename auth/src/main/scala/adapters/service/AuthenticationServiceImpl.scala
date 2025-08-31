@@ -18,7 +18,6 @@ import application.errors.UserRegistrationError.{
   InvalidOAuthCode,
   OAuthUserAlreadyExists,
 }
-import application.repositories.UserRepository
 import application.{AuthenticationService, BasicAuthenticationService}
 import domain.errors.UserValidationError
 import domain.model.{TokenString, User, Username}
@@ -32,6 +31,7 @@ import cats.MonadThrow
 import cats.data.{EitherNec, EitherT, NonEmptyChain, OptionT}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
+import org.aulune.auth.domain.repositories.UserRepository
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 

@@ -3,13 +3,13 @@ package adapters.service
 
 import application.dto.AuthenticationRequest
 import application.dto.AuthenticationRequest.BasicAuthenticationRequest
-import application.repositories.UserRepository
 import domain.model.{User, Username}
 
 import cats.Monad
 import cats.data.OptionT
 import cats.syntax.all.*
 import org.aulune.auth.application.BasicAuthenticationService
+import org.aulune.auth.domain.repositories.UserRepository
 import org.aulune.auth.domain.services.PasswordHashingService
 
 

@@ -9,7 +9,6 @@ import application.errors.UserRegistrationError.{
   InvalidOAuthCode,
   OAuthUserAlreadyExists,
 }
-import application.repositories.UserRepository
 import application.{AuthenticationService, BasicAuthenticationService}
 import domain.model.{User, Username}
 import domain.services.{
@@ -23,6 +22,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.auth.domain.repositories.UserRepository
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
