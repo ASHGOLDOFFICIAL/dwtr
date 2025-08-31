@@ -3,7 +3,7 @@ package service.permission
 
 
 import errors.ErrorStatus.PermissionDenied
-import errors.{ErrorStatus, ErrorResponse}
+import errors.{ErrorResponse, ErrorStatus}
 import service.auth.User
 
 import cats.syntax.all.given
@@ -20,38 +20,19 @@ trait PermissionClientService[F[_]]:
    */
   def registerPermission(
       permission: Permission,
-  ): F[Either[ErrorStatus, Unit]]
+  ): F[Either[ErrorResponse, Unit]]
 
-  /** Returns authenticated user's info if token is valid.
+  /** Returns `true` if user has the required permission.
    *  @param user user who needs permission.
    *  @param permission required permission.
    */
-  def hasPermission(user: User, permission: Permission): F[Boolean]
+  def hasPermission(
+      user: User,
+      permission: Permission,
+  ): F[Either[ErrorResponse, Boolean]]
 
 
 object PermissionClientService:
-  /** Conditionally executes one of two actions based on whether the user has
-   *  the given permission.
-   *
-   *  @param required permission required to do the action [[onGranted]].
-   *  @param from authenticated user requesting the action.
-   *  @param notGranted action to perform if the user lacks the permission.
-   *  @param onGranted action to perform if the user has the permission.
-   *  @param service [[PermissionClientService]] instance (contextual).
-   *  @tparam F effect type.
-   *  @tparam A return type.
-   *  @return a result in the effect `F` based on permission verification.
-   */
-  def requirePermission[F[_]: FlatMap, A](
-      required: Permission,
-      from: User,
-  )(notGranted: => F[A])(onGranted: => F[A])(using
-      service: PermissionClientService[F],
-  ): F[A] = service.hasPermission(from, required).flatMap {
-    case false => notGranted
-    case true  => onGranted
-  }
-
   /** Executes a provided action if the user has the required permission,
    *  otherwise returns a [[PermissionDenied]] response.
    *
@@ -59,19 +40,23 @@ object PermissionClientService:
    *  @param from authenticated user.
    *  @param granted action to perform if the permission check passes.
    *  @param service [[PermissionClientService]] instance (contextual).
-   *  @tparam M effect type.
+   *  @tparam F effect type.
    *  @tparam A successful return type.
    *  @return either [[PermissionDenied]] response or the successful result,
-   *    wrapped in [[M]].
+   *    wrapped in [[F]].
    */
-  def requirePermissionOrDeny[M[_]: Monad, A](
+  def requirePermissionOrDeny[F[_]: Monad, A](
       required: Permission,
       from: User,
-  )(granted: => M[Either[ErrorResponse, A]])(using
-      service: PermissionClientService[M],
-  ): M[Either[ErrorResponse, A]] = requirePermission(required, from) {
-    permissionDenied.asLeft[A].pure[M]
-  }(granted)
+  )(granted: => F[Either[ErrorResponse, A]])(using
+      service: PermissionClientService[F],
+  ): F[Either[ErrorResponse, A]] =
+    service.hasPermission(from, required).flatMap {
+      case Left(error)      => error.asLeft.pure[F]
+      case Right(isGranted) =>
+        if isGranted then granted
+        else permissionDenied.asLeft[A].pure[F]
+    }
 
   private val permissionDenied = ErrorResponse(
     status = PermissionDenied,

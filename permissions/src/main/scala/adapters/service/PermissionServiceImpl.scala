@@ -2,6 +2,7 @@ package org.aulune.permissions
 package adapters.service
 
 
+import adapters.service.PermissionServiceErrorResponses as ErrorResponses
 import application.PermissionRepository.PermissionIdentity
 import application.dto.CheckPermissionStatus.{Denied, Granted}
 import application.dto.{
@@ -24,8 +25,7 @@ import cats.data.EitherT
 import cats.mtl.Handle.handleForApplicativeError
 import cats.mtl.{Handle, Raise}
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus
-import org.aulune.commons.errors.ErrorStatus.InvalidArgument
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
@@ -73,32 +73,33 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
 
   override def registerPermission(
       request: CreatePermissionRequest,
-  ): F[Either[ErrorStatus, PermissionResource]] = (for
-    domain <- EitherT
-      .fromOption(PermissionMapper.fromRequest(request), InvalidArgument)
-    result <- EitherT(upsertPermission(domain))
+  ): F[Either[ErrorResponse, PermissionResource]] = (for
+    permission <- EitherT
+      .fromOption(
+        PermissionMapper.fromRequest(request),
+        ErrorResponses.invalidPermission)
+    result <- repo
+      .upsert(permission)
+      .handleError { case RepositoryError.FailedPrecondition => permission }
+      .attemptT
+      .leftMap(_ => ErrorResponses.internal)
     response = PermissionMapper.toResponse(result)
   yield response).value
 
   override def checkPermission(
       request: CheckPermissionRequest,
-  ): F[Either[ErrorStatus, CheckPermissionResponse]] =
+  ): F[Either[ErrorResponse, CheckPermissionResponse]] =
     val id = Uuid[User](request.user)
     val permissionIdentityOpt =
       PermissionMapper.makeIdentity(request.namespace, request.permission)
     (for
-      domain <- EitherT.fromOption(permissionIdentityOpt, InvalidArgument)
-      adminCheck <- EitherT(hasPermission(id, adminPermissionIdentity))
-      permCheck <- EitherT(hasPermission(id, domain))
+      domain <- EitherT.fromOption(
+        permissionIdentityOpt,
+        ErrorResponses.invalidPermission)
+      adminCheck <- hasPermission(id, adminPermissionIdentity)
+      permCheck <- hasPermission(id, domain)
       response = toCheckResponse(request, adminCheck || permCheck)
     yield response).value
-
-  private def upsertPermission(
-      permission: Permission,
-  ): F[Either[ErrorStatus, Permission]] = repo
-    .upsert(permission)
-    .attempt
-    .map(_.leftMap(toApplicationError))
 
   /** Checks if user has a permission.
    *  @param id user's ID.
@@ -107,19 +108,14 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
   private def hasPermission(
       id: Uuid[User],
       permission: PermissionIdentity,
-  ): F[Either[ErrorStatus, Boolean]] = repo
+  ): EitherT[F, ErrorResponse, Boolean] = repo
     .hasPermission(id, permission)
-    .attempt
-    .map(_.leftMap(toApplicationError))
-
-  private def toApplicationError(
-      throwable: Throwable,
-  ): ErrorStatus = throwable match
-    case e: RepositoryError => e match
-        case RepositoryError.FailedPrecondition =>
-          ErrorStatus.FailedPrecondition
-        case _ => ErrorStatus.Internal
-    case _ => ErrorStatus.Internal
+    .attemptT
+    .leftMap {
+      case RepositoryError.FailedPrecondition =>
+        ErrorResponses.unregisteredPermission
+      case _ => ErrorResponses.internal
+    }
 
   /** Makes check response out of initial request and check result.
    *
