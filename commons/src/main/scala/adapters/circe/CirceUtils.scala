@@ -1,5 +1,5 @@
 package org.aulune.commons
-package circe
+package adapters.circe
 
 import io.circe.generic.extras.Configuration
 

@@ -1,6 +1,5 @@
 package org.aulune.commons
-package tapir
-
+package adapters.tapir
 
 import errors.{ErrorInfo, ErrorReason, ErrorResponse, ErrorStatus}
 

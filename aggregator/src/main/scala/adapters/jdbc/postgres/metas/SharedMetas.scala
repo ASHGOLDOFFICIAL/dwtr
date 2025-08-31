@@ -7,7 +7,7 @@ import domain.shared.{ImageUrl, ReleaseDate, Synopsis}
 import cats.Show
 import doobie.Meta
 import doobie.postgres.implicits.JavaLocalDateMeta
-import org.aulune.commons.doobie.postgres.SharedMetas.urlMeta
+import org.aulune.commons.adapters.doobie.postgres.Metas.urlMeta
 
 import java.net.URL
 import java.time.LocalDate

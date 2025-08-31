@@ -1,6 +1,5 @@
 package org.aulune.commons
-package circe
-
+package adapters.circe
 
 import errors.{ErrorInfo, ErrorReason, ErrorResponse, ErrorStatus}
 import CirceUtils.config

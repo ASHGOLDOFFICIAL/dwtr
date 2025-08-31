@@ -1,7 +1,5 @@
 package org.aulune.commons
-package doobie.postgres
-
-import types.Uuid
+package adapters.doobie.postgres
 
 import doobie.Meta
 import doobie.postgres.implicits.{
@@ -9,6 +7,8 @@ import doobie.postgres.implicits.{
   unliftedStringArrayType,
   unliftedUUIDArrayType,
 }
+import types.Uuid
+
 import io.circe.Json
 import io.circe.parser.parse
 import org.postgresql.util.PGobject
@@ -18,7 +18,7 @@ import java.util.UUID
 
 
 /** [[Meta]] instances for Java and shared types. */
-object SharedMetas:
+object Metas:
   given urlMeta: Meta[URL] = Meta[String].imap(URI.create(_).toURL)(_.toString)
   given urlsMeta: Meta[Array[URL]] = Meta[Array[String]]
     .imap(_.map(URI.create(_).toURL))(_.map(_.toString))

@@ -22,10 +22,10 @@ import application.errors.UserRegistrationError
 import cats.Functor
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.circe.ErrorResponseCodecs.given
+import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
 import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.tapir.ErrorResponseSchemas.given
-import org.aulune.commons.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
+import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint

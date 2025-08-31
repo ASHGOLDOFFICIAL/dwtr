@@ -13,7 +13,7 @@ import cats.syntax.all.*
 import doobie.implicits.*
 import doobie.postgres.sqlstate
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.commons.doobie.postgres.SharedMetas.uuidMeta
+import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,

@@ -1,11 +1,11 @@
 package org.aulune.commons
-package service.auth
+package adapters.tapir
 
-
-import circe.ErrorResponseCodecs.given
+import adapters.circe.ErrorResponseCodecs.given
+import adapters.tapir.ErrorResponseSchemas.given
+import adapters.tapir.ErrorStatusCodeMapper
 import errors.ErrorResponse
-import tapir.ErrorResponseSchemas.given
-import tapir.ErrorStatusCodeMapper
+import service.auth.{AuthenticationClientService, User}
 
 import cats.syntax.all.given
 import cats.{Applicative, Functor}
