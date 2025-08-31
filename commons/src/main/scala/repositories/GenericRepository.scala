@@ -1,6 +1,8 @@
 package org.aulune.commons
 package repositories
 
+import repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+
 
 /** Repository with basic CRUD operations.
  *
@@ -16,6 +18,9 @@ trait GenericRepository[F[_], E, Id]:
   def contains(id: Id): F[Boolean]
 
   /** Persist element in repository.
+   *
+   *  [[AlreadyExists]] will be returned on any conflict.
+   *
    *  @param elem element to persist.
    *  @return element if success, otherwise error.
    *  @note It doesn't persist element if another element with the same identity
@@ -30,10 +35,12 @@ trait GenericRepository[F[_], E, Id]:
   def get(id: Id): F[Option[E]]
 
   /** Update element in repository.
+   *
+   *  [[FailedPrecondition]] will be returned if there are no elements to
+   *  update.
+   *
    *  @param elem element to update.
    *  @return element if success, otherwise error.
-   *  @note It doesn't create new element if no element with the same identity
-   *    is persisted.
    *  @note This method is idempotent, unless some modification were made in
    *    between calls.
    */
