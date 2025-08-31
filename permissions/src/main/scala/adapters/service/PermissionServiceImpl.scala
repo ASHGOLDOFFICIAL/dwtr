@@ -3,20 +3,15 @@ package adapters.service
 
 
 import adapters.service.PermissionServiceErrorResponses as ErrorResponses
-import application.PermissionRepository.PermissionIdentity
+import org.aulune.permissions.domain.repositories.PermissionRepository.PermissionIdentity
 import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
   CreatePermissionRequest,
   PermissionResource,
 }
-import application.{PermissionRepository, PermissionService}
-import domain.{
-  Permission,
-  PermissionDescription,
-  PermissionName,
-  PermissionNamespace,
-}
+import application.PermissionService
+import domain.{Permission, PermissionDescription, PermissionName, PermissionNamespace}
 
 import cats.MonadThrow
 import cats.data.EitherT
@@ -25,6 +20,7 @@ import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
+import org.aulune.permissions.domain.repositories.PermissionRepository
 import org.typelevel.log4cats.Logger
 
 

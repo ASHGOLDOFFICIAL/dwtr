@@ -2,7 +2,7 @@ package org.aulune.permissions
 package adapters.service
 
 
-import application.PermissionRepository.PermissionIdentity
+import org.aulune.permissions.domain.repositories.PermissionRepository.PermissionIdentity
 import application.dto.CheckPermissionStatus.{Denied, Granted}
 import application.dto.{
   CheckPermissionRequest,

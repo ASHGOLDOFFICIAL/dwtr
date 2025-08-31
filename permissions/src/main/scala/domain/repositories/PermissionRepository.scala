@@ -1,8 +1,7 @@
 package org.aulune.permissions
-package application
+package domain.repositories
 
-
-import application.PermissionRepository.PermissionIdentity
+import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{Permission, PermissionName, PermissionNamespace}
 
 import org.aulune.commons.repositories.RepositoryError.FailedPrecondition
