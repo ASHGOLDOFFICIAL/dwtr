@@ -1,14 +1,13 @@
 package org.aulune.auth
 package adapters.service.oauth2
 
-
-import adapters.service.inner.OAuth2CodeExchangeService
 import application.dto.OAuth2Provider.Google
 
 import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.syntax.all.*
 import io.circe.Decoder
+import org.aulune.auth.domain.services.OAuth2CodeExchangeService
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.implicits.uri

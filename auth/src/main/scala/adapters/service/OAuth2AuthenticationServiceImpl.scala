@@ -1,11 +1,6 @@
 package org.aulune.auth
 package adapters.service
 
-
-import adapters.service.inner.{
-  OAuth2AuthenticationService,
-  OAuth2CodeExchangeService
-}
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.OAuth2Provider.Google
 import application.dto.{AuthenticationRequest, OAuth2Provider}
@@ -15,9 +10,11 @@ import domain.model.User
 import cats.Monad
 import cats.data.OptionT
 import cats.effect.Concurrent
+import org.aulune.auth.domain.services.{OAuth2AuthenticationService, OAuth2CodeExchangeService}
 
 
 /** Service that manages authentication via third party using OAuth2 protocol.
+ *
  *  @param googleOAuth2 Google OAuth2 service.
  *  @param googleIdSearch [[GoogleIdSearch]] to search users by their Google ID.
  *  @tparam F effect type.

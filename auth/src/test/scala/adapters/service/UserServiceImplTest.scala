@@ -1,8 +1,6 @@
 package org.aulune.auth
 package adapters.service
 
-
-import adapters.service.inner.OAuth2AuthenticationService
 import application.UserService
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.CreateUserRequest
@@ -19,6 +17,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.auth.domain.services.OAuth2AuthenticationService
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory

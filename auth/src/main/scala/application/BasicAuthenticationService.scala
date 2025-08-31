@@ -1,6 +1,5 @@
 package org.aulune.auth
-package adapters.service.inner
-
+package application
 
 import application.dto.AuthenticationRequest
 import application.dto.AuthenticationRequest.BasicAuthenticationRequest

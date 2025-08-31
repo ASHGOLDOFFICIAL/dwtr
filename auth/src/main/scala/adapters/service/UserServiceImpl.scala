@@ -1,8 +1,6 @@
 package org.aulune.auth
 package adapters.service
 
-
-import adapters.service.inner.OAuth2AuthenticationService
 import application.UserService
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.{
@@ -20,6 +18,7 @@ import cats.MonadThrow
 import cats.data.{EitherNec, EitherT, NonEmptyChain}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.*
+import org.aulune.auth.domain.services.OAuth2AuthenticationService
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 

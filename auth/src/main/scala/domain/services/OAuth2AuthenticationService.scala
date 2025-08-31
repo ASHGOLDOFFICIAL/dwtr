@@ -1,6 +1,5 @@
 package org.aulune.auth
-package adapters.service.inner
-
+package domain.services
 
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.OAuth2Provider

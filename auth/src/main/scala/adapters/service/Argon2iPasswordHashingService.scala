@@ -2,11 +2,10 @@ package org.aulune.auth
 package adapters.service
 
 
-import adapters.service.inner.PasswordHashingService
-
 import cats.effect.{Resource, Sync}
 import cats.syntax.all.*
 import de.mkammerer.argon2.{Argon2, Argon2Factory}
+import org.aulune.auth.domain.services.PasswordHashingService
 
 
 /** Password hashing service with Argon2i as its hashing algorithm. */

@@ -1,8 +1,6 @@
 package org.aulune.auth
 package adapters.service
 
-
-import adapters.service.inner.{AccessTokenService, IdTokenService}
 import application.dto.{AccessTokenPayload, AuthenticatedUser, IdTokenPayload}
 import domain.model.{TokenString, User}
 
@@ -13,6 +11,7 @@ import cats.syntax.all.*
 import io.circe.parser.decode
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
+import org.aulune.auth.domain.services.{AccessTokenService, IdTokenService}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim, JwtOptions}
 
 import java.time.Instant

@@ -1,14 +1,7 @@
 package org.aulune.auth
 package adapters.service
 
-
-import adapters.service.inner.{
-  AccessTokenService,
-  BasicAuthenticationService,
-  IdTokenService,
-  OAuth2AuthenticationService
-}
-import application.AuthenticationService
+import application.{AuthenticationService, BasicAuthenticationService}
 import application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
   OAuth2AuthenticationRequest,
@@ -24,9 +17,11 @@ import domain.model.{TokenString, User}
 import cats.Monad
 import cats.data.OptionT
 import cats.syntax.all.given
+import org.aulune.auth.domain.services.{AccessTokenService, IdTokenService, OAuth2AuthenticationService}
 
 
 /** [[AuthenticationService]] implementation.
+ *
  *  @param repo repository with users.
  *  @param accessTokenService service that generates and decodes token.
  *  @param idTokenService service that generates ID tokens.
