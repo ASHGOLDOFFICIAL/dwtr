@@ -18,14 +18,10 @@ import application.errors.UserRegistrationError.{
   InvalidOAuthCode,
   OAuthUserAlreadyExists,
 }
-import application.{AuthenticationService, BasicAuthenticationService}
+import application.AuthenticationService
 import domain.errors.UserValidationError
 import domain.model.{TokenString, User, Username}
-import domain.services.{
-  AccessTokenService,
-  IdTokenService,
-  OAuth2AuthenticationService,
-}
+import domain.services.{AccessTokenService, BasicAuthenticationService, IdTokenService, OAuth2AuthenticationService}
 
 import cats.MonadThrow
 import cats.data.{EitherNec, EitherT, NonEmptyChain, OptionT}

@@ -9,13 +9,9 @@ import application.errors.UserRegistrationError.{
   InvalidOAuthCode,
   OAuthUserAlreadyExists,
 }
-import application.{AuthenticationService, BasicAuthenticationService}
+import application.AuthenticationService
 import domain.model.{User, Username}
-import domain.services.{
-  AccessTokenService,
-  IdTokenService,
-  OAuth2AuthenticationService,
-}
+import domain.services.{AccessTokenService, BasicAuthenticationService, IdTokenService, OAuth2AuthenticationService}
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
