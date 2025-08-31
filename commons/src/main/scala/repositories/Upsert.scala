@@ -1,8 +1,6 @@
 package org.aulune.commons
 package repositories
 
-import cats.mtl.Raise
-
 
 /** Upsert operation for repository.
  *
@@ -15,6 +13,4 @@ trait Upsert[F[_], E]:
    *  @param elem element to persist.
    *  @return element if success, otherwise error.
    */
-  def upsert(elem: E)(using
-      Raise[F, RepositoryError],
-  ): F[E]
+  def upsert(elem: E): F[E]

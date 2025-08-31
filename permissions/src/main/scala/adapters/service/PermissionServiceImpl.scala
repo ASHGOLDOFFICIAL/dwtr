@@ -22,8 +22,7 @@ import domain.{
 
 import cats.MonadThrow
 import cats.data.EitherT
-import cats.mtl.Handle.handleForApplicativeError
-import cats.mtl.{Handle, Raise}
+import cats.mtl.Raise
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.repositories.RepositoryError
@@ -47,8 +46,6 @@ object PermissionServiceImpl:
       adminPermissionNamespace: String,
       adminPermissionName: String,
       repo: PermissionRepository[F],
-  )(using
-      Raise[F, RepositoryError],
   ): F[PermissionService[F]] =
     val adminPermission = Permission.unsafe(
       PermissionNamespace.unsafe(adminPermissionNamespace),

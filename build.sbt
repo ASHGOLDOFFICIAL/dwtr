@@ -93,7 +93,6 @@ lazy val permissions = (project in file("permissions"))
     libraryDependencies ++= testDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
     ),
   )

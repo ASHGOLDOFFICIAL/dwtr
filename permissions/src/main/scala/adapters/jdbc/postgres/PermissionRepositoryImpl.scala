@@ -93,9 +93,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
     .adaptErr(toRepositoryError)
 
-  override def upsert(elem: Permission)(using
-      Raise[F, RepositoryError],
-  ): F[Permission] = sql"""
+  override def upsert(elem: Permission): F[Permission] = sql"""
     |INSERT INTO permissions (namespace, name, description)
     |VALUES (
     |  ${elem.namespace},
