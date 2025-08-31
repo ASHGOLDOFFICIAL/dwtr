@@ -9,9 +9,8 @@ import adapters.service.{
   BasicAuthenticationServiceImpl,
   JwtTokenService,
   OAuth2AuthenticationServiceImpl,
-  UserServiceImpl,
 }
-import api.http.{AuthenticationController, UsersController}
+import api.http.AuthenticationController
 
 import cats.effect.Async
 import cats.effect.std.UUIDGen
@@ -62,12 +61,8 @@ object AuthApp:
         basicLogin,
         oauthService)
       authEndpoints = new AuthenticationController[F](service).endpoints
-
-      userServ = new UserServiceImpl[F](oauthService, userRepo)
-      userEndpoints = new UsersController[F](userServ).endpoints
-      allEndpoints = authEndpoints ++ userEndpoints
     yield new AuthApp[F]:
       override val clientAuthentication: AuthenticationClientService[F] =
         AuthenticationServiceAdapter[F](service)
-      override val endpoints: List[ServerEndpoint[Any, F]] = allEndpoints
+      override val endpoints: List[ServerEndpoint[Any, F]] = authEndpoints
   }

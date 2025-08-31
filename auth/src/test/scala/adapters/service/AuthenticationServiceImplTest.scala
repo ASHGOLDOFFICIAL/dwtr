@@ -1,7 +1,7 @@
 package org.aulune.auth
 package adapters.service
 
-import application.UserService
+
 import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
 import application.dto.CreateUserRequest
 import application.dto.OAuth2Provider.Google
@@ -10,14 +10,19 @@ import application.errors.UserRegistrationError.{
   OAuthUserAlreadyExists,
 }
 import application.repositories.UserRepository
+import application.{AuthenticationService, BasicAuthenticationService}
 import domain.model.{User, Username}
+import domain.services.{
+  AccessTokenService,
+  IdTokenService,
+  OAuth2AuthenticationService,
+}
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.auth.domain.services.OAuth2AuthenticationService
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
@@ -28,22 +33,33 @@ import org.scalatest.matchers.should.Matchers
 import java.util.UUID
 
 
-/** Tests for [[UserServiceImpl]]. */
-final class UserServiceImplTest
+/** Tests for [[AuthenticationServiceImpl]]. */
+final class AuthenticationServiceImplTest
     extends AsyncFreeSpec
     with AsyncIOSpec
     with Matchers
     with AsyncMockFactory:
 
-  private val mockOauth = mock[OAuth2AuthenticationService[IO]]
   private val mockRepo = mock[UserRepository[IO]]
+  private val mockAccess = mock[AccessTokenService[IO]]
+  private val mockId = mock[IdTokenService[IO]]
+  private val mockBasic = mock[BasicAuthenticationService[IO]]
+  private val mockOauth = mock[OAuth2AuthenticationService[IO]]
 
   private val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
   private given UUIDGen[IO] = new UUIDGen[IO]:
     override def randomUUID: IO[UUID] = uuid.pure[IO]
 
-  private def stand: (UserService[IO] => IO[Assertion]) => IO[Assertion] =
-    testCase => testCase(UserServiceImpl(mockOauth, mockRepo))
+  private def stand(
+      testCase: AuthenticationService[IO] => IO[Assertion],
+  ): IO[Assertion] = testCase(
+    AuthenticationServiceImpl(
+      repo = mockRepo,
+      accessTokenService = mockAccess,
+      idTokenService = mockId,
+      basicAuthService = mockBasic,
+      oauth2AuthService = mockOauth,
+    ))
 
   private val newUser = User.unsafe(
     id = Uuid(uuid),
@@ -146,4 +162,4 @@ final class UserServiceImplTest
     }
   }
 
-end UserServiceImplTest
+end AuthenticationServiceImplTest
