@@ -13,8 +13,8 @@ import api.http.tapir.schemas.AuthenticationSchemas.given
 import api.http.tapir.schemas.UserSchemas.given
 import application.AuthenticationService
 import application.dto.{
-  AuthenticationRequest,
-  AuthenticationResponse,
+  AuthenticateUserRequest,
+  AuthenticateUserResponse,
   CreateUserRequest,
 }
 import application.errors.UserRegistrationError
@@ -43,10 +43,10 @@ final class AuthenticationController[F[_]: Functor](
 
   private val loginEndpoint = endpoint.post
     .in("auth" / "login")
-    .in(jsonBody[AuthenticationRequest]
+    .in(jsonBody[AuthenticateUserRequest]
       .description("Login information.")
       .examples(requestExamples))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AuthenticationResponse]
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AuthenticateUserResponse]
       .description("Tokens to use in calls to API.")
       .example(responseExample)))
     .errorOut(statusCode.and(jsonBody[ErrorResponse]))
@@ -64,7 +64,7 @@ final class AuthenticationController[F[_]: Functor](
     .in(jsonBody[CreateUserRequest]
       .description("Registration details.")
       .example(createRequestExample))
-    .out(statusCode(StatusCode.Created).and(jsonBody[AuthenticationResponse]
+    .out(statusCode(StatusCode.Created).and(jsonBody[AuthenticateUserResponse]
       .description("Tokens to use in calls to API.")
       .example(responseExample)))
     .errorOut(statusCode.and(jsonBody[ErrorResponse]))

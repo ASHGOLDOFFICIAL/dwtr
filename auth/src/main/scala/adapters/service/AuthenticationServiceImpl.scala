@@ -4,14 +4,14 @@ package adapters.service
 
 import adapters.service.errors.AuthenticationServiceErrorResponses as ErrorResponses
 import application.AuthenticationService
-import application.dto.AuthenticationRequest.{
-  BasicAuthenticationRequest,
-  OAuth2AuthenticationRequest,
+import application.dto.AuthenticateUserRequest.{
+  BasicAuthentication,
+  OAuth2Authentication,
 }
 import application.dto.{
   AuthenticatedUser,
-  AuthenticationRequest,
-  AuthenticationResponse,
+  AuthenticateUserRequest,
+  AuthenticateUserResponse,
   CreateUserRequest,
   OAuth2Provider,
 }
@@ -66,8 +66,8 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
 ) extends AuthenticationService[F]:
 
   override def login(
-      request: AuthenticationRequest,
-  ): F[Either[ErrorResponse, AuthenticationResponse]] = (for
+                      request: AuthenticateUserRequest,
+  ): F[Either[ErrorResponse, AuthenticateUserResponse]] = (for
     user <- EitherT.fromOptionF(
       delegateLogin(request),
       ErrorResponses.failedLoginResponse)
@@ -76,7 +76,7 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
 
   override def register(
       request: CreateUserRequest,
-  ): F[Either[ErrorResponse, AuthenticationResponse]] = (for
+  ): F[Either[ErrorResponse, AuthenticateUserResponse]] = (for
     oid <- EitherT.fromOptionF(
       getId(request.oauth2),
       ErrorResponses.failedToRetrieveId)
@@ -94,20 +94,21 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
     user <- OptionT(accessTokenService.decodeAccessToken(token))
   yield user).toRight(ErrorResponses.invalidAccessToken).value
 
-  /** Makes [[AuthenticationResponse]] for given user.
+  /** Makes [[AuthenticateUserResponse]] for given user.
+   *
    *  @param user user for whom response is being made.
    */
-  private def makeResponseForUser(user: User): F[AuthenticationResponse] =
+  private def makeResponseForUser(user: User): F[AuthenticateUserResponse] =
     for
       accessToken <- accessTokenService.generateAccessToken(user)
       idToken <- idTokenService.generateIdToken(user)
-    yield AuthenticationResponse(accessToken = accessToken, idToken = idToken)
+    yield AuthenticateUserResponse(accessToken = accessToken, idToken = idToken)
 
   /** Gets user ID in third-party services.
    *  @param oauth2Info OAuth2 provider and code
    */
   private def getId(
-      oauth2Info: OAuth2AuthenticationRequest,
+                     oauth2Info: OAuth2Authentication,
   ): F[Option[String]] =
     oauth2AuthService.getId(oauth2Info.provider, oauth2Info.authorizationCode)
 
@@ -182,9 +183,9 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
    *  @param request login request.
    *  @return user if login is successful, otherwise `None`.
    */
-  private def delegateLogin(request: AuthenticationRequest): F[Option[User]] =
+  private def delegateLogin(request: AuthenticateUserRequest): F[Option[User]] =
     request match
-      case req @ BasicAuthenticationRequest(username, password) =>
+      case req @ BasicAuthentication(username, password) =>
         basicAuthService.authenticate(req)
-      case req @ OAuth2AuthenticationRequest(provider, code) =>
+      case req @ OAuth2Authentication(provider, code) =>
         oauth2AuthService.authenticate(req)

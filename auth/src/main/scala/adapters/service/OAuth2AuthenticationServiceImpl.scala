@@ -1,9 +1,9 @@
 package org.aulune.auth
 package adapters.service
 
-import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
+import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.OAuth2Provider.Google
-import application.dto.{AuthenticationRequest, OAuth2Provider}
+import application.dto.{AuthenticateUserRequest, OAuth2Provider}
 import domain.model.User
 
 import cats.Monad
@@ -25,7 +25,7 @@ final class OAuth2AuthenticationServiceImpl[F[_]: Concurrent: Monad](
 ) extends OAuth2AuthenticationService[F]:
 
   override def authenticate(
-      info: OAuth2AuthenticationRequest,
+                             info: OAuth2Authentication,
   ): F[Option[User]] = (for
     oid <- OptionT(getId(info.provider, info.authorizationCode))
     user <- OptionT(findUser(info.provider, oid))

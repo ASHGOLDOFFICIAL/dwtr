@@ -2,7 +2,7 @@ package org.aulune.auth
 package adapters.service
 
 
-import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
+import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.CreateUserRequest
 import application.dto.OAuth2Provider.Google
 import application.errors.UserRegistrationError.{
@@ -66,7 +66,7 @@ final class AuthenticationServiceImplTest
 
   private val createUserRequest = CreateUserRequest(
     username = newUser.username,
-    OAuth2AuthenticationRequest(
+    OAuth2Authentication(
       provider = Google,
       authorizationCode = "code",
     ),

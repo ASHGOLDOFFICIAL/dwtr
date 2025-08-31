@@ -1,8 +1,8 @@
 package org.aulune.auth
 package adapters.service
 
-import application.dto.AuthenticationRequest
-import application.dto.AuthenticationRequest.BasicAuthenticationRequest
+import application.dto.AuthenticateUserRequest
+import application.dto.AuthenticateUserRequest.BasicAuthentication
 import domain.model.{User, Username}
 
 import cats.Monad
@@ -24,7 +24,7 @@ final class BasicAuthenticationServiceImpl[F[_]: Monad](
 ) extends BasicAuthenticationService[F]:
 
   override def authenticate(
-      credentials: BasicAuthenticationRequest,
+                             credentials: BasicAuthentication,
   ): F[Option[User]] = (for
     username <- OptionT.fromOption(Username(credentials.username))
     user <- OptionT(repo.getByUsername(username))

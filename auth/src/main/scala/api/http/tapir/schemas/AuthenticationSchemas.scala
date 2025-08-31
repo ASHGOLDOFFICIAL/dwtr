@@ -4,8 +4,8 @@ package api.http.tapir.schemas
 
 import api.mappers.OAuth2ProviderMapper
 import application.dto.{
-  AuthenticationRequest,
-  AuthenticationResponse,
+  AuthenticateUserRequest,
+  AuthenticateUserResponse,
   OAuth2Provider,
 }
 
@@ -13,10 +13,10 @@ import sttp.tapir.{Schema, Validator}
 
 
 private[api] object AuthenticationSchemas:
-  given Schema[AuthenticationRequest] = Schema.derived
-  given Schema[AuthenticationResponse] = Schema.derived
+  given Schema[AuthenticateUserRequest] = Schema.derived
+  given Schema[AuthenticateUserResponse] = Schema.derived
 
-  given Schema[AuthenticationRequest.OAuth2AuthenticationRequest] =
+  given Schema[AuthenticateUserRequest.OAuth2Authentication] =
     Schema.derived
 
   given Schema[OAuth2Provider] = Schema.string

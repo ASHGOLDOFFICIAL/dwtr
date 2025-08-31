@@ -1,8 +1,8 @@
 package org.aulune.auth
 package domain.services
 
-import application.dto.AuthenticationRequest
-import application.dto.AuthenticationRequest.BasicAuthenticationRequest
+import application.dto.AuthenticateUserRequest
+import application.dto.AuthenticateUserRequest.BasicAuthentication
 import domain.model.User
 
 
@@ -13,4 +13,4 @@ trait BasicAuthenticationService[F[_]]:
   /** Returns user if authentication is successful, otherwise `None`.
    *  @param request authentication request.
    */
-  def authenticate(request: BasicAuthenticationRequest): F[Option[User]]
+  def authenticate(request: BasicAuthentication): F[Option[User]]

@@ -4,8 +4,8 @@ package application
 
 import application.dto.{
   AuthenticatedUser,
-  AuthenticationRequest,
-  AuthenticationResponse,
+  AuthenticateUserRequest,
+  AuthenticateUserResponse,
   CreateUserRequest
 }
 import application.errors.UserRegistrationError
@@ -21,8 +21,8 @@ trait AuthenticationService[F[_]]:
    *  @param request request with authentication info.
    */
   def login(
-      request: AuthenticationRequest,
-  ): F[Either[ErrorResponse, AuthenticationResponse]]
+             request: AuthenticateUserRequest,
+  ): F[Either[ErrorResponse, AuthenticateUserResponse]]
 
   /** Creates new user if request is valid, otherwise errors indicating what's
    *  wrong.
@@ -31,7 +31,7 @@ trait AuthenticationService[F[_]]:
    */
   def register(
       request: CreateUserRequest,
-  ): F[Either[ErrorResponse, AuthenticationResponse]]
+  ): F[Either[ErrorResponse, AuthenticateUserResponse]]
 
   /** Returns authenticated user's info if token is valid.
    *  @param idToken user's token.

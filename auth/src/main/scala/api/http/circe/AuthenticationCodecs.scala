@@ -3,10 +3,10 @@ package api.http.circe
 
 
 import api.mappers.OAuth2ProviderMapper
-import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
+import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.{
-  AuthenticationRequest,
-  AuthenticationResponse,
+  AuthenticateUserRequest,
+  AuthenticateUserResponse,
   OAuth2Provider,
 }
 
@@ -37,11 +37,11 @@ private[api] object AuthenticationCodecs:
     },
   )
 
-  given Encoder[OAuth2AuthenticationRequest] = deriveConfiguredEncoder
-  given Decoder[OAuth2AuthenticationRequest] = deriveConfiguredDecoder
+  given Encoder[OAuth2Authentication] = deriveConfiguredEncoder
+  given Decoder[OAuth2Authentication] = deriveConfiguredDecoder
 
-  given Encoder[AuthenticationRequest] = deriveConfiguredEncoder
-  given Decoder[AuthenticationRequest] = deriveConfiguredDecoder
+  given Encoder[AuthenticateUserRequest] = deriveConfiguredEncoder
+  given Decoder[AuthenticateUserRequest] = deriveConfiguredDecoder
 
-  given Encoder[AuthenticationResponse] = deriveConfiguredEncoder
-  given Decoder[AuthenticationResponse] = deriveConfiguredDecoder
+  given Encoder[AuthenticateUserResponse] = deriveConfiguredEncoder
+  given Decoder[AuthenticateUserResponse] = deriveConfiguredDecoder

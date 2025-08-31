@@ -1,7 +1,7 @@
 package org.aulune.auth
 package application.dto
 
-import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
+import application.dto.AuthenticateUserRequest.OAuth2Authentication
 
 
 /** User registration request body.
@@ -10,5 +10,5 @@ import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
  */
 final case class CreateUserRequest(
     username: String,
-    oauth2: OAuth2AuthenticationRequest,
+    oauth2: OAuth2Authentication,
 )

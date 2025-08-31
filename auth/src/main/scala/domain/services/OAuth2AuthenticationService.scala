@@ -1,7 +1,7 @@
 package org.aulune.auth
 package domain.services
 
-import application.dto.AuthenticationRequest.OAuth2AuthenticationRequest
+import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.OAuth2Provider
 import domain.model.User
 
@@ -13,7 +13,7 @@ trait OAuth2AuthenticationService[F[_]]:
   /** Returns user if authentication via OAuth2 is successful, otherwise `None`.
    *  @param request authentication request.
    */
-  def authenticate(request: OAuth2AuthenticationRequest): F[Option[User]]
+  def authenticate(request: OAuth2Authentication): F[Option[User]]
 
   /** Returns user's unique ID in third-party service.
    *
