@@ -23,7 +23,7 @@ import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.AuthenticationClientService
-import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.authOnlyEndpoint
+import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
 import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
 import sttp.model.StatusCode
@@ -92,7 +92,7 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
-  private val postEndpoint = authOnlyEndpoint.post
+  private val postEndpoint = securedEndpoint.post
     .in(collectionPath)
     .in(jsonBody[CreateAudioPlayRequest]
       .description("Audio play to create.")
@@ -108,7 +108,7 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
-  private val deleteEndpoint = authOnlyEndpoint.delete
+  private val deleteEndpoint = securedEndpoint.delete
     .in(elementPath)
     .out(statusCode(StatusCode.NoContent))
     .name("DeleteAudioPlay")

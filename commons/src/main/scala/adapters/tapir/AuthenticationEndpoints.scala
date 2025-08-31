@@ -1,9 +1,9 @@
 package org.aulune.commons
 package adapters.tapir
 
+
 import adapters.circe.ErrorResponseCodecs.given
 import adapters.tapir.ErrorResponseSchemas.given
-import adapters.tapir.ErrorStatusCodeMapper
 import errors.ErrorResponse
 import service.auth.{AuthenticationClientService, User}
 
@@ -38,7 +38,7 @@ object AuthenticationEndpoints:
    *  @tparam F effect type.
    *  @return endpoint accessible only to authenticated users.
    */
-  def authOnlyEndpoint[F[_]: Applicative](using
+  def securedEndpoint[F[_]: Applicative](using
       AuthenticationClientService[F],
   ): PartialServerEndpoint[
     String,
