@@ -3,9 +3,14 @@ package api.http.tapir.audioplay.translation
 
 
 import api.http.tapir.audioplay.AudioPlayExamples
-import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto.Subtitles
-import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto.Russian
-import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, CreateAudioPlayTranslationRequest, ListAudioPlayTranslationsResponse}
+import application.dto.audioplay.translation.AudioPlayTranslationTypeDto.Subtitles
+import application.dto.audioplay.translation.LanguageDto.Russian
+import application.dto.audioplay.translation.{
+  AudioPlayTranslationResource,
+  CreateAudioPlayTranslationRequest,
+  ListAudioPlayTranslationsRequest,
+  ListAudioPlayTranslationsResponse,
+}
 
 import java.net.URI
 import java.util.{Base64, UUID}
@@ -22,11 +27,12 @@ object AudioPlayTranslationExamples:
   private val nextTokenExample =
     Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 
-  val requestExample: CreateAudioPlayTranslationRequest = CreateAudioPlayTranslationRequest(
-    title = titleExample,
-    translationType = translationTypeExample,
-    language = languageExample,
-    links = linksExample)
+  val requestExample: CreateAudioPlayTranslationRequest =
+    CreateAudioPlayTranslationRequest(
+      title = titleExample,
+      translationType = translationTypeExample,
+      language = languageExample,
+      links = linksExample)
 
   val responseExample: AudioPlayTranslationResource =
     AudioPlayTranslationResource(
@@ -36,6 +42,12 @@ object AudioPlayTranslationExamples:
       translationType = translationTypeExample,
       language = languageExample,
       links = linksExample,
+    )
+
+  val listRequestExample: ListAudioPlayTranslationsRequest =
+    ListAudioPlayTranslationsRequest(
+      pageSize = Some(2),
+      pageToken = nextTokenExample,
     )
 
   val listResponseExample: ListAudioPlayTranslationsResponse =

@@ -3,9 +3,14 @@ package application
 
 
 import application.AggregatorPermission.*
-import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, CreateAudioPlayTranslationRequest, ListAudioPlayTranslationsResponse}
+import application.dto.audioplay.translation.{
+  AudioPlayTranslationResource,
+  CreateAudioPlayTranslationRequest,
+  ListAudioPlayTranslationsRequest,
+  ListAudioPlayTranslationsResponse,
+}
 
-import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
+import org.aulune.commons.errors.{ErrorResponse, ErrorStatus}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
 
@@ -30,13 +35,11 @@ trait AudioPlayTranslationService[F[_]]:
 
   /** Find all translations of given media resource.
    *
-   *  @param token token of entry to start with.
-   *  @param count number of elements.
+   *  @param request request to list audio play translations.
    *  @return list of found translations if success, otherwise error.
    */
   def listAll(
-      token: Option[String],
-      count: Int,
+      request: ListAudioPlayTranslationsRequest,
   ): F[Either[ErrorResponse, ListAudioPlayTranslationsResponse]]
 
   /** Create new translation.
@@ -48,9 +51,9 @@ trait AudioPlayTranslationService[F[_]]:
    *  @note user must have [[Modify]] permission.
    */
   def create(
-              user: User,
-              tc: CreateAudioPlayTranslationRequest,
-              originalId: UUID,
+      user: User,
+      tc: CreateAudioPlayTranslationRequest,
+      originalId: UUID,
   ): F[Either[ErrorResponse, AudioPlayTranslationResource]]
 
   /** Deletes existing translation.

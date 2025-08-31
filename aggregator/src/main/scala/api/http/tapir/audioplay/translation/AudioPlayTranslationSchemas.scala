@@ -9,9 +9,16 @@ import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
   responseExample,
 }
 import api.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
+import application.dto.audioplay.translation.{
+  AudioPlayTranslationResource,
+  AudioPlayTranslationTypeDto,
+  CreateAudioPlayTranslationRequest,
+  LanguageDto,
+  ListAudioPlayTranslationsRequest,
+  ListAudioPlayTranslationsResponse,
+}
 
 import io.circe.syntax.*
-import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, AudioPlayTranslationTypeDto, CreateAudioPlayTranslationRequest, LanguageDto, ListAudioPlayTranslationsResponse}
 import sttp.tapir.{Schema, Validator}
 
 import java.net.URI
@@ -19,7 +26,47 @@ import java.util.UUID
 
 
 object AudioPlayTranslationSchemas:
-  private given Schema[URI] = Schema.string[URI]
+  given Schema[AudioPlayTranslationResource] = Schema
+    .derived[AudioPlayTranslationResource]
+    .modify(_.id) {
+      _.encodedExample(responseExample.id.asJson.toString)
+        .description(idDescription)
+    }
+    .modify(_.originalId) {
+      _.encodedExample(AudioPlayExamples.responseExample.id.asJson.toString)
+        .description(originalIdDescription)
+    }
+    .modify(_.title) {
+      _.encodedExample(responseExample.title.asJson.toString)
+        .description(titleDescription)
+    }
+    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
+      .description(linksDescription))
+
+  given Schema[CreateAudioPlayTranslationRequest] = Schema
+    .derived[CreateAudioPlayTranslationRequest]
+    .modify(_.title) {
+      _.encodedExample(requestExample.title.asJson.toString)
+        .description(titleDescription)
+    }
+    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
+      .description(linksDescription))
+
+  given Schema[ListAudioPlayTranslationsRequest] = Schema
+    .derived[ListAudioPlayTranslationsRequest]
+    .modify(_.pageSize) {
+      _.description(pageSizeDescription)
+    }
+    .modify(_.pageToken) {
+      _.description(pageTokenDescription)
+    }
+
+  given Schema[ListAudioPlayTranslationsResponse] = Schema
+    .derived[ListAudioPlayTranslationsResponse]
+    .modify(_.nextPageToken) {
+      _.encodedExample(listResponseExample.nextPageToken)
+        .description(nextPageDescription)
+    }
 
   private val idDescription = "UUID of the translation."
   private val originalIdDescription =
@@ -29,7 +76,12 @@ object AudioPlayTranslationSchemas:
     AudioPlayTranslationTypeMapper.stringValues.mkString(", ")
   private val languageDescription = "Language of translation."
   private val linksDescription = "Links to where translation is published."
+  private val pageSizeDescription = "Desirable number of elements in response."
+  private val pageTokenDescription =
+    "Page token to continue previously started listing."
   private val nextPageDescription = "Token to retrieve next page."
+
+  private given Schema[URI] = Schema.string[URI]
 
   private given Schema[AudioPlayTranslationTypeDto] = Schema.string
     .validate(
@@ -54,36 +106,3 @@ object AudioPlayTranslationSchemas:
         .asJson
         .toString)
     .description(languageDescription)
-
-  given Schema[CreateAudioPlayTranslationRequest] = Schema
-    .derived[CreateAudioPlayTranslationRequest]
-    .modify(_.title) {
-      _.encodedExample(requestExample.title.asJson.toString)
-        .description(titleDescription)
-    }
-    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
-      .description(linksDescription))
-
-  given Schema[AudioPlayTranslationResource] = Schema
-    .derived[AudioPlayTranslationResource]
-    .modify(_.id) {
-      _.encodedExample(responseExample.id.asJson.toString)
-        .description(idDescription)
-    }
-    .modify(_.originalId) {
-      _.encodedExample(AudioPlayExamples.responseExample.id.asJson.toString)
-        .description(originalIdDescription)
-    }
-    .modify(_.title) {
-      _.encodedExample(responseExample.title.asJson.toString)
-        .description(titleDescription)
-    }
-    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
-      .description(linksDescription))
-
-  given Schema[ListAudioPlayTranslationsResponse] = Schema
-    .derived[ListAudioPlayTranslationsResponse]
-    .modify(_.nextPageToken) {
-      _.encodedExample(listResponseExample.nextPageToken)
-        .description(nextPageDescription)
-    }

@@ -4,19 +4,24 @@ package api.http
 
 import api.http.circe.AudioPlayTranslationCodecs.given
 import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
+  listRequestExample,
   listResponseExample,
   requestExample,
   responseExample,
 }
 import api.http.tapir.audioplay.translation.AudioPlayTranslationSchemas.given
 import application.AudioPlayTranslationService
+import application.dto.audioplay.translation.{
+  AudioPlayTranslationResource,
+  CreateAudioPlayTranslationRequest,
+  ListAudioPlayTranslationsRequest,
+  ListAudioPlayTranslationsResponse,
+}
 
 import cats.Applicative
 import cats.syntax.all.given
-import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, CreateAudioPlayTranslationRequest, ListAudioPlayTranslationsResponse}
 import org.aulune.commons.circe.ErrorResponseCodecs.given
 import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.http.QueryParams
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import org.aulune.commons.tapir.ErrorResponseSchemas.given
@@ -89,7 +94,9 @@ private final class TranslationsController[F[_]: Applicative](
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(QueryParams.pagination(pagination.default, pagination.max))
+    .in(jsonBody[ListAudioPlayTranslationsRequest]
+      .description("Request to list audio play translations.")
+      .example(listRequestExample))
     .out(
       statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlayTranslationsResponse]
         .description("List of audio plays and a token to retrieve next page.")
@@ -99,8 +106,8 @@ private final class TranslationsController[F[_]: Applicative](
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
-    .serverLogic { case (mediaId, pageSize, pageToken) =>
-      for result <- service.listAll(pageToken, pageSize)
+    .serverLogic { case (mediaId, request) =>
+      for result <- service.listAll(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 

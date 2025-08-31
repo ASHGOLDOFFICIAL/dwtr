@@ -7,6 +7,6 @@ package application.dto.audioplay
  *  @param nextPageToken token that can be sent to retrieve the next page.
  */
 final case class ListAudioPlaysResponse(
-                                         audioPlays: List[AudioPlayResource],
-                                         nextPageToken: Option[String],
+    audioPlays: List[AudioPlayResource],
+    nextPageToken: Option[String],
 )
