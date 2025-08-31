@@ -23,9 +23,8 @@ trait PermissionService[F[_]]:
   /** Registers new permission. Checking for unregistered permissions will lead
    *  to error.
    *
-   *  Errors:
-   *    - [[InvalidPermission]] will be returned when trying to create invalid
-   *      permission.
+   *  [[InvalidPermission]] will be returned when trying to create invalid
+   *  permission.
    *
    *  @param request request with permission details.
    *  @return `Unit` if everything is OK, otherwise error.
