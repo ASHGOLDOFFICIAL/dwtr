@@ -12,10 +12,13 @@ import application.PersonService
 import application.dto.person.{PersonRequest, PersonResponse}
 
 import cats.Applicative
-import cats.syntax.all.*
-import org.aulune.commons.errors.toErrorResponse
+import cats.syntax.all.given
+import org.aulune.commons.circe.ErrorResponseCodecs.given
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
+import org.aulune.commons.tapir.ErrorResponseSchemas.given
+import org.aulune.commons.tapir.ErrorStatusCodeMapper
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
@@ -47,13 +50,14 @@ final class PersonsController[F[_]: Applicative](
     .out(statusCode(StatusCode.Ok).and(jsonBody[PersonResponse]
       .description("Requested person's information if found.")
       .example(personResponseExample)))
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetPerson")
     .summary("Returns a person with given ID.")
     .tag(tag)
     .serverLogic { id =>
       for result <- service.findById(id)
-      yield result.toRight(StatusCode.NotFound)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -69,23 +73,7 @@ final class PersonsController[F[_]: Applicative](
     .tag(tag)
     .serverLogic { user => request =>
       for result <- service.create(user, request)
-      yield result.leftMap(toErrorResponse)
-    }
-
-  private val updateEndpoint = authOnlyEndpoint.put
-    .in(elementPath)
-    .in(jsonBody[PersonRequest]
-      .description("Person's new state.")
-      .example(personRequestExample))
-    .out(statusCode(StatusCode.Ok).and(jsonBody[PersonResponse]
-      .description("Updated person.")
-      .example(personResponseExample)))
-    .name("UpdatePerson")
-    .summary("Updates person with given ID.")
-    .tag(tag)
-    .serverLogic { user => (id, request) =>
-      for result <- service.update(user, id, request)
-      yield result.leftMap(toErrorResponse)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val deleteEndpoint = authOnlyEndpoint.delete
@@ -95,13 +83,13 @@ final class PersonsController[F[_]: Applicative](
     .summary("Deletes person with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      service.delete(user, id).map(_.leftMap(toErrorResponse))
+      for result <- service.delete(user, id)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   /** Returns Tapir endpoints for persons. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     postEndpoint,
-    updateEndpoint,
     deleteEndpoint,
   )

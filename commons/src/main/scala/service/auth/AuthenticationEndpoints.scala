@@ -2,11 +2,17 @@ package org.aulune.commons
 package service.auth
 
 
-import cats.syntax.all.*
+import circe.ErrorResponseCodecs.given
+import errors.ErrorResponse
+import tapir.ErrorResponseSchemas.given
+import tapir.ErrorStatusCodeMapper
+
+import cats.syntax.all.given
 import cats.{Applicative, Functor}
 import sttp.model.StatusCode
-import sttp.tapir.*
+import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.PartialServerEndpoint
+import sttp.tapir.{auth, endpoint, statusCode}
 
 
 /** Endpoints with authentication for Tapir. */
@@ -24,12 +30,11 @@ object AuthenticationEndpoints:
    */
   private def decodeToken[F[_]: Functor](token: String)(using
       service: AuthenticationClientService[F],
-  ): F[Either[StatusCode, User]] =
+  ): F[Either[(StatusCode, ErrorResponse), User]] =
     for result <- service.getUserInfo(token)
-    yield result.toRight(StatusCode.Unauthorized)
+    yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
 
   /** Endpoint with authentication check.
-   *
    *  @tparam F effect type.
    *  @return endpoint accessible only to authenticated users.
    */
@@ -39,11 +44,11 @@ object AuthenticationEndpoints:
     String,
     User,
     Unit,
-    StatusCode,
+    (StatusCode, ErrorResponse),
     Unit,
     Any,
     F,
   ] = endpoint
     .securityIn(tokenAuth)
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(jsonBody[ErrorResponse]))
     .serverSecurityLogic(decodeToken)

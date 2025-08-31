@@ -4,7 +4,7 @@ package application
 
 import application.dto.person.{PersonRequest, PersonResponse}
 
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
 
@@ -19,7 +19,7 @@ trait PersonService[F[_]]:
    *  @param id person identity.
    *  @return requested person if found.
    */
-  def findById(id: UUID): F[Option[PersonResponse]]
+  def findById(id: UUID): F[Either[ErrorResponse, PersonResponse]]
 
   /** Create new audio play.
    *
@@ -31,21 +31,7 @@ trait PersonService[F[_]]:
   def create(
       user: User,
       pr: PersonRequest,
-  ): F[Either[ApplicationServiceError, PersonResponse]]
-
-  /** Updates existing person's info.
-   *
-   *  @param user user who performs this action.
-   *  @param id person ID.
-   *  @param pr new state.
-   *  @return updated person info if success, otherwise error.
-   *  @note user must have [[AggregatorPermission.Modify]] permission.
-   */
-  def update(
-      user: User,
-      id: UUID,
-      pr: PersonRequest,
-  ): F[Either[ApplicationServiceError, PersonResponse]]
+  ): F[Either[ErrorResponse, PersonResponse]]
 
   /** Deletes existing person.
    *
@@ -57,4 +43,4 @@ trait PersonService[F[_]]:
   def delete(
       user: User,
       id: UUID,
-  ): F[Either[ApplicationServiceError, Unit]]
+  ): F[Either[ErrorResponse, Unit]]

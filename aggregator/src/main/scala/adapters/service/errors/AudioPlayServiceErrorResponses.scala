@@ -1,0 +1,73 @@
+package org.aulune.aggregator
+package adapters.service.errors
+
+
+import domain.errors.AudioPlayValidationError
+import application.errors.AudioPlayServiceError.{
+  AudioPlayNotFound,
+  AudioPlaySeriesNotFound,
+  InvalidAudioPlay,
+}
+
+import cats.data.NonEmptyChain
+import cats.syntax.all.given
+import org.aulune.commons.errors.ErrorStatus.{
+  FailedPrecondition,
+  Internal,
+  InvalidArgument,
+  NotFound,
+}
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.errors.ErrorInfo
+
+
+/** Error responses for
+ *  [[org.aulune.aggregator.adapters.service.AudioPlayServiceImpl]].
+ */
+object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
+  val audioPlayNotFound: ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = "Audio play is not found.",
+    details = List(
+      ErrorInfo(
+        reason = AudioPlayNotFound,
+        domain = domain,
+      )),
+  )
+
+  val audioPlaySeriesNotFound: ErrorResponse = ErrorResponse(
+    status = FailedPrecondition,
+    message = "Audio play series with given ID was not found",
+    details = List(
+      ErrorInfo(
+        reason = AudioPlaySeriesNotFound,
+        domain = domain,
+      )),
+  )
+
+  def invalidAudioPlay(
+      errs: NonEmptyChain[AudioPlayValidationError],
+  ): ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = errs
+      .map(representValidationError)
+      .mkString_("Invalid audio play is given: ", ", ", "."),
+    details = List(
+      ErrorInfo(
+        reason = InvalidAudioPlay,
+        domain = domain,
+      )),
+  )
+
+  /** Returns string representation of [[AudioPlayValidationError]].
+   *  @param err validation error.
+   */
+  private def representValidationError(err: AudioPlayValidationError): String =
+    err match
+      case AudioPlayValidationError.InvalidArguments => "arguments are invalid"
+      case AudioPlayValidationError.WriterDuplicates =>
+        "duplicate writers are not allowed"
+      case AudioPlayValidationError.CastMemberDuplicates =>
+        "duplicate cast members are not allowed"
+      case AudioPlayValidationError.SeriesIsMissing =>
+        "audio play series is needed when season or series number is given"

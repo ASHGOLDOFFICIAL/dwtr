@@ -22,6 +22,10 @@ import application.errors.UserRegistrationError
 import cats.Functor
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
+import org.aulune.commons.circe.ErrorResponseCodecs.given
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.tapir.ErrorResponseSchemas.given
+import org.aulune.commons.tapir.ErrorStatusCodeMapper
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
@@ -43,15 +47,15 @@ final class AuthenticationController[F[_]: Functor](
       .description("Login information.")
       .examples(requestExamples))
     .out(statusCode(StatusCode.Ok).and(jsonBody[AuthenticationResponse]
-      .description("JSON with access token.")
+      .description("Tokens to use in calls to API.")
       .example(responseExample)))
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(jsonBody[ErrorResponse]))
     .name("Login")
     .summary("Authenticate to receive token.")
     .tag(authTag)
-    .serverLogic { credentials =>
-      for result <- service.login(credentials)
-      yield result.toRight(StatusCode.Unauthorized)
+    .serverLogic { request =>
+      for result <- service.login(request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val usersTag = "Users"
@@ -60,34 +64,17 @@ final class AuthenticationController[F[_]: Functor](
     .in(jsonBody[CreateUserRequest]
       .description("Registration details.")
       .example(createRequestExample))
-    .out(statusCode(StatusCode.Created))
-    .errorOut(statusCode.and(stringBody))
+    .out(statusCode(StatusCode.Created).and(jsonBody[AuthenticationResponse]
+      .description("Tokens to use in calls to API.")
+      .example(responseExample)))
+    .errorOut(statusCode.and(jsonBody[ErrorResponse]))
     .name("CreateUser")
     .summary("Register new user.")
     .tag(usersTag)
     .serverLogic { request =>
       for result <- service.register(request)
-      yield result.leftMap(toErrorResponse)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
-
-  /** Maps domain errors of type [[UserRegistrationError]] to status code with
-   *  explanation.
-   *  @param errs domain errors.
-   */
-  private def toErrorResponse(
-      errs: NonEmptyChain[UserRegistrationError],
-  ): (StatusCode, String) = (
-    StatusCode.BadRequest,
-    errs
-      .map {
-        case UserRegistrationError.TakenUsername    => "Username already taken."
-        case UserRegistrationError.InvalidUsername  => "Invalid username."
-        case UserRegistrationError.InvalidOAuthCode =>
-          "Invalid OAuth2 authorization code."
-        case UserRegistrationError.OAuthUserAlreadyExists =>
-          "User with this third-party account already exists."
-      }
-      .mkString_(" "))
 
   /** Returns Tapir endpoints for authentication. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(

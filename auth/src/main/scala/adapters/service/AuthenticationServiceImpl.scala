@@ -2,9 +2,11 @@ package org.aulune.auth
 package adapters.service
 
 
+import adapters.service.errors.AuthenticationServiceErrorResponses as ErrorResponses
+import application.AuthenticationService
 import application.dto.AuthenticationRequest.{
   BasicAuthenticationRequest,
-  OAuth2AuthenticationRequest
+  OAuth2AuthenticationRequest,
 }
 import application.dto.{
   AuthenticatedUser,
@@ -15,19 +17,32 @@ import application.dto.{
 }
 import application.errors.UserRegistrationError
 import application.errors.UserRegistrationError.{
+  InvalidDetails,
   InvalidOAuthCode,
-  OAuthUserAlreadyExists,
+  UserAlreadyExists,
 }
-import application.AuthenticationService
 import domain.errors.UserValidationError
 import domain.model.{TokenString, User, Username}
-import domain.services.{AccessTokenService, BasicAuthenticationService, IdTokenService, OAuth2AuthenticationService}
+import domain.repositories.UserRepository
+import domain.services.{
+  AccessTokenService,
+  BasicAuthenticationService,
+  IdTokenService,
+  OAuth2AuthenticationService,
+}
 
 import cats.MonadThrow
-import cats.data.{EitherNec, EitherT, NonEmptyChain, OptionT}
+import cats.data.{EitherT, NonEmptyChain, OptionT}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import org.aulune.auth.domain.repositories.UserRepository
+import org.aulune.commons.errors.ErrorStatus.{
+  AlreadyExists,
+  Internal,
+  InvalidArgument,
+  Unauthenticated,
+}
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.errors.ErrorInfo
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 
@@ -52,40 +67,51 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
 
   override def login(
       request: AuthenticationRequest,
-  ): F[Option[AuthenticationResponse]] = (for
-    user <- OptionT(delegateLogin(request))
-    accessToken <- OptionT.liftF(accessTokenService.generateAccessToken(user))
-    idToken <- OptionT.liftF(idTokenService.generateIdToken(user))
-  yield AuthenticationResponse(
-    accessToken = accessToken,
-    idToken = idToken)).value
+  ): F[Either[ErrorResponse, AuthenticationResponse]] = (for
+    user <- EitherT.fromOptionF(
+      delegateLogin(request),
+      ErrorResponses.failedLoginResponse)
+    response <- EitherT.liftF(makeResponseForUser(user))
+  yield response).value
 
   override def register(
       request: CreateUserRequest,
-  ): F[EitherNec[UserRegistrationError, Unit]] = (for
-    oid <- getId(request.oauth2)
-    _ <- checkIfRegistered(request.oauth2.provider, oid)
+  ): F[Either[ErrorResponse, AuthenticationResponse]] = (for
+    oid <- EitherT.fromOptionF(
+      getId(request.oauth2),
+      ErrorResponses.failedToRetrieveId)
+    _ <- EitherT(checkIfRegistered(request.oauth2.provider, oid))
     id <- EitherT.liftF(UUIDGen[F].randomUUID.map(Uuid[User]))
-    user <- EitherT.fromEither(
-      createUser(id, request, oid).leftMap(fromUserValidation))
+    user <- EitherT.fromEither(createUser(id, request, oid))
     _ <- EitherT(persist(user))
-  yield ()).value
+    response <- EitherT.liftF(makeResponseForUser(user))
+  yield response).value
 
-  override def getUserInfo(token: String): F[Option[AuthenticatedUser]] =
-    TokenString(token).traverseFilter(accessTokenService.decodeAccessToken)
+  override def getUserInfo(
+      accessToken: String,
+  ): F[Either[ErrorResponse, AuthenticatedUser]] = (for
+    token <- OptionT.fromOption(TokenString(accessToken))
+    user <- OptionT(accessTokenService.decodeAccessToken(token))
+  yield user).toRight(ErrorResponses.invalidAccessToken).value
+
+  /** Makes [[AuthenticationResponse]] for given user.
+   *  @param user user for whom response is being made.
+   */
+  private def makeResponseForUser(user: User): F[AuthenticationResponse] =
+    for
+      accessToken <- accessTokenService.generateAccessToken(user)
+      idToken <- idTokenService.generateIdToken(user)
+    yield AuthenticationResponse(accessToken = accessToken, idToken = idToken)
 
   /** Gets user ID in third-party services.
    *  @param oauth2Info OAuth2 provider and code
    */
   private def getId(
       oauth2Info: OAuth2AuthenticationRequest,
-  ): EitherT[F, NonEmptyChain[UserRegistrationError], String] =
-    val idOpt =
-      oauth2AuthService.getId(oauth2Info.provider, oauth2Info.authorizationCode)
-    EitherT.fromOptionF(idOpt, NonEmptyChain.one(InvalidOAuthCode))
+  ): F[Option[String]] =
+    oauth2AuthService.getId(oauth2Info.provider, oauth2Info.authorizationCode)
 
   /** Checks if user is already in repository.
-   *
    *  @param provider third-party OAuth2 provider.
    *  @param id user's ID in third-party services.
    *  @return `Unit` if user doesn't exist, otherwise error.
@@ -93,14 +119,14 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
   private def checkIfRegistered(
       provider: OAuth2Provider,
       id: String,
-  ): EitherT[F, NonEmptyChain[UserRegistrationError], Unit] = EitherT(
-    oauth2AuthService.findUser(provider, id).map {
-      case Some(value) => NonEmptyChain.one(OAuthUserAlreadyExists).asLeft
-      case None        => Either.unit
-    })
+  ): F[Either[ErrorResponse, Unit]] =
+    for result <- oauth2AuthService.findUser(provider, id).attempt
+    yield result.leftMap(_ => ErrorResponses.internalError).flatMap {
+      case Some(user) => ErrorResponses.alreadyRegistered.asLeft
+      case None       => ().asRight
+    }
 
   /** Creates user from registration request and third-party id.
-   *
    *  @param request registration request.
    *  @param oauth2Id third-party ID.
    *  @return user or NEC of errors.
@@ -109,30 +135,18 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
       id: Uuid[User],
       request: CreateUserRequest,
       oauth2Id: String,
-  ): EitherNec[UserValidationError, User] =
-    for
-      username <- Username(request.username)
-        .toRight(NonEmptyChain.one(UserValidationError.InvalidUsername))
-      userBase <- User(
+  ): Either[ErrorResponse, User] = Username(request.username)
+    .toValidNec(UserValidationError.InvalidUsername)
+    .andThen(username =>
+      User(
         id = id,
         username = username,
         hashedPassword = None,
         googleId = None,
-      ).toEither
-      user <- linkAccount(userBase, request.oauth2.provider, oauth2Id).toEither
-    yield user
-
-  /** Persists user. If user already existed (race conditions for example), then
-   *  error will be returned in left side.
-   *  @param user user to persist.
-   */
-  private def persist(user: User): F[EitherNec[UserRegistrationError, Unit]] =
-    repo
-      .persist(user)
-      .map(_ => Either.unit[NonEmptyChain[UserRegistrationError]])
-      .recover { case e: RepositoryError.AlreadyExists.type =>
-        NonEmptyChain.one(OAuthUserAlreadyExists).asLeft
-      }
+      ))
+    .andThen(user => linkAccount(user, request.oauth2.provider, oauth2Id))
+    .toEither
+    .leftMap(ErrorResponses.invalidRegistrationDetails)
 
   /** Places id into user based on given provider.
    *  @param user user whose being modified.
@@ -144,16 +158,25 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen](
     provider match
       case OAuth2Provider.Google => user.update(googleId = Some(id))
 
+  /** Persists user. If user already existed (race conditions for example), then
+   *  error will be returned in left side.
+   *  @param user user to persist.
+   */
+  private def persist(user: User): F[Either[ErrorResponse, User]] =
+    for result <- repo.persist(user).attempt
+    yield result.leftMap {
+      case RepositoryError.AlreadyExists => ErrorResponses.alreadyRegistered
+      case _                             => ErrorResponses.internalError
+    }
+
   /** Converts NEC of [[UserValidationError]] to NEC of
    *  [[UserRegistrationError]].
    *  @param errs NEC of errors.
    */
   private def fromUserValidation(
       errs: NonEmptyChain[UserValidationError],
-  ): NonEmptyChain[UserRegistrationError] = errs.map {
-    case UserValidationError.InvalidUsername =>
-      UserRegistrationError.InvalidUsername
-  }
+  ): NonEmptyChain[UserRegistrationError] =
+    errs.map { case UserValidationError.InvalidUsername => InvalidDetails }
 
   /** Delegates login request to a service that can manage it.
    *  @param request login request.

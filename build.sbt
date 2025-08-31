@@ -8,6 +8,13 @@ inThisBuild {
     scalaVersion := "3.3.6",
     semanticdbEnabled := true,
     version := "0.1.0-SNAPSHOT",
+    scalacOptions ++= Seq(
+      "-feature",
+      "-deprecation",
+      "-unchecked",
+      "-Wnonunit-statement",
+      "-Xmax-inlines:64"
+    )
   )
 }
 
@@ -104,14 +111,6 @@ lazy val aggregator = (project in file("aggregator"))
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
     ),
   )
-
-
-scalacOptions ++= Seq(
-  "-feature",
-  "-deprecation",
-  "-unchecked",
-  "-Wnonunit-statement",
-)
 
 
 val argon2Version = "2.12"

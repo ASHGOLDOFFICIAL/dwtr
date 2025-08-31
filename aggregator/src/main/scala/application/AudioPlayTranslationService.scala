@@ -9,7 +9,7 @@ import application.dto.{
   AudioPlayTranslationResponse,
 }
 
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
 
@@ -30,7 +30,7 @@ trait AudioPlayTranslationService[F[_]]:
   def findById(
       originalId: UUID,
       id: UUID,
-  ): F[Option[AudioPlayTranslationResponse]]
+  ): F[Either[ErrorResponse, AudioPlayTranslationResponse]]
 
   /** Find all translations of given media resource.
    *
@@ -41,7 +41,7 @@ trait AudioPlayTranslationService[F[_]]:
   def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, AudioPlayTranslationListResponse]]
+  ): F[Either[ErrorResponse, AudioPlayTranslationListResponse]]
 
   /** Create new translation.
    *
@@ -55,7 +55,7 @@ trait AudioPlayTranslationService[F[_]]:
       user: User,
       tc: AudioPlayTranslationRequest,
       originalId: UUID,
-  ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]]
+  ): F[Either[ErrorResponse, AudioPlayTranslationResponse]]
 
   /** Deletes existing translation.
    *
@@ -69,4 +69,4 @@ trait AudioPlayTranslationService[F[_]]:
       user: User,
       originalId: UUID,
       id: UUID,
-  ): F[Either[ApplicationServiceError, Unit]]
+  ): F[Either[ErrorResponse, Unit]]

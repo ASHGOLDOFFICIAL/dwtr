@@ -6,6 +6,7 @@ import application.dto.AuthenticatedUser
 
 import cats.Functor
 import cats.syntax.all.given
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.{AuthenticationClientService, User}
 
 
@@ -16,7 +17,7 @@ import org.aulune.commons.service.auth.{AuthenticationClientService, User}
 private[auth] final class AuthenticationServiceAdapter[F[_]: Functor](
     service: AuthenticationService[F],
 ) extends AuthenticationClientService[F]:
-  override def getUserInfo(token: String): F[Option[User]] =
+  override def getUserInfo(token: String): F[Either[ErrorResponse, User]] =
     for maybeUser <- service.getUserInfo(token)
     yield maybeUser.map(makeUser)
 

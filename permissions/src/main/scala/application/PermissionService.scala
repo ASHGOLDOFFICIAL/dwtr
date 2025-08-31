@@ -9,7 +9,7 @@ import application.dto.{
   PermissionResource
 }
 
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.ErrorStatus
 
 
 /** Service to check user permissions.
@@ -25,7 +25,7 @@ trait PermissionService[F[_]]:
    */
   def registerPermission(
       request: CreatePermissionRequest,
-  ): F[Either[ApplicationServiceError, PermissionResource]]
+  ): F[Either[ErrorStatus, PermissionResource]]
 
   /** Checks if user has permission.
    *  @param request request with details of who is requiring what permission.
@@ -33,4 +33,4 @@ trait PermissionService[F[_]]:
    */
   def checkPermission(
       request: CheckPermissionRequest,
-  ): F[Either[ApplicationServiceError, CheckPermissionResponse]]
+  ): F[Either[ErrorStatus, CheckPermissionResponse]]

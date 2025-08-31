@@ -1,6 +1,8 @@
 package org.aulune.commons
 package service.auth
 
+import errors.ErrorResponse
+
 
 /** Authentication service for use in other modules.
  *
@@ -10,4 +12,4 @@ trait AuthenticationClientService[F[_]]:
   /** Returns user's info if token is valid.
    *  @param token user's token.
    */
-  def getUserInfo(token: String): F[Option[User]]
+  def getUserInfo(token: String): F[Either[ErrorResponse, User]]

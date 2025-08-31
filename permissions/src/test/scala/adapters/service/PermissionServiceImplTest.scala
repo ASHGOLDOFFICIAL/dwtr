@@ -24,7 +24,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.mtl.Handle.handleForApplicativeError
 import cats.mtl.Raise
 import cats.syntax.all.given
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.ErrorStatus
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
@@ -206,7 +206,7 @@ final class PermissionServiceImplTest
             .returning(IO.raiseError(RepositoryError.FailedPrecondition))
 
           for result <- service.checkPermission(checkRequest)
-          yield result shouldBe ApplicationServiceError.FailedPrecondition.asLeft
+          yield result shouldBe ErrorStatus.FailedPrecondition.asLeft
       }
     }
   }

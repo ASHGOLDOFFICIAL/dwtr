@@ -2,8 +2,9 @@ package org.aulune.aggregator
 package adapters.service
 
 
+import adapters.service.errors.AudioPlayTranslationServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayTranslationMapper
-import application.AggregatorPermission.*
+import application.AggregatorPermission.Modify
 import application.dto.{
   AudioPlayTranslationListResponse,
   AudioPlayTranslationRequest,
@@ -19,12 +20,15 @@ import application.{AggregatorPermission, AudioPlayTranslationService}
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
 import cats.MonadThrow
-import cats.data.Validated
+import cats.data.{EitherT, Validated}
 import cats.effect.std.UUIDGen
-import cats.syntax.all.*
-import org.aulune.aggregator.AggregatorConfig
-import org.aulune.commons.errors.ApplicationServiceError.InvalidArgument
-import org.aulune.commons.errors.{ApplicationServiceError, toApplicationError}
+import cats.syntax.all.given
+import org.aulune.commons.errors.ErrorStatus.InvalidArgument
+import org.aulune.commons.errors.{
+  ErrorStatus,
+  ErrorResponse,
+  toApplicationError,
+}
 import org.aulune.commons.pagination.{PaginationParams, PaginationParamsParser}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
@@ -72,49 +76,61 @@ private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
   override def findById(
       originalId: UUID,
       id: UUID,
-  ): F[Option[AudioPlayTranslationResponse]] =
+  ): F[Either[ErrorResponse, AudioPlayTranslationResponse]] =
     val tId = identity(originalId, id)
-    for result <- repo.get(tId)
-    yield result.map(AudioPlayTranslationMapper.toResponse)
+    val getResult = repo.get(tId).attempt
+    (for
+      elemOpt <- EitherT(getResult).leftMap(_ => ErrorResponses.internal)
+      elem <- EitherT.fromOption(elemOpt, ErrorResponses.translationNotFound)
+      response = AudioPlayTranslationMapper.toResponse(elem)
+    yield response).value
 
   override def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ApplicationServiceError, AudioPlayTranslationListResponse]] =
+  ): F[Either[ErrorResponse, AudioPlayTranslationListResponse]] =
     paginationParser.parse(Some(count), token) match
       case Validated.Invalid(_) =>
-        ApplicationServiceError.InvalidArgument.asLeft.pure
+        ErrorResponses.invalidPaginationParams.asLeft.pure
       case Validated.Valid(PaginationParams(pageSize, cursor)) =>
-        for translations <- repo.list(cursor, pageSize)
-        yield AudioPlayTranslationMapper.toListResponse(translations).asRight
+        val listResult = repo.list(cursor, pageSize).attempt
+        (for
+          audios <- EitherT(listResult).leftMap(_ => ErrorResponses.internal)
+          response = AudioPlayTranslationMapper.toListResponse(audios)
+        yield response).value
 
   override def create(
       user: User,
-      tc: AudioPlayTranslationRequest,
+      request: AudioPlayTranslationRequest,
       originalId: UUID,
-  ): F[Either[ApplicationServiceError, AudioPlayTranslationResponse]] =
+  ): F[Either[ErrorResponse, AudioPlayTranslationResponse]] =
     requirePermissionOrDeny(Modify, user) {
       (for
-        id <- UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
+        id <- EitherT
+          .liftF(UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation]))
         original = Uuid[AudioPlay](originalId)
-        translation <- AudioPlayTranslationMapper
-          .fromRequest(tc, original, id)
-          .fold(_ => InvalidArgument.raiseError, _.pure[F])
-        persisted <- repo.persist(translation)
+        translation <- EitherT.fromEither(
+          AudioPlayTranslationMapper
+            .fromRequest(request, original, id)
+            .leftMap(ErrorResponses.invalidAudioPlayTranslation)
+            .toEither)
+        persisted <- repo
+          .persist(translation)
+          .attemptT
+          .leftMap(_ => ErrorResponses.internal)
         response = AudioPlayTranslationMapper.toResponse(persisted)
-      yield response).attempt.map(_.leftMap(toApplicationError))
+      yield response).value
     }
 
   override def delete(
       user: User,
       originalId: UUID,
       id: UUID,
-  ): F[Either[ApplicationServiceError, Unit]] =
-    requirePermissionOrDeny(Modify, user) {
-      val translationIdentity = identity(originalId, id)
-      for result <- repo.delete(translationIdentity).attempt
-      yield result.leftMap(toApplicationError)
-    }
+  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
+    val translationIdentity = identity(originalId, id)
+    for result <- repo.delete(translationIdentity).attempt
+    yield result.leftMap(_ => ErrorResponses.internal)
+  }
 
   /** Returns [[AudioPlayTranslationIdentity]] for given [[UUID]]s.
    *

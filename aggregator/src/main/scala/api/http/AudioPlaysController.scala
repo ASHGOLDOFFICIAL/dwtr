@@ -20,11 +20,13 @@ import application.{AudioPlayService, AudioPlayTranslationService}
 
 import cats.Applicative
 import cats.syntax.all.given
-import org.aulune.aggregator.AggregatorConfig
-import org.aulune.commons.errors.toErrorResponse
+import org.aulune.commons.circe.ErrorResponseCodecs.given
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.http.QueryParams
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
+import org.aulune.commons.tapir.ErrorResponseSchemas.given
+import org.aulune.commons.tapir.ErrorStatusCodeMapper
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
@@ -63,13 +65,14 @@ final class AudioPlaysController[F[_]: Applicative](
     .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
       .description("Requested audio play if found.")
       .example(responseExample)))
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetAudioPlay")
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
       for result <- service.findById(id)
-      yield result.leftMap(toErrorResponse)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val listEndpoint = endpoint.get
@@ -80,13 +83,14 @@ final class AudioPlaysController[F[_]: Applicative](
     .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
       .example(listResponseExample)))
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
     .serverLogic { request =>
       for result <- service.listAll(request)
-      yield result.leftMap(toErrorResponse)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -100,9 +104,9 @@ final class AudioPlaysController[F[_]: Applicative](
     .name("CreateAudioPlay")
     .summary("Creates a new audio play and returns the created resource.")
     .tag(tag)
-    .serverLogic { user => ac =>
-      for result <- service.create(user, ac)
-      yield result.leftMap(toErrorResponse)
+    .serverLogic { user => request =>
+      for result <- service.create(user, request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val deleteEndpoint = authOnlyEndpoint.delete
@@ -113,7 +117,7 @@ final class AudioPlaysController[F[_]: Applicative](
     .tag(tag)
     .serverLogic { user => id =>
       for result <- service.delete(user, id)
-      yield result.leftMap(toErrorResponse)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   /** Returns Tapir endpoints for audio plays and their translations. */

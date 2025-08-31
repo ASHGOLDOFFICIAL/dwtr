@@ -7,7 +7,7 @@ import application.dto.CreateUserRequest
 import application.dto.OAuth2Provider.Google
 import application.errors.UserRegistrationError.{
   InvalidOAuthCode,
-  OAuthUserAlreadyExists,
+  UserAlreadyExists,
 }
 import application.AuthenticationService
 import domain.model.{User, Username}
@@ -129,7 +129,7 @@ final class AuthenticationServiceImplTest
         .returning(Some(newUser).pure[IO])
 
       for result <- service.register(createUserRequest)
-      yield result shouldBe NonEmptyChain.one(OAuthUserAlreadyExists).asLeft
+      yield result shouldBe NonEmptyChain.one(UserAlreadyExists).asLeft
     }
 
     "result in error if user's already persisted" in stand { service =>
@@ -154,7 +154,7 @@ final class AuthenticationServiceImplTest
         .returning(IO.raiseError(RepositoryError.AlreadyExists))
 
       for result <- service.register(createUserRequest)
-      yield result shouldBe NonEmptyChain.one(OAuthUserAlreadyExists).asLeft
+      yield result shouldBe NonEmptyChain.one(UserAlreadyExists).asLeft
     }
   }
 

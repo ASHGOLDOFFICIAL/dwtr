@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.service
 
 
+import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{DownloadAudioPlays, Modify}
 import application.dto.audioplay.{
@@ -15,18 +16,24 @@ import application.dto.person.PersonResponse
 import application.repositories.AudioPlayRepository
 import application.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 import application.{AggregatorPermission, AudioPlayService, PersonService}
+import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
-import cats.MonadThrow
-import cats.data.Validated
+import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import org.aulune.commons.errors.ApplicationServiceError.{
+import cats.{Monad, MonadThrow}
+import org.aulune.commons.errors.ErrorStatus.{
   FailedPrecondition,
+  Internal,
   InvalidArgument,
   NotFound,
 }
-import org.aulune.commons.errors.{ApplicationServiceError, toApplicationError}
+import org.aulune.commons.errors.{
+  ErrorStatus,
+  ErrorResponse,
+  toApplicationError,
+}
 import org.aulune.commons.pagination.{PaginationParams, PaginationParamsParser}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
@@ -68,6 +75,8 @@ object AudioPlayServiceImpl:
       permissionService,
     )
 
+end AudioPlayServiceImpl
+
 
 private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
     paginationParser: PaginationParamsParser[AudioPlayCursor],
@@ -77,86 +86,90 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
 ) extends AudioPlayService[F]:
   private given PermissionClientService[F] = permissionService
 
-  override def findById(
-      id: UUID,
-  ): F[Either[ApplicationServiceError, AudioPlayResponse]] = (for
-    audioPlayOpt <- repo.get(Uuid[AudioPlay](id))
-    audioPlay <- audioPlayOpt.fold(NotFound.raiseError[F, AudioPlay])(_.pure[F])
-    response = AudioPlayMapper.toResponse(audioPlay)
-  yield response).attempt.map(_.leftMap(toApplicationError))
+  override def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResponse]] =
+    val uuid = Uuid[AudioPlay](id)
+    val getResult = repo.get(uuid).attempt
+    (for
+      elemOpt <- EitherT(getResult).leftMap(_ => ErrorResponses.internal)
+      elem <- EitherT.fromOption(elemOpt, ErrorResponses.audioPlayNotFound)
+      response = AudioPlayMapper.toResponse(elem)
+    yield response).value
 
   override def listAll(
       request: ListAudioPlaysRequest,
-  ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]] =
+  ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
     paginationParser.parse(request.pageSize, request.pageToken) match
-      case Validated.Invalid(_) => InvalidArgument.asLeft.pure[F]
+      case Validated.Invalid(_) =>
+        ErrorResponses.invalidPaginationParams.asLeft.pure[F]
       case Validated.Valid(PaginationParams(pageSize, cursor)) =>
-        for audios <- repo.list(cursor, pageSize)
-        yield AudioPlayMapper.toListResponse(audios).asRight
+        val listResult = repo.list(cursor, pageSize).attempt
+        (for
+          audios <- EitherT(listResult).leftMap(_ => ErrorResponses.internal)
+          response = AudioPlayMapper.toListResponse(audios)
+        yield response).value
 
   override def create(
       user: User,
       request: AudioPlayRequest,
-  ): F[Either[ApplicationServiceError, AudioPlayResponse]] =
+  ): F[Either[ErrorResponse, AudioPlayResponse]] =
     requirePermissionOrDeny(Modify, user) {
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
-        series <- getSeriesOrThrow(seriesId)
-        _ <- checkWritersExistence(request.writers)
-        _ <- checkCastExistence(request.cast)
-        id <- UUIDGen.randomUUID[F]
-        audio <- AudioPlayMapper
-          .fromRequest(request, id, series)
-          .fold(_ => InvalidArgument.raiseError, _.pure[F])
-        persisted <- repo.persist(audio)
+        series <- getSeries(seriesId)
+        _ <- EitherT(getWriters(request.writers))
+        _ <- EitherT(getCastPersons(request.cast))
+        id <- EitherT.liftF(UUIDGen.randomUUID[F])
+        audio <- EitherT.fromEither(
+          AudioPlayMapper
+            .fromRequest(request, id, series)
+            .leftMap(ErrorResponses.invalidAudioPlay)
+            .toEither)
+        persisted <- repo
+          .persist(audio)
+          .attemptT
+          .leftMap(_ => ErrorResponses.internal)
         response = AudioPlayMapper.toResponse(persisted)
-      yield response).attempt.map(_.leftMap(toApplicationError))
+      yield response).value
     }
 
-  override def delete(
-      user: User,
-      id: UUID,
-  ): F[Either[ApplicationServiceError, Unit]] =
+  override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
     requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[AudioPlay](id)
       for result <- repo.delete(uuid).attempt
-      yield result.leftMap(toApplicationError)
+      yield result.leftMap(_ => ErrorResponses.internal)
     }
 
-  /** Throws [[NotFound]] if person with one of the given IDs don't exist.
+  /** Fetches cast member persons by their respective IDs.
    *  @param uuids persons UUIDs.
    */
-  private def checkWritersExistence(uuids: List[UUID]): F[Unit] =
-    uuids.traverseVoid { id =>
-      for
-        writerOpt <- personService.findById(id)
-        _ <- MonadThrow[F].fromOption(writerOpt, NotFound)
-      yield ()
-    }
+  private def getWriters(
+      uuids: List[UUID],
+  ): F[Either[ErrorResponse, List[PersonResponse]]] = uuids
+    .traverse(personService.findById)
+    .map(_.sequence)
 
-  /** Throws [[FailedPrecondition]] if at least one of the cast members don't
-   *  exist.
+  /** Fetches cast member persons by their respective IDs.
    *  @param uuids cast UUIDs.
    */
-  private def checkCastExistence(uuids: List[CastMemberDto]): F[Unit] =
-    uuids.traverseVoid { castMember =>
-      for
-        actorOpt <- personService.findById(castMember.actor)
-        _ <- MonadThrow[F].fromOption(actorOpt, FailedPrecondition)
-      yield ()
-    }
+  private def getCastPersons(
+      uuids: List[CastMemberDto],
+  ): F[Either[ErrorResponse, List[PersonResponse]]] = uuids
+    .traverse(castMember => personService.findById(castMember.actor))
+    .map(_.sequence)
 
   /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
    *  audio play series with it. If [[seriesId]] is not `None` but there's no
-   *  [[AudioPlaySeries]] found with it, then it will throw
-   *  [[FailedPrecondition]].
+   *  [[AudioPlaySeries]] found with it, then it will result in error response.
    *  @param seriesId audio play series ID.
    */
-  private def getSeriesOrThrow(
+  private def getSeries(
       seriesId: Option[Uuid[AudioPlaySeries]],
-  ): F[Option[AudioPlaySeries]] = seriesId.traverse { id =>
-    for
-      seriesOpt <- repo.getSeries(id)
-      series <- MonadThrow[F].fromOption(seriesOpt, FailedPrecondition)
-    yield series
-  }
+  ): EitherT[F, ErrorResponse, Option[AudioPlaySeries]] =
+    seriesId.traverse { id =>
+      val getResult = repo.getSeries(id).attempt
+      for
+        seriesOpt <- EitherT(getResult).leftMap(_ => ErrorResponses.internal)
+        series <-
+          EitherT.fromOption(seriesOpt, ErrorResponses.audioPlaySeriesNotFound)
+      yield series
+    }

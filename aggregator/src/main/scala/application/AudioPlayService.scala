@@ -9,7 +9,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse
 }
 
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
 import org.aulune.commons.service.auth.User
 
 import java.util.UUID
@@ -25,7 +25,7 @@ trait AudioPlayService[F[_]]:
    *  @param id audio play identity.
    *  @return requested audio play if found.
    */
-  def findById(id: UUID): F[Either[ApplicationServiceError, AudioPlayResponse]]
+  def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResponse]]
 
   /** Get a portion of audio plays.
    *  @param request request to list audio plays.
@@ -33,7 +33,7 @@ trait AudioPlayService[F[_]]:
    */
   def listAll(
       request: ListAudioPlaysRequest,
-  ): F[Either[ApplicationServiceError, ListAudioPlaysResponse]]
+  ): F[Either[ErrorResponse, ListAudioPlaysResponse]]
 
   /** Create new audio play.
    *
@@ -45,7 +45,7 @@ trait AudioPlayService[F[_]]:
   def create(
       user: User,
       ac: AudioPlayRequest,
-  ): F[Either[ApplicationServiceError, AudioPlayResponse]]
+  ): F[Either[ErrorResponse, AudioPlayResponse]]
 
   /** Deletes existing audio play.
    *
@@ -57,4 +57,4 @@ trait AudioPlayService[F[_]]:
   def delete(
       user: User,
       id: UUID,
-  ): F[Either[ApplicationServiceError, Unit]]
+  ): F[Either[ErrorResponse, Unit]]

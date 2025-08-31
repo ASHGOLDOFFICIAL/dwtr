@@ -7,7 +7,7 @@ import application.dto.{CheckPermissionRequest, CreatePermissionRequest}
 
 import cats.Functor
 import cats.syntax.all.given
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.ErrorStatus
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.{
   Permission,
@@ -25,7 +25,7 @@ private[permissions] final class PermissionServiceAdapter[F[_]: Functor](
 
   override def registerPermission(
       permission: Permission,
-  ): F[Either[ApplicationServiceError, Unit]] =
+  ): F[Either[ErrorStatus, Unit]] =
     service.registerPermission(makeCreateRequest(permission)).map(_.void)
 
   override def hasPermission(

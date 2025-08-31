@@ -2,7 +2,9 @@ package org.aulune.aggregator
 package adapters.service
 
 
-import application.AggregatorPermission.*
+import adapters.service.errors.PersonServiceErrorResponses as ErrorResponses
+import adapters.service.mappers.PersonMapper
+import application.AggregatorPermission.Modify
 import application.dto.person.{PersonRequest, PersonResponse}
 import application.repositories.PersonRepository
 import application.{AggregatorPermission, PersonService}
@@ -11,14 +13,18 @@ import domain.errors.PersonValidationError.InvalidArguments
 import domain.model.person.{FullName, Person}
 
 import cats.MonadThrow
-import cats.data.{Validated, ValidatedNec}
+import cats.data.{EitherT, Validated, ValidatedNec}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import org.aulune.commons.errors.ApplicationServiceError.{
+import org.aulune.commons.errors.ErrorStatus.{
   InvalidArgument,
   NotFound,
 }
-import org.aulune.commons.errors.{ApplicationServiceError, toApplicationError}
+import org.aulune.commons.errors.{
+  ErrorStatus,
+  ErrorResponse,
+  toApplicationError,
+}
 import org.aulune.commons.repositories.transformF
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
@@ -50,80 +56,40 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
 ) extends PersonService[F]:
   given PermissionClientService[F] = permissionService
 
-  override def findById(id: UUID): F[Option[PersonResponse]] =
+  override def findById(id: UUID): F[Either[ErrorResponse, PersonResponse]] =
     val uuid = Uuid[Person](id)
-    for result <- repo.get(uuid)
-    yield result.map(_.toResponse)
+    val getResult = repo.get(uuid).attempt
+    (for
+      elemOpt <- EitherT(getResult).leftMap(_ => ErrorResponses.internal)
+      elem <- EitherT.fromOption(elemOpt, ErrorResponses.personNotFound)
+      response = PersonMapper.toResponse(elem)
+    yield response).value
 
   override def create(
       user: User,
       request: PersonRequest,
-  ): F[Either[ApplicationServiceError, PersonResponse]] =
+  ): F[Either[ErrorResponse, PersonResponse]] =
     requirePermissionOrDeny(Modify, user) {
       (for
-        id <- UUIDGen.randomUUID[F].map(Uuid[Person])
-        person <- request
-          .toDomain(id)
-          .fold(_ => InvalidArgument.raiseError, _.pure[F])
-        persisted <- repo.persist(person)
-      yield persisted.toResponse).attempt.map(_.leftMap(toApplicationError))
-    }
-
-  override def update(
-      user: User,
-      id: UUID,
-      request: PersonRequest,
-  ): F[Either[ApplicationServiceError, PersonResponse]] =
-    requirePermissionOrDeny(Modify, user) {
-      val uuid = Uuid[Person](id)
-      (for
-        updatedOpt <- repo.transformF(uuid) { old =>
-          request.update(old) match
-            case Validated.Valid(a)   => a.pure
-            case Validated.Invalid(e) => InvalidArgument.raiseError
-        }
-        updated <- updatedOpt match
-          case Some(person) => person.pure
-          case None         => NotFound.raiseError[F, Person]
-        response = updated.toResponse
-      yield response).attempt.map(_.leftMap(toApplicationError))
+        id <- EitherT.liftF(UUIDGen.randomUUID[F].map(Uuid[Person]))
+        person <- EitherT.fromEither(
+          PersonMapper
+            .fromCreateRequest(request, id)
+            .leftMap(ErrorResponses.invalidPerson)
+            .toEither)
+        persisted <- repo
+          .persist(person)
+          .attemptT
+          .leftMap(_ => ErrorResponses.internal)
+        response = PersonMapper.toResponse(persisted)
+      yield response).value
     }
 
   override def delete(
       user: User,
       id: UUID,
-  ): F[Either[ApplicationServiceError, Unit]] =
-    requirePermissionOrDeny(Modify, user) {
-      val uuid = Uuid[Person](id)
-      for result <- repo.delete(uuid).attempt
-      yield result.leftMap(toApplicationError)
-    }
-
-  extension (request: PersonRequest)
-    /** Updates old domain object with fields from request.
-     *  @param old old domain object.
-     *  @return updated domain object if valid.
-     */
-    private def update(
-        old: Person,
-    ): ValidatedNec[PersonValidationError, Person] =
-      FullName(request.name).map(name => Person(id = old.id, name = name)) match
-        case Some(value) => value
-        case None        => InvalidArguments.invalidNec
-
-    /** Converts request to domain object and verifies it.
-     *  @param id ID assigned to this person.
-     *  @return created domain object if valid.
-     */
-    private def toDomain(
-        id: UUID,
-    ): ValidatedNec[PersonValidationError, Person] = FullName(request.name).map {
-      name => Person(id = Uuid[Person](id), name = name)
-    } match
-      case Some(value) => value
-      case None        => InvalidArguments.invalidNec
-
-  extension (domain: Person)
-    /** Converts domain object to response object. */
-    private def toResponse: PersonResponse =
-      PersonResponse(id = domain.id, name = domain.name)
+  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
+    val uuid = Uuid[Person](id)
+    for result <- repo.delete(uuid).attempt
+    yield result.leftMap(_ => ErrorResponses.internal)
+  }

@@ -48,7 +48,7 @@ private[service] object AudioPlayMapper:
     synopsis <- Synopsis(request.synopsis)
     releaseDate <- ReleaseDate(request.releaseDate)
     writers = request.writers.map(Uuid[Person])
-    cast <- request.cast.toList.traverse(CastMemberMapper.toDomain)
+    cast <- request.cast.traverse(CastMemberMapper.toDomain)
     season <- request.seriesSeason.map(AudioPlaySeason.apply)
     number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
     resources = request.externalResources.map(ExternalResourceMapper.toDomain)
@@ -64,7 +64,7 @@ private[service] object AudioPlayMapper:
     seriesNumber = number,
     coverUrl = None,
     externalResources = resources,
-  )).getOrElse(AudioPlayValidationError.InvalidValues.invalidNec)
+  )).getOrElse(AudioPlayValidationError.InvalidArguments.invalidNec)
 
   /** Converts domain object to response object.
    *  @param domain entity to use as a base.

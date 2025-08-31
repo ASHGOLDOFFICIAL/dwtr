@@ -24,8 +24,8 @@ import cats.data.EitherT
 import cats.mtl.Handle.handleForApplicativeError
 import cats.mtl.{Handle, Raise}
 import cats.syntax.all.given
-import org.aulune.commons.errors.ApplicationServiceError
-import org.aulune.commons.errors.ApplicationServiceError.InvalidArgument
+import org.aulune.commons.errors.ErrorStatus
+import org.aulune.commons.errors.ErrorStatus.InvalidArgument
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
@@ -73,7 +73,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
 
   override def registerPermission(
       request: CreatePermissionRequest,
-  ): F[Either[ApplicationServiceError, PermissionResource]] = (for
+  ): F[Either[ErrorStatus, PermissionResource]] = (for
     domain <- EitherT
       .fromOption(PermissionMapper.fromRequest(request), InvalidArgument)
     result <- EitherT(upsertPermission(domain))
@@ -82,7 +82,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
 
   override def checkPermission(
       request: CheckPermissionRequest,
-  ): F[Either[ApplicationServiceError, CheckPermissionResponse]] =
+  ): F[Either[ErrorStatus, CheckPermissionResponse]] =
     val id = Uuid[User](request.user)
     val permissionIdentityOpt =
       PermissionMapper.makeIdentity(request.namespace, request.permission)
@@ -95,7 +95,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
 
   private def upsertPermission(
       permission: Permission,
-  ): F[Either[ApplicationServiceError, Permission]] = repo
+  ): F[Either[ErrorStatus, Permission]] = repo
     .upsert(permission)
     .attempt
     .map(_.leftMap(toApplicationError))
@@ -107,19 +107,19 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
   private def hasPermission(
       id: Uuid[User],
       permission: PermissionIdentity,
-  ): F[Either[ApplicationServiceError, Boolean]] = repo
+  ): F[Either[ErrorStatus, Boolean]] = repo
     .hasPermission(id, permission)
     .attempt
     .map(_.leftMap(toApplicationError))
 
   private def toApplicationError(
       throwable: Throwable,
-  ): ApplicationServiceError = throwable match
+  ): ErrorStatus = throwable match
     case e: RepositoryError => e match
         case RepositoryError.FailedPrecondition =>
-          ApplicationServiceError.FailedPrecondition
-        case _ => ApplicationServiceError.Internal
-    case _ => ApplicationServiceError.Internal
+          ErrorStatus.FailedPrecondition
+        case _ => ErrorStatus.Internal
+    case _ => ErrorStatus.Internal
 
   /** Makes check response out of initial request and check result.
    *

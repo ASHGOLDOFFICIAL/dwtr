@@ -11,7 +11,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.commons.errors.ApplicationServiceError
+import org.aulune.commons.errors.ErrorStatus
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
@@ -96,7 +96,7 @@ final class PersonServiceImplTest
           .returning(IO(true))
 
         for result <- service.create(user, emptyNameRequest)
-        yield result shouldBe ApplicationServiceError.InvalidArgument.asLeft
+        yield result shouldBe ErrorStatus.InvalidArgument.asLeft
       }
 
       "return `AlreadyExists` when creating person with taken identity" in {
@@ -110,7 +110,7 @@ final class PersonServiceImplTest
           .returning(RepositoryError.AlreadyExists.raiseError)
 
         for result <- service.create(user, request)
-        yield result shouldBe ApplicationServiceError.AlreadyExists.asLeft
+        yield result shouldBe ErrorStatus.AlreadyExists.asLeft
       }
 
       "return `PermissionDenied` when users without permissions are trying to create persons" in {
@@ -120,7 +120,7 @@ final class PersonServiceImplTest
           .returning(IO(false))
 
         for result <- service.create(user, request)
-        yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
+        yield result shouldBe ErrorStatus.PermissionDenied.asLeft
       }
     }
   }
@@ -153,7 +153,7 @@ final class PersonServiceImplTest
         (mockRepo.get _).expects(person.id).returning(person.some.pure)
 
         for result <- service.update(user, person.id, emptyNameRequest)
-        yield result shouldBe ApplicationServiceError.InvalidArgument.asLeft
+        yield result shouldBe ErrorStatus.InvalidArgument.asLeft
       }
 
       "return `NotFound` when updating non-existent person" in {
@@ -165,7 +165,7 @@ final class PersonServiceImplTest
         (mockRepo.get _).expects(person.id).returning(None.pure)
 
         for result <- service.update(user, person.id, request)
-        yield result shouldBe ApplicationServiceError.NotFound.asLeft
+        yield result shouldBe ErrorStatus.NotFound.asLeft
       }
 
       "return `PermissionDenied` when users without permissions are trying to update persons" in {
@@ -175,7 +175,7 @@ final class PersonServiceImplTest
           .returning(IO(false))
 
         for result <- service.update(user, person.id, request)
-        yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
+        yield result shouldBe ErrorStatus.PermissionDenied.asLeft
       }
     }
   }
@@ -201,7 +201,7 @@ final class PersonServiceImplTest
           .returning(IO(false))
 
         for result <- service.delete(user, person.id)
-        yield result shouldBe ApplicationServiceError.PermissionDenied.asLeft
+        yield result shouldBe ErrorStatus.PermissionDenied.asLeft
       }
     }
   }

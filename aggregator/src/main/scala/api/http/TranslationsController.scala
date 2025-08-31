@@ -17,15 +17,18 @@ import application.dto.{
 }
 
 import cats.Applicative
-import cats.syntax.all.*
-import org.aulune.commons.errors.toErrorResponse
+import cats.syntax.all.given
+import org.aulune.commons.circe.ErrorResponseCodecs.given
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.http.QueryParams
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
+import org.aulune.commons.tapir.ErrorResponseSchemas.given
+import org.aulune.commons.tapir.ErrorStatusCodeMapper
 import sttp.model.StatusCode
-import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
+import sttp.tapir.{EndpointInput, endpoint, path, statusCode, stringToPath}
 
 import java.util.UUID
 
@@ -78,13 +81,14 @@ private final class TranslationsController[F[_]: Applicative](
     .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResponse]
       .description("Requested audio play translation if found.")
       .example(responseExample)))
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetTranslation")
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
     .serverLogic { case (mediaId, id) =>
       for result <- service.findById(mediaId, id)
-      yield result.toRight(StatusCode.NotFound)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val listEndpoint = endpoint.get
@@ -94,13 +98,14 @@ private final class TranslationsController[F[_]: Applicative](
       statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationListResponse]
         .description("List of audio plays and a token to retrieve next page.")
         .example(listResponseExample)))
-    .errorOut(statusCode)
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
     .serverLogic { case (mediaId, pageSize, pageToken) =>
       for result <- service.listAll(pageToken, pageSize)
-      yield result.leftMap(toErrorResponse)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val postEndpoint = authOnlyEndpoint.post
@@ -115,9 +120,9 @@ private final class TranslationsController[F[_]: Applicative](
     .name("CreateTranslation")
     .summary("Creates a new translation for parent resource and returns it.")
     .tag(tag)
-    .serverLogic { user => (mediaId, tc) =>
-      for result <- service.create(user, tc, mediaId)
-      yield result.leftMap(toErrorResponse)
+    .serverLogic { user => (mediaId, request) =>
+      for result <- service.create(user, request, mediaId)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val deleteEndpoint = authOnlyEndpoint.delete
@@ -127,9 +132,8 @@ private final class TranslationsController[F[_]: Applicative](
     .summary("Deletes translation resource with given ID.")
     .tag(tag)
     .serverLogic { user => (mediaId, translationId) =>
-      service
-        .delete(user, mediaId, translationId)
-        .map(_.leftMap(toErrorResponse))
+      for result <- service.delete(user, mediaId, translationId)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   /** Returns Tapir endpoints for translations. */

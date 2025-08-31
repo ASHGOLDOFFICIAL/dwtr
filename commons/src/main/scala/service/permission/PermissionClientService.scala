@@ -2,7 +2,8 @@ package org.aulune.commons
 package service.permission
 
 
-import errors.ApplicationServiceError
+import errors.ErrorStatus.PermissionDenied
+import errors.{ErrorStatus, ErrorResponse}
 import service.auth.User
 
 import cats.syntax.all.given
@@ -19,7 +20,7 @@ trait PermissionClientService[F[_]]:
    */
   def registerPermission(
       permission: Permission,
-  ): F[Either[ApplicationServiceError, Unit]]
+  ): F[Either[ErrorStatus, Unit]]
 
   /** Returns authenticated user's info if token is valid.
    *  @param user user who needs permission.
@@ -36,7 +37,7 @@ object PermissionClientService:
    *  @param from authenticated user requesting the action.
    *  @param notGranted action to perform if the user lacks the permission.
    *  @param onGranted action to perform if the user has the permission.
-   *  @param service [[AuthorizationService]] instance (contextual).
+   *  @param service [[PermissionClientService]] instance (contextual).
    *  @tparam F effect type.
    *  @tparam A return type.
    *  @return a result in the effect `F` based on permission verification.
@@ -51,23 +52,29 @@ object PermissionClientService:
     case true  => onGranted
   }
 
-  /** Executes a provided action if the user has the required permission, or
-   *  returns a [[ApplicationServiceError.PermissionDenied]] error otherwise.
+  /** Executes a provided action if the user has the required permission,
+   *  otherwise returns a [[PermissionDenied]] response.
    *
    *  @param required required permission.
    *  @param from authenticated user.
    *  @param granted action to perform if the permission check passes.
-   *  @param service [[AuthorizationService]] instance (contextual).
+   *  @param service [[PermissionClientService]] instance (contextual).
    *  @tparam M effect type.
    *  @tparam A successful return type.
-   *  @return either [[ApplicationServiceError.PermissionDenied]] or the
-   *    successful result, wrapped in [[M]].
+   *  @return either [[PermissionDenied]] response or the successful result,
+   *    wrapped in [[M]].
    */
   def requirePermissionOrDeny[M[_]: Monad, A](
       required: Permission,
       from: User,
-  )(granted: => M[Either[ApplicationServiceError, A]])(using
+  )(granted: => M[Either[ErrorResponse, A]])(using
       service: PermissionClientService[M],
-  ): M[Either[ApplicationServiceError, A]] = requirePermission(required, from) {
-    ApplicationServiceError.PermissionDenied.asLeft[A].pure[M]
+  ): M[Either[ErrorResponse, A]] = requirePermission(required, from) {
+    permissionDenied.asLeft[A].pure[M]
   }(granted)
+
+  private val permissionDenied = ErrorResponse(
+    status = PermissionDenied,
+    message = "Permission denied or not found",
+    details = Nil,
+  )
