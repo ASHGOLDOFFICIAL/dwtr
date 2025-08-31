@@ -1,6 +1,5 @@
 package org.aulune.commons
-package adapters.jdbc.postgres.metas
-
+package doobie.postgres
 
 import types.Uuid
 

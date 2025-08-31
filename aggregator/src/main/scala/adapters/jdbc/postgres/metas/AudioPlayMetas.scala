@@ -22,7 +22,7 @@ import io.circe.generic.extras.semiauto.{
 }
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
-import org.aulune.commons.adapters.jdbc.postgres.metas.SharedMetas.jsonbMeta
+import org.aulune.commons.doobie.postgres.SharedMetas.jsonbMeta
 import org.aulune.commons.types.Uuid
 
 import java.net.URL

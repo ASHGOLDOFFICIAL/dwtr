@@ -26,7 +26,7 @@ import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode
 import io.circe.syntax.given
-import org.aulune.commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
+import org.aulune.commons.doobie.postgres.SharedMetas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError.FailedPrecondition
 import org.aulune.commons.types.Uuid
 

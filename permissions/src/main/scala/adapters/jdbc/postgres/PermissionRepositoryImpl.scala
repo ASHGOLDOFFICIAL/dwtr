@@ -21,7 +21,7 @@ import doobie.postgres.sqlstate
 import doobie.postgres.sqlstate.class23.UNIQUE_VIOLATION
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.commons.adapters.jdbc.postgres.metas.SharedMetas.uuidMeta
+import org.aulune.commons.doobie.postgres.SharedMetas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
