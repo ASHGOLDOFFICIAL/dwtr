@@ -1,17 +1,16 @@
 package org.aulune.aggregator
 package api.http.tapir.audioplay
 
-
-import application.dto.ExternalResourceDto
-import application.dto.ExternalResourceTypeDto.Purchase
+import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
-  AudioPlaySeriesResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
+  AudioPlaySeriesResource,
   CastMemberDto,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
+import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceDto
 
 import java.net.URI
 import java.time.LocalDate
@@ -27,7 +26,7 @@ object AudioPlayExamples:
     UUID.fromString("3cb893bf-5382-49ef-b881-2f07e75bfcdd")
   private val seriesNameExample = "Cicero"
   private val seriesExample = Some(
-    AudioPlaySeriesResponse(
+    AudioPlaySeriesResource(
       id = seriesIdExample,
       name = seriesNameExample,
     ))
@@ -103,7 +102,7 @@ object AudioPlayExamples:
   private val nextPageTokenExample =
     Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 
-  val requestExample: AudioPlayRequest = AudioPlayRequest(
+  val requestExample: CreateAudioPlayRequest = CreateAudioPlayRequest(
     title = titleExample,
     synopsis = synopsisExample,
     releaseDate = releaseDateExample,
@@ -115,7 +114,7 @@ object AudioPlayExamples:
     externalResources = externalResourcesExample,
   )
 
-  val responseExample: AudioPlayResponse = AudioPlayResponse(
+  val responseExample: AudioPlayResource = AudioPlayResource(
     id = UUID.fromString("bab591f2-e256-4969-9b79-7652d6d8430e"),
     title = titleExample,
     synopsis = synopsisExample,

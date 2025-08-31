@@ -9,7 +9,7 @@ import api.http.tapir.person.PersonExamples.{
 }
 import api.http.tapir.person.PersonSchemas.given
 import application.PersonService
-import application.dto.person.{PersonRequest, PersonResponse}
+import application.dto.person.{CreatePersonRequest, PersonResource}
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -47,7 +47,7 @@ final class PersonsController[F[_]: Applicative](
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(statusCode(StatusCode.Ok).and(jsonBody[PersonResponse]
+    .out(statusCode(StatusCode.Ok).and(jsonBody[PersonResource]
       .description("Requested person's information if found.")
       .example(personResponseExample)))
     .errorOut(statusCode.and(
@@ -62,10 +62,10 @@ final class PersonsController[F[_]: Applicative](
 
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
-    .in(jsonBody[PersonRequest]
+    .in(jsonBody[CreatePersonRequest]
       .description("Person to create")
       .example(personRequestExample))
-    .out(statusCode(StatusCode.Created).and(jsonBody[PersonResponse]
+    .out(statusCode(StatusCode.Created).and(jsonBody[PersonResource]
       .description("Created person.")
       .example(personResponseExample)))
     .name("CreatePerson")

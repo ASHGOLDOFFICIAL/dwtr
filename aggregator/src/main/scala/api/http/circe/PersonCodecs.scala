@@ -2,7 +2,7 @@ package org.aulune.aggregator
 package api.http.circe
 
 
-import application.dto.person.{PersonRequest, PersonResponse}
+import application.dto.person.{CreatePersonRequest, PersonResource}
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
@@ -14,8 +14,8 @@ import org.aulune.commons.http.circe.CirceConfiguration.config
 
 /** [[Encoder]] and [[Decoder]] instances for person DTOs. */
 private[api] object PersonCodecs:
-  given Encoder[PersonResponse] = deriveConfiguredEncoder
-  given Decoder[PersonResponse] = deriveConfiguredDecoder
+  given Encoder[PersonResource] = deriveConfiguredEncoder
+  given Decoder[PersonResource] = deriveConfiguredDecoder
 
-  given Encoder[PersonRequest] = deriveConfiguredEncoder
-  given Decoder[PersonRequest] = deriveConfiguredDecoder
+  given Encoder[CreatePersonRequest] = deriveConfiguredEncoder
+  given Decoder[CreatePersonRequest] = deriveConfiguredDecoder

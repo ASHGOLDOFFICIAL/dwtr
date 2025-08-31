@@ -6,13 +6,13 @@ import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{DownloadAudioPlays, Modify}
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
   CastMemberDto,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
-import application.dto.person.PersonResponse
+import application.dto.person.PersonResource
 import application.repositories.AudioPlayRepository
 import application.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 import application.{AggregatorPermission, AudioPlayService, PersonService}
@@ -76,7 +76,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
 ) extends AudioPlayService[F]:
   private given PermissionClientService[F] = permissionService
 
-  override def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResponse]] =
+  override def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResource]] =
     val uuid = Uuid[AudioPlay](id)
     val getResult = repo.get(uuid).attempt
     (for
@@ -99,9 +99,9 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
         yield response).value
 
   override def create(
-      user: User,
-      request: AudioPlayRequest,
-  ): F[Either[ErrorResponse, AudioPlayResponse]] =
+                       user: User,
+                       request: CreateAudioPlayRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]] =
     requirePermissionOrDeny(Modify, user) {
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
       (for
@@ -134,7 +134,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
    */
   private def getWriters(
       uuids: List[UUID],
-  ): F[Either[ErrorResponse, List[PersonResponse]]] = uuids
+  ): F[Either[ErrorResponse, List[PersonResource]]] = uuids
     .traverse(personService.findById)
     .map(_.sequence)
 
@@ -143,7 +143,7 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
    */
   private def getCastPersons(
       uuids: List[CastMemberDto],
-  ): F[Either[ErrorResponse, List[PersonResponse]]] = uuids
+  ): F[Either[ErrorResponse, List[PersonResource]]] = uuids
     .traverse(castMember => personService.findById(castMember.actor))
     .map(_.sequence)
 

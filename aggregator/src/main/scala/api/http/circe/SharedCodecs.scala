@@ -3,17 +3,13 @@ package api.http.circe
 
 
 import api.mappers.{ExternalResourceTypeMapper, LanguageMapper}
-import application.dto.{
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-  LanguageDto,
-}
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
+import org.aulune.aggregator.application.dto.audioplay.translation.{ExternalResourceDto, ExternalResourceTypeDto, LanguageDto}
 import org.aulune.commons.http.circe.CirceConfiguration.config
 
 import java.net.{URI, URL}

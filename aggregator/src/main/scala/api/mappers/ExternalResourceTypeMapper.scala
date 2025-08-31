@@ -1,7 +1,7 @@
 package org.aulune.aggregator
 package api.mappers
 
-import application.dto.ExternalResourceTypeDto
+import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto
 
 
 /** Mapper between application layer's [[ExternalResourceTypeDto]] and its API

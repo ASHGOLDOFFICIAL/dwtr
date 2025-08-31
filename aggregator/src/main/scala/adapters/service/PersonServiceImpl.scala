@@ -5,7 +5,7 @@ package adapters.service
 import adapters.service.errors.PersonServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.PersonMapper
 import application.AggregatorPermission.Modify
-import application.dto.person.{PersonRequest, PersonResponse}
+import application.dto.person.{CreatePersonRequest, PersonResource}
 import application.repositories.PersonRepository
 import application.{AggregatorPermission, PersonService}
 import domain.errors.PersonValidationError
@@ -46,7 +46,7 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
 ) extends PersonService[F]:
   given PermissionClientService[F] = permissionService
 
-  override def findById(id: UUID): F[Either[ErrorResponse, PersonResponse]] =
+  override def findById(id: UUID): F[Either[ErrorResponse, PersonResource]] =
     val uuid = Uuid[Person](id)
     val getResult = repo.get(uuid).attempt
     (for
@@ -56,9 +56,9 @@ private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
     yield response).value
 
   override def create(
-      user: User,
-      request: PersonRequest,
-  ): F[Either[ErrorResponse, PersonResponse]] =
+                       user: User,
+                       request: CreatePersonRequest,
+  ): F[Either[ErrorResponse, PersonResource]] =
     requirePermissionOrDeny(Modify, user) {
       (for
         id <- EitherT.liftF(UUIDGen.randomUUID[F].map(Uuid[Person]))

@@ -2,7 +2,7 @@ package org.aulune.aggregator
 package application
 
 
-import application.dto.person.{PersonRequest, PersonResponse}
+import application.dto.person.{CreatePersonRequest, PersonResource}
 
 import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
 import org.aulune.commons.service.auth.User
@@ -19,7 +19,7 @@ trait PersonService[F[_]]:
    *  @param id person identity.
    *  @return requested person if found.
    */
-  def findById(id: UUID): F[Either[ErrorResponse, PersonResponse]]
+  def findById(id: UUID): F[Either[ErrorResponse, PersonResource]]
 
   /** Create new audio play.
    *
@@ -29,9 +29,9 @@ trait PersonService[F[_]]:
    *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
-      user: User,
-      pr: PersonRequest,
-  ): F[Either[ErrorResponse, PersonResponse]]
+              user: User,
+              pr: CreatePersonRequest,
+  ): F[Either[ErrorResponse, PersonResource]]
 
   /** Deletes existing person.
    *

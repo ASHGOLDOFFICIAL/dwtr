@@ -1,8 +1,5 @@
 package org.aulune.aggregator
-package application.dto
-
-
-import application.dto.LanguageDto
+package application.dto.audioplay.translation
 
 import java.net.URI
 
@@ -13,7 +10,7 @@ import java.net.URI
  *  @param links links to where translation is published.
  *  @param translationType type of translation.
  */
-final case class AudioPlayTranslationRequest(
+final case class CreateAudioPlayTranslationRequest(
     title: String,
     translationType: AudioPlayTranslationTypeDto,
     language: LanguageDto,

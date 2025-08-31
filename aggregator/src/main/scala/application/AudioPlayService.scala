@@ -3,8 +3,8 @@ package application
 
 
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse
 }
@@ -25,7 +25,7 @@ trait AudioPlayService[F[_]]:
    *  @param id audio play identity.
    *  @return requested audio play if found.
    */
-  def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResponse]]
+  def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Get a portion of audio plays.
    *  @param request request to list audio plays.
@@ -43,9 +43,9 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
-      user: User,
-      ac: AudioPlayRequest,
-  ): F[Either[ErrorResponse, AudioPlayResponse]]
+              user: User,
+              ac: CreateAudioPlayRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Deletes existing audio play.
    *

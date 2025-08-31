@@ -1,13 +1,13 @@
 package org.aulune.aggregator
 package adapters.service.mappers
 
-
-import application.dto.{ExternalResourceDto, ExternalResourceTypeDto}
 import domain.shared.{ExternalResource, ExternalResourceType}
+import org.aulune.aggregator.application.dto.audioplay.translation.{ExternalResourceDto, ExternalResourceTypeDto}
 
 
 /** Mapper between external [[ExternalResourceDto]] and domain's
  *  [[ExternalResource]].
+ *
  *  @note Should not be used outside `service` package to not expose domain
  *    type.
  */

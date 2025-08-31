@@ -9,15 +9,9 @@ import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
   responseExample,
 }
 import api.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
-import application.dto.{
-  AudioPlayTranslationListResponse,
-  AudioPlayTranslationRequest,
-  AudioPlayTranslationResponse,
-  AudioPlayTranslationTypeDto,
-  LanguageDto,
-}
 
 import io.circe.syntax.*
+import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, AudioPlayTranslationTypeDto, CreateAudioPlayTranslationRequest, LanguageDto, ListAudioPlayTranslationsResponse}
 import sttp.tapir.{Schema, Validator}
 
 import java.net.URI
@@ -61,8 +55,8 @@ object AudioPlayTranslationSchemas:
         .toString)
     .description(languageDescription)
 
-  given Schema[AudioPlayTranslationRequest] = Schema
-    .derived[AudioPlayTranslationRequest]
+  given Schema[CreateAudioPlayTranslationRequest] = Schema
+    .derived[CreateAudioPlayTranslationRequest]
     .modify(_.title) {
       _.encodedExample(requestExample.title.asJson.toString)
         .description(titleDescription)
@@ -70,8 +64,8 @@ object AudioPlayTranslationSchemas:
     .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
       .description(linksDescription))
 
-  given Schema[AudioPlayTranslationResponse] = Schema
-    .derived[AudioPlayTranslationResponse]
+  given Schema[AudioPlayTranslationResource] = Schema
+    .derived[AudioPlayTranslationResource]
     .modify(_.id) {
       _.encodedExample(responseExample.id.asJson.toString)
         .description(idDescription)
@@ -87,8 +81,8 @@ object AudioPlayTranslationSchemas:
     .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
       .description(linksDescription))
 
-  given Schema[AudioPlayTranslationListResponse] = Schema
-    .derived[AudioPlayTranslationListResponse]
+  given Schema[ListAudioPlayTranslationsResponse] = Schema
+    .derived[ListAudioPlayTranslationsResponse]
     .modify(_.nextPageToken) {
       _.encodedExample(listResponseExample.nextPageToken)
         .description(nextPageDescription)

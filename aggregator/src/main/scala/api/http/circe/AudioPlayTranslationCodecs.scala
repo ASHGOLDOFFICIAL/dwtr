@@ -9,20 +9,11 @@ import api.mappers.{
   LanguageMapper,
 }
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
-  AudioPlaySeriesResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
+  AudioPlaySeriesResource,
   CastMemberDto,
   ListAudioPlaysResponse,
-}
-import application.dto.{
-  AudioPlayTranslationListResponse,
-  AudioPlayTranslationRequest,
-  AudioPlayTranslationResponse,
-  AudioPlayTranslationTypeDto,
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-  LanguageDto,
 }
 
 import io.circe.generic.extras.semiauto.{
@@ -30,6 +21,7 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
+import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, AudioPlayTranslationTypeDto, CreateAudioPlayTranslationRequest, ExternalResourceDto, ExternalResourceTypeDto, LanguageDto, ListAudioPlayTranslationsResponse}
 import org.aulune.commons.http.circe.CirceConfiguration.config
 
 import java.net.{URI, URL}
@@ -46,11 +38,11 @@ private[api] object AudioPlayTranslationCodecs:
       .toRight(s"Invalid TranslationType: $str")
   }
 
-  given Encoder[AudioPlayTranslationRequest] = deriveConfiguredEncoder
-  given Decoder[AudioPlayTranslationRequest] = deriveConfiguredDecoder
+  given Encoder[CreateAudioPlayTranslationRequest] = deriveConfiguredEncoder
+  given Decoder[CreateAudioPlayTranslationRequest] = deriveConfiguredDecoder
 
-  given Encoder[AudioPlayTranslationResponse] = deriveConfiguredEncoder
-  given Decoder[AudioPlayTranslationResponse] = deriveConfiguredDecoder
+  given Encoder[AudioPlayTranslationResource] = deriveConfiguredEncoder
+  given Decoder[AudioPlayTranslationResource] = deriveConfiguredDecoder
 
-  given Encoder[AudioPlayTranslationListResponse] = deriveConfiguredEncoder
-  given Decoder[AudioPlayTranslationListResponse] = deriveConfiguredDecoder
+  given Encoder[ListAudioPlayTranslationsResponse] = deriveConfiguredEncoder
+  given Decoder[ListAudioPlayTranslationsResponse] = deriveConfiguredDecoder

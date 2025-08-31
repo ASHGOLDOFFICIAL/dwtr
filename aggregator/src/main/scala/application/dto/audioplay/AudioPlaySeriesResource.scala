@@ -8,7 +8,7 @@ import java.util.UUID
  *  @param id unique series ID.
  *  @param name series name.
  */
-final case class AudioPlaySeriesResponse(
+final case class AudioPlaySeriesResource(
     id: UUID,
     name: String,
 )

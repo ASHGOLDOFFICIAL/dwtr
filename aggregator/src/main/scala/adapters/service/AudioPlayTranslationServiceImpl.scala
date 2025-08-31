@@ -5,11 +5,6 @@ package adapters.service
 import adapters.service.errors.AudioPlayTranslationServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayTranslationMapper
 import application.AggregatorPermission.Modify
-import application.dto.{
-  AudioPlayTranslationListResponse,
-  AudioPlayTranslationRequest,
-  AudioPlayTranslationResponse,
-}
 import application.repositories.TranslationRepository
 import application.repositories.TranslationRepository.{
   AudioPlayTranslationCursor,
@@ -23,6 +18,7 @@ import cats.MonadThrow
 import cats.data.{EitherT, Validated}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
+import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, CreateAudioPlayTranslationRequest, ListAudioPlayTranslationsResponse}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.{PaginationParams, PaginationParamsParser}
 import org.aulune.commons.service.auth.User
@@ -71,7 +67,7 @@ private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
   override def findById(
       originalId: UUID,
       id: UUID,
-  ): F[Either[ErrorResponse, AudioPlayTranslationResponse]] =
+  ): F[Either[ErrorResponse, AudioPlayTranslationResource]] =
     val tId = identity(originalId, id)
     val getResult = repo.get(tId).attempt
     (for
@@ -83,7 +79,7 @@ private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
   override def listAll(
       token: Option[String],
       count: Int,
-  ): F[Either[ErrorResponse, AudioPlayTranslationListResponse]] =
+  ): F[Either[ErrorResponse, ListAudioPlayTranslationsResponse]] =
     paginationParser.parse(Some(count), token) match
       case Validated.Invalid(_) =>
         ErrorResponses.invalidPaginationParams.asLeft.pure
@@ -95,10 +91,10 @@ private final class AudioPlayTranslationServiceImpl[F[_]: MonadThrow: UUIDGen](
         yield response).value
 
   override def create(
-      user: User,
-      request: AudioPlayTranslationRequest,
-      originalId: UUID,
-  ): F[Either[ErrorResponse, AudioPlayTranslationResponse]] =
+                       user: User,
+                       request: CreateAudioPlayTranslationRequest,
+                       originalId: UUID,
+  ): F[Either[ErrorResponse, AudioPlayTranslationResource]] =
     requirePermissionOrDeny(Modify, user) {
       (for
         id <- EitherT

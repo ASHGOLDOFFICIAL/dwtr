@@ -1,7 +1,7 @@
 package org.aulune.aggregator
 package api.mappers
 
-import application.dto.LanguageDto
+import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto
 
 
 /** Mapper between application layer's [[LanguageDto]] and its API

@@ -3,7 +3,7 @@ package adapters.service
 
 
 import application.AggregatorPermission.Modify
-import application.dto.person.{PersonRequest, PersonResponse}
+import application.dto.person.{CreatePersonRequest, PersonResource}
 import application.repositories.PersonRepository
 import domain.model.person.{FullName, Person}
 
@@ -46,10 +46,10 @@ final class PersonServiceImplTest
   private val person = Person.unsafe(
     id = Uuid.unsafe[Person]("9d91def4-c492-4984-b1d4-adf9a7081b56"),
     name = FullName.unsafe("John Smith"))
-  private val request = PersonRequest(name = person.name)
-  private val response = PersonResponse(id = person.id, name = person.name)
+  private val request = CreatePersonRequest(name = person.name)
+  private val response = PersonResource(id = person.id, name = person.name)
 
-  private val emptyNameRequest = PersonRequest(name = "")
+  private val emptyNameRequest = CreatePersonRequest(name = "")
 
   "findById method " - {
     "should " - {
@@ -84,7 +84,7 @@ final class PersonServiceImplTest
         (mockRepo.persist _).expects(generated).returning(generated.pure)
 
         for result <- service.create(user, request)
-        yield result shouldBe PersonResponse(
+        yield result shouldBe PersonResource(
           id = generated.id,
           name = generated.name).asRight
       }
@@ -126,8 +126,8 @@ final class PersonServiceImplTest
   }
 
   private val updated = Person.unsafe(person.id, FullName.unsafe("John Brown"))
-  private val updatedRequest = PersonRequest(name = updated.name)
-  private val updatedResponse = PersonResponse(person.id, name = updated.name)
+  private val updatedRequest = CreatePersonRequest(name = updated.name)
+  private val updatedResponse = PersonResource(person.id, name = updated.name)
   "update method " - {
     "should " - {
       "allow users with permissions to update persons if they exist" in {

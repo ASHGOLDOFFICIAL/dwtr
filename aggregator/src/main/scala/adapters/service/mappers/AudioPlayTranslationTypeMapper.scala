@@ -1,14 +1,14 @@
 package org.aulune.aggregator
 package adapters.service.mappers
 
-
-import application.dto.AudioPlayTranslationTypeDto
-import application.dto.AudioPlayTranslationTypeDto.*
+import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto.*
 import domain.model.audioplay.AudioPlayTranslationType
+import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto
 
 
 /** Mapper between external [[AudioPlayTranslationTypeDto]] and domain's
  *  [[AudioPlayTranslationType]].
+ *
  *  @note Should not be used outside `service` package to not expose domain
  *    type.
  */

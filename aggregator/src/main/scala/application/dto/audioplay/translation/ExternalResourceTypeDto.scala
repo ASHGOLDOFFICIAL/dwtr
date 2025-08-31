@@ -1,6 +1,5 @@
 package org.aulune.aggregator
-package application.dto
-
+package application.dto.audioplay.translation
 
 /** Type of links for resource. */
 enum ExternalResourceTypeDto:

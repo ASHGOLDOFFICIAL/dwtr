@@ -2,7 +2,7 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import application.dto.person.{PersonRequest, PersonResponse}
+import application.dto.person.{CreatePersonRequest, PersonResource}
 import domain.errors.PersonValidationError
 import domain.errors.PersonValidationError.InvalidArguments
 import domain.model.person.{FullName, Person}
@@ -20,13 +20,13 @@ object PersonMapper:
    *  @return created domain object if valid.
    */
   def fromCreateRequest(
-      request: PersonRequest,
-      id: Uuid[Person],
+                         request: CreatePersonRequest,
+                         id: Uuid[Person],
   ): ValidatedNec[PersonValidationError, Person] =
     FullName(request.name).map(name => Person(id = id, name = name)) match
       case Some(person) => person
       case None         => InvalidArguments.invalidNec
 
   /** Converts domain object to response object. */
-  def toResponse(domain: Person): PersonResponse =
-    PersonResponse(id = domain.id, name = domain.name)
+  def toResponse(domain: Person): PersonResource =
+    PersonResource(id = domain.id, name = domain.name)

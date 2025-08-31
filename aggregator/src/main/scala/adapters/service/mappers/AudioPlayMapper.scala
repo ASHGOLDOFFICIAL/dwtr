@@ -3,8 +3,8 @@ package adapters.service.mappers
 
 
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
   ListAudioPlaysResponse
 }
 import application.repositories.AudioPlayRepository.AudioPlayCursor
@@ -40,9 +40,9 @@ private[service] object AudioPlayMapper:
    *  @return created domain object if valid.
    */
   def fromRequest(
-      request: AudioPlayRequest,
-      id: UUID,
-      series: Option[AudioPlaySeries],
+                   request: CreateAudioPlayRequest,
+                   id: UUID,
+                   series: Option[AudioPlaySeries],
   ): ValidatedNec[AudioPlayValidationError, AudioPlay] = (for
     title <- AudioPlayTitle(request.title)
     synopsis <- Synopsis(request.synopsis)
@@ -69,7 +69,7 @@ private[service] object AudioPlayMapper:
   /** Converts domain object to response object.
    *  @param domain entity to use as a base.
    */
-  def toResponse(domain: AudioPlay): AudioPlayResponse = AudioPlayResponse(
+  def toResponse(domain: AudioPlay): AudioPlayResource = AudioPlayResource(
     id = domain.id,
     title = domain.title,
     synopsis = domain.synopsis,

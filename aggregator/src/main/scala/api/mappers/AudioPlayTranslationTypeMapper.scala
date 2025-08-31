@@ -1,7 +1,7 @@
 package org.aulune.aggregator
 package api.mappers
 
-import application.dto.AudioPlayTranslationTypeDto
+import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto
 
 
 /** Mapper between application layer's [[AudioPlayTranslationTypeDto]] and its

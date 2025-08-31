@@ -10,14 +10,10 @@ import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
 }
 import api.http.tapir.audioplay.translation.AudioPlayTranslationSchemas.given
 import application.AudioPlayTranslationService
-import application.dto.{
-  AudioPlayTranslationListResponse,
-  AudioPlayTranslationRequest,
-  AudioPlayTranslationResponse,
-}
 
 import cats.Applicative
 import cats.syntax.all.given
+import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, CreateAudioPlayTranslationRequest, ListAudioPlayTranslationsResponse}
 import org.aulune.commons.circe.ErrorResponseCodecs.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.http.QueryParams
@@ -78,7 +74,7 @@ private final class TranslationsController[F[_]: Applicative](
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResponse]
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResource]
       .description("Requested audio play translation if found.")
       .example(responseExample)))
     .errorOut(statusCode.and(
@@ -95,7 +91,7 @@ private final class TranslationsController[F[_]: Applicative](
     .in(collectionPath)
     .in(QueryParams.pagination(pagination.default, pagination.max))
     .out(
-      statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationListResponse]
+      statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlayTranslationsResponse]
         .description("List of audio plays and a token to retrieve next page.")
         .example(listResponseExample)))
     .errorOut(statusCode.and(
@@ -110,11 +106,11 @@ private final class TranslationsController[F[_]: Applicative](
 
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
-    .in(jsonBody[AudioPlayTranslationRequest]
+    .in(jsonBody[CreateAudioPlayTranslationRequest]
       .description("Translation to create")
       .example(requestExample))
     .out(
-      statusCode(StatusCode.Created).and(jsonBody[AudioPlayTranslationResponse]
+      statusCode(StatusCode.Created).and(jsonBody[AudioPlayTranslationResource]
         .description("Created translation.")
         .example(responseExample)))
     .name("CreateTranslation")

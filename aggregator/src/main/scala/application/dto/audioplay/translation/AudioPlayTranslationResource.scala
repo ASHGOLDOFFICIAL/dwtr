@@ -1,8 +1,5 @@
 package org.aulune.aggregator
-package application.dto
-
-
-import application.dto.LanguageDto
+package application.dto.audioplay.translation
 
 import java.net.URI
 import java.util.UUID
@@ -16,7 +13,7 @@ import java.util.UUID
  *  @param translationType type of translation.
  *  @param links links to translation publications.
  */
-final case class AudioPlayTranslationResponse(
+final case class AudioPlayTranslationResource(
     originalId: UUID,
     id: UUID,
     title: String,

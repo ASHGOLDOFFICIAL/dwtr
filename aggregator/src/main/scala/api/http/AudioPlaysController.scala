@@ -11,8 +11,8 @@ import api.http.tapir.audioplay.AudioPlayExamples.{
 }
 import api.http.tapir.audioplay.AudioPlaySchemas.given
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
@@ -22,7 +22,6 @@ import cats.Applicative
 import cats.syntax.all.given
 import org.aulune.commons.circe.ErrorResponseCodecs.given
 import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.http.QueryParams
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.auth.AuthenticationEndpoints.authOnlyEndpoint
 import org.aulune.commons.tapir.ErrorResponseSchemas.given
@@ -62,7 +61,7 @@ final class AudioPlaysController[F[_]: Applicative](
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
-    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResponse]
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResource]
       .description("Requested audio play if found.")
       .example(responseExample)))
     .errorOut(statusCode.and(
@@ -95,10 +94,10 @@ final class AudioPlaysController[F[_]: Applicative](
 
   private val postEndpoint = authOnlyEndpoint.post
     .in(collectionPath)
-    .in(jsonBody[AudioPlayRequest]
+    .in(jsonBody[CreateAudioPlayRequest]
       .description("Audio play to create.")
       .example(requestExample))
-    .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResponse]
+    .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResource]
       .description("Created audio play.")
       .example(responseExample)))
     .name("CreateAudioPlay")

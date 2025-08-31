@@ -8,7 +8,7 @@ import java.util.UUID
  *  @param id person unique ID.
  *  @param name full name.
  */
-final case class PersonResponse(
+final case class PersonResource(
     id: UUID,
     name: String,
 )

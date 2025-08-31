@@ -1,6 +1,5 @@
 package org.aulune.aggregator
-package application.dto
-
+package application.dto.audioplay.translation
 
 /** Values to be used as translation type. */
 enum AudioPlayTranslationTypeDto:

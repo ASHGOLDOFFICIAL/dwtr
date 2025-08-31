@@ -4,9 +4,9 @@ package api.http.circe
 
 import api.http.circe.SharedCodecs.given
 import application.dto.audioplay.{
-  AudioPlayRequest,
-  AudioPlayResponse,
-  AudioPlaySeriesResponse,
+  CreateAudioPlayRequest,
+  AudioPlayResource,
+  AudioPlaySeriesResource,
   CastMemberDto,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
@@ -22,14 +22,14 @@ import org.aulune.commons.http.circe.CirceConfiguration.config
 
 /** [[Encoder]] and [[Decoder]] instances for audio play DTOs. */
 private[api] object AudioPlayCodecs:
-  given Encoder[AudioPlaySeriesResponse] = deriveConfiguredEncoder
-  given Decoder[AudioPlaySeriesResponse] = deriveConfiguredDecoder
+  given Encoder[AudioPlaySeriesResource] = deriveConfiguredEncoder
+  given Decoder[AudioPlaySeriesResource] = deriveConfiguredDecoder
 
-  given Encoder[AudioPlayRequest] = deriveConfiguredEncoder
-  given Decoder[AudioPlayRequest] = deriveConfiguredDecoder
+  given Encoder[CreateAudioPlayRequest] = deriveConfiguredEncoder
+  given Decoder[CreateAudioPlayRequest] = deriveConfiguredDecoder
 
-  given Encoder[AudioPlayResponse] = deriveConfiguredEncoder
-  given Decoder[AudioPlayResponse] = deriveConfiguredDecoder
+  given Encoder[AudioPlayResource] = deriveConfiguredEncoder
+  given Decoder[AudioPlayResource] = deriveConfiguredDecoder
 
   given Encoder[ListAudioPlaysRequest] = deriveConfiguredEncoder
   given Decoder[ListAudioPlaysRequest] = deriveConfiguredDecoder
