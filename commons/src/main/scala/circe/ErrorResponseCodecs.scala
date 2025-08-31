@@ -3,7 +3,7 @@ package circe
 
 
 import errors.{ErrorInfo, ErrorReason, ErrorResponse, ErrorStatus}
-import http.circe.CirceConfiguration.config
+import CirceUtils.config
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,

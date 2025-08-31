@@ -31,7 +31,7 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.commons.http.circe.CirceConfiguration.config
+import org.aulune.commons.circe.CirceUtils.config
 
 import java.net.{URI, URL}
 import scala.util.Try

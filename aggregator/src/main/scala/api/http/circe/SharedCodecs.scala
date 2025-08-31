@@ -10,7 +10,7 @@ import io.circe.generic.extras.semiauto.{
 }
 import io.circe.{Decoder, Encoder}
 import org.aulune.aggregator.application.dto.audioplay.translation.{ExternalResourceDto, ExternalResourceTypeDto, LanguageDto}
-import org.aulune.commons.http.circe.CirceConfiguration.config
+import org.aulune.commons.circe.CirceUtils.config
 
 import java.net.{URI, URL}
 import scala.util.Try

@@ -9,7 +9,7 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.commons.http.circe.CirceConfiguration.config
+import org.aulune.commons.circe.CirceUtils.config
 
 
 /** [[Encoder]] and [[Decoder]] instances for person DTOs. */
