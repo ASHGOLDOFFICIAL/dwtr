@@ -2,7 +2,7 @@ package org.aulune.permissions
 package adapters.service
 
 
-import application.PermissionRepository.PermissionIdentity
+import application.PermissionService
 import application.dto.CheckPermissionStatus.{Denied, Granted}
 import application.dto.{
   CheckPermissionRequest,
@@ -11,7 +11,12 @@ import application.dto.{
   CreatePermissionRequest,
   PermissionResource,
 }
-import application.{PermissionRepository, PermissionService}
+import application.errors.PermissionServiceError.{
+  InvalidPermission,
+  PermissionNotFound,
+}
+import domain.repositories.PermissionRepository
+import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{
   Permission,
   PermissionDescription,
@@ -21,10 +26,8 @@ import domain.{
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.mtl.Handle.handleForApplicativeError
-import cats.mtl.Raise
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus
+import org.aulune.commons.errors.ErrorInfo
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
@@ -46,6 +49,8 @@ final class PermissionServiceImplTest
     with AsyncMockFactory:
   private given Logger[IO] = Slf4jLogger.getLogger[IO]
 
+  private val domain = "org.aulune.permissions"
+
   private val adminNamespace = "adminNamespace"
   private val adminName = "adminName"
   private val adminPermission = PermissionIdentity(
@@ -56,16 +61,15 @@ final class PermissionServiceImplTest
     p.namespace == adminNamespace && p.name == adminName
 
   private val mockRepo = mock[PermissionRepository[IO]]
-  private def stand: (PermissionService[IO] => IO[Assertion]) => IO[Assertion] =
-    testCase =>
-      (mockRepo
-        .upsert(_: Permission)(using
-          _: Raise[IO, RepositoryError]))
-        .expects(argThat(hasAdminPermissionIdentity), *)
-        .onCall((p: Permission, _: Raise[IO, RepositoryError]) => IO.pure(p))
-      PermissionServiceImpl
-        .build[IO](adminNamespace, adminName, mockRepo)
-        .flatMap(testCase)
+  private def stand(
+      testCase: PermissionService[IO] => IO[Assertion],
+  ): IO[Assertion] =
+    (mockRepo.upsert _)
+      .expects(where(hasAdminPermissionIdentity))
+      .onCall(p => IO.pure(p))
+    PermissionServiceImpl
+      .build[IO](adminNamespace, adminName, mockRepo)
+      .flatMap(testCase)
 
   private val user = User(
     id = UUID.fromString("e05d2bd1-f347-4861-ac53-f2d36a6f942f"),
@@ -106,25 +110,35 @@ final class PermissionServiceImplTest
   "registerPermission method " - {
     "should " - {
       "add new permissions" in stand { service =>
-        (mockRepo
-          .upsert(_: Permission)(using
-            _: Raise[IO, RepositoryError]))
-          .expects(testPermission, *)
+        (mockRepo.upsert _)
+          .expects(testPermission)
           .returning(testPermission.pure)
         for result <- service.registerPermission(createRequest)
         yield result shouldBe permissionResource.asRight
       }
 
+      "result in InvalidPermission when request is invalid" in stand {
+        service =>
+          val invalidRequest = CreatePermissionRequest(
+            namespace = "whitespace inside",
+            name = "the same",
+            description = "",
+          )
+          for result <- service.registerPermission(invalidRequest)
+          yield result match
+            case Left(error) => error.details.info shouldBe ErrorInfo(
+                reason = InvalidPermission,
+                domain = domain,
+              ).some
+            case Right(value) => fail("Error was expected.")
+      }
+
       "be idempotent" in stand { service =>
-        (mockRepo
-          .upsert(_: Permission)(using
-            _: Raise[IO, RepositoryError]))
-          .expects(testPermission, *)
+        (mockRepo.upsert _)
+          .expects(testPermission)
           .returning(testPermission.pure)
-        (mockRepo
-          .upsert(_: Permission)(using
-            _: Raise[IO, RepositoryError]))
-          .expects(testPermission, *)
+        (mockRepo.upsert _)
+          .expects(testPermission)
           .returning(testPermission.pure)
 
         for
@@ -194,19 +208,36 @@ final class PermissionServiceImplTest
           yield result shouldBe checkResponse(Granted).asRight
       }
 
-      "result in FailedPrecondition if permission hadn't been registered prior" in stand {
+      "result in InvalidPermission when trying to check invalid permission" in stand {
         service =>
-          // User is an admin...
-          (mockRepo.hasPermission _)
-            .expects(Uuid[User](user.id), adminPermission)
-            .returning(true.pure)
-          // ...but required permission doesn't exist.
+          val invalidRequest = CheckPermissionRequest(
+            namespace = "whitespace inside",
+            permission = "the same",
+            user = user.id,
+          )
+          for result <- service.checkPermission(invalidRequest)
+          yield result match
+            case Left(error) => error.details.info shouldBe ErrorInfo(
+                reason = InvalidPermission,
+                domain = domain,
+              ).some
+            case Right(value) => fail("Error was expected.")
+      }
+
+      "result in PermissionNotFound if permission hadn't been registered prior" in stand {
+        service =>
+          // User doesn't have a required permission.
           (mockRepo.hasPermission _)
             .expects(Uuid[User](user.id), testPermissionIdentity)
             .returning(IO.raiseError(RepositoryError.FailedPrecondition))
 
           for result <- service.checkPermission(checkRequest)
-          yield result shouldBe ErrorStatus.FailedPrecondition.asLeft
+          yield result match
+            case Left(error) => error.details.info shouldBe ErrorInfo(
+                reason = PermissionNotFound,
+                domain = domain,
+              ).some
+            case Right(value) => fail("Error was expected.")
       }
     }
   }

@@ -2,7 +2,7 @@ package org.aulune.permissions
 package adapters.jdbc.postgres
 
 
-import application.PermissionRepository.PermissionIdentity
+import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{
   Permission,
   PermissionDescription,
@@ -12,7 +12,6 @@ import domain.{
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import cats.mtl.Handle.handleForApplicativeError
 import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
