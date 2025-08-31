@@ -5,6 +5,7 @@ package application
 import application.PermissionRepository.PermissionIdentity
 import domain.{Permission, PermissionName, PermissionNamespace}
 
+import org.aulune.commons.repositories.RepositoryError.FailedPrecondition
 import org.aulune.commons.repositories.{GenericRepository, Upsert}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
@@ -18,11 +19,14 @@ trait PermissionRepository[F[_]]
     with Upsert[F, Permission]:
 
   /** Check if given user has given permission.
+   *
+   *  Errors:
+   *    - [[FailedPrecondition]] will be returned if required permission doesn't
+   *      exist.
+   *
    *  @param user user.
    *  @param permission identity of a required permission.
    *  @return `true` if user has it, otherwise `false`.
-   *  @note If required permission doesn't exist, [[FailedPrecondition]] will be
-   *    thrown inside.
    */
   def hasPermission(
       user: Uuid[User],
@@ -30,10 +34,13 @@ trait PermissionRepository[F[_]]
   ): F[Boolean]
 
   /** Grants permission to a user.
+   *
+   *  Errors:
+   *    - [[FailedPrecondition]] will be returned if required permission doesn't
+   *      exist.
+   *
    *  @param user user who will be granted permission.
    *  @param permission permission to be granted.
-   *  @note If granted permission doesn't exist, [[FailedPrecondition]] will be
-   *    thrown inside.
    */
   def grantPermission(
       user: Uuid[User],
@@ -41,10 +48,13 @@ trait PermissionRepository[F[_]]
   ): F[Unit]
 
   /** Revokes permission from a user.
+   *
+   *  Errors:
+   *    - [[FailedPrecondition]] will be returned if required permission doesn't
+   *      exist.
+   *
    *  @param user user whose permission will be revoked.
    *  @param permission permission to be revoked.
-   *  @note If revoked permission doesn't exist, [[FailedPrecondition]] will be
-   *    thrown inside.
    *  @note This method is idempotent.
    */
   def revokePermission(

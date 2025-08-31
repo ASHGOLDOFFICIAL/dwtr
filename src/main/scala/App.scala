@@ -43,7 +43,7 @@ object App extends IOApp.Simple:
       aggregatorApp <- AggregatorApp.build(
         config.aggregator,
         authApp.clientAuthentication,
-        permissionApp.clientPermission,
+        permissionApp.clientService,
         transactor)
       endpoints = authApp.endpoints ++ aggregatorApp.endpoints
       _ <- makeServer[IO](endpoints).use(_ => IO.never)

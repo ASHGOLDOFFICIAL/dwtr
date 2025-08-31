@@ -17,7 +17,7 @@ import org.typelevel.log4cats.Logger
  *  @tparam F effect type.
  */
 trait PermissionApp[F[_]]:
-  val clientPermission: PermissionClientService[F]
+  val clientService: PermissionClientService[F]
 
 
 object PermissionApp:
@@ -36,5 +36,5 @@ object PermissionApp:
         adminPermissionName = config.adminPermissionName,
         repo = repository)
     yield new PermissionApp[F]:
-      override val clientPermission: PermissionClientService[F] =
+      override val clientService: PermissionClientService[F] =
         PermissionServiceAdapter[F](service)

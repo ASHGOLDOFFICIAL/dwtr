@@ -14,7 +14,6 @@ import domain.{
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
-import cats.mtl.Raise
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
 import doobie.postgres.sqlstate

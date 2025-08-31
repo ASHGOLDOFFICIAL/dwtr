@@ -3,7 +3,13 @@ package adapters.service
 
 
 import application.PermissionRepository.PermissionIdentity
-import application.dto.{CreatePermissionRequest, PermissionResource}
+import application.dto.CheckPermissionStatus.{Denied, Granted}
+import application.dto.{
+  CheckPermissionRequest,
+  CheckPermissionResponse,
+  CreatePermissionRequest,
+  PermissionResource,
+}
 import domain.{
   Permission,
   PermissionDescription,
@@ -21,7 +27,7 @@ private[service] object PermissionMapper:
    *  @param dto permission DTO.
    *  @return created domain object if valid.
    */
-  def fromRequest(dto: CreatePermissionRequest): Option[Permission] =
+  def fromCreateRequest(dto: CreatePermissionRequest): Option[Permission] =
     for
       namespace <- PermissionNamespace(dto.namespace)
       name <- PermissionName(dto.name)
@@ -36,6 +42,20 @@ private[service] object PermissionMapper:
     namespace = domain.namespace,
     name = domain.name,
     description = domain.description,
+  )
+
+  /** Makes check response out of initial request and check result.
+   *  @param request initial request.
+   *  @param isGranted whether permission is granted or not.
+   */
+  def toCheckResponse(
+      request: CheckPermissionRequest,
+      isGranted: Boolean,
+  ): CheckPermissionResponse = CheckPermissionResponse(
+    status = if isGranted then Granted else Denied,
+    user = request.user,
+    namespace = request.namespace,
+    permission = request.permission,
   )
 
   /** Makes permission identity of given arguments.

@@ -4,11 +4,9 @@ package adapters.service
 
 import adapters.service.PermissionServiceErrorResponses as ErrorResponses
 import application.PermissionRepository.PermissionIdentity
-import application.dto.CheckPermissionStatus.{Denied, Granted}
 import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
-  CheckPermissionStatus,
   CreatePermissionRequest,
   PermissionResource,
 }
@@ -22,7 +20,6 @@ import domain.{
 
 import cats.MonadThrow
 import cats.data.EitherT
-import cats.mtl.Raise
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.repositories.RepositoryError
@@ -73,11 +70,10 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
   ): F[Either[ErrorResponse, PermissionResource]] = (for
     permission <- EitherT
       .fromOption(
-        PermissionMapper.fromRequest(request),
+        PermissionMapper.fromCreateRequest(request),
         ErrorResponses.invalidPermission)
     result <- repo
       .upsert(permission)
-      .handleError { case RepositoryError.FailedPrecondition => permission }
       .attemptT
       .leftMap(_ => ErrorResponses.internal)
     response = PermissionMapper.toResponse(result)
@@ -87,15 +83,15 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
       request: CheckPermissionRequest,
   ): F[Either[ErrorResponse, CheckPermissionResponse]] =
     val id = Uuid[User](request.user)
-    val permissionIdentityOpt =
-      PermissionMapper.makeIdentity(request.namespace, request.permission)
+    val identityOpt = PermissionMapper
+      .makeIdentity(request.namespace, request.permission)
     (for
-      domain <- EitherT.fromOption(
-        permissionIdentityOpt,
-        ErrorResponses.invalidPermission)
+      domain <- EitherT
+        .fromOption(identityOpt, ErrorResponses.invalidPermission)
       permCheck <- hasPermission(id, domain)
       adminCheck <- hasPermission(id, adminPermissionIdentity)
-      response = toCheckResponse(request, permCheck || adminCheck)
+      response = PermissionMapper
+        .toCheckResponse(request, permCheck || adminCheck)
     yield response).value
 
   /** Checks if user has a permission.
@@ -113,18 +109,3 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: Logger](
         ErrorResponses.unregisteredPermission
       case _ => ErrorResponses.internal
     }
-
-  /** Makes check response out of initial request and check result.
-   *
-   *  @param request initial request.
-   *  @param result whether permission is granted or not.
-   */
-  private def toCheckResponse(
-      request: CheckPermissionRequest,
-      result: Boolean,
-  ): CheckPermissionResponse = CheckPermissionResponse(
-    status = if result then Granted else Denied,
-    user = request.user,
-    namespace = request.namespace,
-    permission = request.permission,
-  )
