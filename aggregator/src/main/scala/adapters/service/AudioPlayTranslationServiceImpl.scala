@@ -23,12 +23,7 @@ import cats.MonadThrow
 import cats.data.{EitherT, Validated}
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus.InvalidArgument
-import org.aulune.commons.errors.{
-  ErrorStatus,
-  ErrorResponse,
-  toApplicationError,
-}
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.{PaginationParams, PaginationParamsParser}
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService

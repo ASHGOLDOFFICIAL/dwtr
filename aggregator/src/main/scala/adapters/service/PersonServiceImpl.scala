@@ -9,23 +9,13 @@ import application.dto.person.{PersonRequest, PersonResponse}
 import application.repositories.PersonRepository
 import application.{AggregatorPermission, PersonService}
 import domain.errors.PersonValidationError
-import domain.errors.PersonValidationError.InvalidArguments
-import domain.model.person.{FullName, Person}
+import domain.model.person.Person
 
 import cats.MonadThrow
-import cats.data.{EitherT, Validated, ValidatedNec}
+import cats.data.EitherT
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus.{
-  InvalidArgument,
-  NotFound,
-}
-import org.aulune.commons.errors.{
-  ErrorStatus,
-  ErrorResponse,
-  toApplicationError,
-}
-import org.aulune.commons.repositories.transformF
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
