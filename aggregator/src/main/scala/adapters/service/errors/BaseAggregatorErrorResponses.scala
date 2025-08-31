@@ -2,11 +2,8 @@ package org.aulune.aggregator
 package adapters.service.errors
 
 
-import org.aulune.commons.errors.ErrorStatus.{
-  Internal,
-  InvalidArgument
-}
-import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.errors.ErrorStatus.{Internal, InvalidArgument}
+import org.aulune.commons.errors.{ErrorDetails, ErrorResponse}
 
 
 /** Error responses shared among aggregator services. */
@@ -16,11 +13,11 @@ trait BaseAggregatorErrorResponses:
   val internal: ErrorResponse = ErrorResponse(
     status = Internal,
     message = "Internal error.",
-    details = Nil,
+    details = ErrorDetails(),
   )
 
   val invalidPaginationParams: ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = "Given pagination params are invalid.",
-    details = Nil,
+    details = ErrorDetails(),
   )

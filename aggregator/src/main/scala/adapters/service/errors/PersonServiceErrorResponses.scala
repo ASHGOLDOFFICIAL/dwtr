@@ -7,7 +7,7 @@ import domain.errors.PersonValidationError
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
+import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 import org.aulune.commons.errors.ErrorStatus.{InvalidArgument, NotFound}
 
 
@@ -18,11 +18,12 @@ object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
   val personNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Person is not found.",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = PersonNotFound,
         domain = domain,
-      )),
+      ).some
+    ),
   )
 
   def invalidPerson(
@@ -32,11 +33,12 @@ object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
     message = errs
       .map(representValidationError)
       .mkString_("Invalid person is given: ", ", ", "."),
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = InvalidPerson,
         domain = domain,
-      )),
+      ).some
+    ),
   )
 
   /** Returns string representation of [[PersonValidationError]].

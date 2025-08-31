@@ -8,12 +8,13 @@ import application.errors.PermissionServiceError.{
   PermissionNotFound,
 }
 
+import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorStatus.{
   FailedPrecondition,
   Internal,
   InvalidArgument,
 }
-import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
+import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 
 
 /** Error responses for [[PermissionServiceImpl]]. */
@@ -23,26 +24,27 @@ object PermissionServiceErrorResponses:
   val internal: ErrorResponse = ErrorResponse(
     status = Internal,
     message = "Internal error.",
-    details = Nil,
+    details = ErrorDetails(),
   )
 
   val invalidPermission: ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = "Given permission is not valid.",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = InvalidPermission,
         domain = domain,
-      )),
+      ).some,
+    ),
   )
 
   val unregisteredPermission: ErrorResponse = ErrorResponse(
     status = FailedPrecondition,
     message = "Asked permission isn't registered yet.",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = PermissionNotFound,
         domain = domain,
-      ),
+      ).some,
     ),
   )

@@ -14,5 +14,5 @@ package errors
 final case class ErrorResponse(
     status: ErrorStatus,
     message: String,
-    details: List[ErrorInfo],
+    details: ErrorDetails,
 )

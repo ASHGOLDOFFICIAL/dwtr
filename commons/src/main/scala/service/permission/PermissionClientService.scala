@@ -3,7 +3,7 @@ package service.permission
 
 
 import errors.ErrorStatus.PermissionDenied
-import errors.{ErrorResponse, ErrorStatus}
+import errors.{ErrorDetails, ErrorResponse, ErrorStatus}
 import service.auth.User
 
 import cats.syntax.all.given
@@ -61,5 +61,5 @@ object PermissionClientService:
   private val permissionDenied = ErrorResponse(
     status = PermissionDenied,
     message = "Permission denied or not found",
-    details = Nil,
+    details = ErrorDetails()
   )

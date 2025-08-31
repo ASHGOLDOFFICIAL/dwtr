@@ -2,22 +2,13 @@ package org.aulune.auth
 package adapters.service.errors
 
 
-import application.errors.UserRegistrationError.{
-  InvalidDetails,
-  InvalidOAuthCode,
-  UserAlreadyExists
-}
+import application.errors.UserRegistrationError.{InvalidDetails, InvalidOAuthCode, UserAlreadyExists}
 import domain.errors.UserValidationError
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
-import org.aulune.commons.errors.ErrorStatus.{
-  AlreadyExists,
-  Internal,
-  InvalidArgument,
-  Unauthenticated,
-}
+import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
+import org.aulune.commons.errors.ErrorStatus.{AlreadyExists, Internal, InvalidArgument, Unauthenticated}
 
 
 /** Error responses for
@@ -29,34 +20,34 @@ object AuthenticationServiceErrorResponses:
   val internalError: ErrorResponse = ErrorResponse(
     status = Internal,
     message = "Internal error.",
-    details = Nil,
+    details = ErrorDetails(),
   )
 
   val failedLoginResponse: ErrorResponse = ErrorResponse(
     status = Unauthenticated,
     message = "Login failed. Check your credentials.",
-    details = Nil,
+    details = ErrorDetails(),
   )
 
   val failedToRetrieveId: ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = "Couldn't exchange code for access token.",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = InvalidOAuthCode,
         domain = authDomain,
-      ),
+      ).some,
     ),
   )
 
   val alreadyRegistered: ErrorResponse = ErrorResponse(
     status = AlreadyExists,
     message = "Account with given info already exists.",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = UserAlreadyExists,
         domain = authDomain,
-      ),
+      ).some,
     ),
   )
 
@@ -68,18 +59,18 @@ object AuthenticationServiceErrorResponses:
   ): ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = errs.map(validationErrorToString).mkString_(" "),
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = InvalidDetails,
         domain = authDomain,
-      ),
+      ).some,
     ),
   )
 
   val invalidAccessToken: ErrorResponse = ErrorResponse(
     status = Unauthenticated,
     message = "Given access token is not valid",
-    details = Nil,
+    details = ErrorDetails(),
   )
 
   private def validationErrorToString(err: UserValidationError): String =

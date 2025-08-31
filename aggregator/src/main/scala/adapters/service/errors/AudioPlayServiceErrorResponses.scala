@@ -3,22 +3,12 @@ package adapters.service.errors
 
 
 import domain.errors.AudioPlayValidationError
-import application.errors.AudioPlayServiceError.{
-  AudioPlayNotFound,
-  AudioPlaySeriesNotFound,
-  InvalidAudioPlay,
-}
+import application.errors.AudioPlayServiceError.{AudioPlayNotFound, AudioPlaySeriesNotFound, InvalidAudioPlay}
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus.{
-  FailedPrecondition,
-  Internal,
-  InvalidArgument,
-  NotFound,
-}
-import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.errors.ErrorInfo
+import org.aulune.commons.errors.ErrorStatus.{FailedPrecondition, Internal, InvalidArgument, NotFound}
+import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 
 
 /** Error responses for
@@ -28,21 +18,23 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
   val audioPlayNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Audio play is not found.",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = AudioPlayNotFound,
         domain = domain,
-      )),
+      ).some
+    ),
   )
 
   val audioPlaySeriesNotFound: ErrorResponse = ErrorResponse(
     status = FailedPrecondition,
     message = "Audio play series with given ID was not found",
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = AudioPlaySeriesNotFound,
         domain = domain,
-      )),
+      ).some
+    ),
   )
 
   def invalidAudioPlay(
@@ -52,11 +44,12 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
     message = errs
       .map(representValidationError)
       .mkString_("Invalid audio play is given: ", ", ", "."),
-    details = List(
-      ErrorInfo(
+    details = ErrorDetails(
+      info = ErrorInfo(
         reason = InvalidAudioPlay,
         domain = domain,
-      )),
+      ).some
+    ),
   )
 
   /** Returns string representation of [[AudioPlayValidationError]].
