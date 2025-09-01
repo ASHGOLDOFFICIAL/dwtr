@@ -5,12 +5,10 @@ import adapters.jdbc.postgres.PermissionRepositoryImpl
 import adapters.service.PermissionServiceImpl
 
 import cats.effect.Async
-import cats.mtl.Raise
 import cats.syntax.all.given
 import doobie.Transactor
-import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.permission.PermissionClientService
-import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.LoggerFactory
 
 
 /** Permission app with client-side service implementation.
@@ -25,7 +23,7 @@ object PermissionApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: Async: Logger](
+  def build[F[_]: Async: LoggerFactory](
       config: PermissionConfig,
       transactor: Transactor[F],
   ): F[PermissionApp[F]] =

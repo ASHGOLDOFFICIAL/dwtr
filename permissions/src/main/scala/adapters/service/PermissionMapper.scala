@@ -2,7 +2,6 @@ package org.aulune.permissions
 package adapters.service
 
 
-import org.aulune.permissions.domain.repositories.PermissionRepository.PermissionIdentity
 import application.dto.CheckPermissionStatus.{Denied, Granted}
 import application.dto.{
   CheckPermissionRequest,
@@ -10,6 +9,7 @@ import application.dto.{
   CreatePermissionRequest,
   PermissionResource,
 }
+import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{
   Permission,
   PermissionDescription,
@@ -18,7 +18,7 @@ import domain.{
 }
 
 
-/** Mapper between external permission DTOs and domain's [[Permission]].
+/** Mapper between permission DTOs and domain's [[Permission]].
  *  @note Should not be used outside `service` package to not expose domain
  *    type.
  */
@@ -35,7 +35,7 @@ private[service] object PermissionMapper:
       domain <- Permission(namespace, name, description)
     yield domain
 
-  /** Converts domain object to response object.
+  /** Converts domain object to response for check request.
    *  @param domain entity to use as a base.
    */
   def toResponse(domain: Permission): PermissionResource = PermissionResource(

@@ -3,8 +3,14 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.PermissionMetas.given
-import org.aulune.permissions.domain.repositories.PermissionRepository.PermissionIdentity
-import domain.{Permission, PermissionDescription, PermissionName, PermissionNamespace}
+import domain.repositories.PermissionRepository
+import domain.repositories.PermissionRepository.PermissionIdentity
+import domain.{
+  Permission,
+  PermissionDescription,
+  PermissionName,
+  PermissionNamespace,
+}
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
@@ -22,7 +28,6 @@ import org.aulune.commons.repositories.RepositoryError.{
 }
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
-import org.aulune.permissions.domain.repositories.PermissionRepository
 
 import java.sql.SQLException
 import scala.util.control.NonFatal
