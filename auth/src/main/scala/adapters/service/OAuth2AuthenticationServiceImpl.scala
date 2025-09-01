@@ -1,16 +1,18 @@
 package org.aulune.auth
 package adapters.service
 
+
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import application.dto.OAuth2Provider.Google
-import application.dto.{AuthenticateUserRequest, OAuth2Provider}
-import domain.model.User
+import org.aulune.auth.domain.model.OAuth2Provider.Google
+import application.dto.AuthenticateUserRequest
+import domain.errors.OAuthError
+import domain.model.{AuthorizationCode, ExternalId, OAuth2Provider, User}
+import domain.repositories.GoogleIdSearch
+import domain.services.{OAuth2AuthenticationService, OAuth2CodeExchangeService}
 
 import cats.Monad
 import cats.data.OptionT
 import cats.effect.Concurrent
-import org.aulune.auth.domain.repositories.GoogleIdSearch
-import org.aulune.auth.domain.services.{OAuth2AuthenticationService, OAuth2CodeExchangeService}
 
 
 /** Service that manages authentication via third party using OAuth2 protocol.
@@ -24,19 +26,14 @@ final class OAuth2AuthenticationServiceImpl[F[_]: Concurrent: Monad](
     googleIdSearch: GoogleIdSearch[F],
 ) extends OAuth2AuthenticationService[F]:
 
-  override def authenticate(
-                             info: OAuth2Authentication,
-  ): F[Option[User]] = (for
-    oid <- OptionT(getId(info.provider, info.authorizationCode))
-    user <- OptionT(findUser(info.provider, oid))
-  yield user).value
-
   override def getId(
       provider: OAuth2Provider,
-      code: String,
-  ): F[Option[String]] = provider match
+      code: AuthorizationCode,
+  ): F[Either[OAuthError, ExternalId]] = provider match
     case Google => googleOAuth2.getId(code)
 
-  override def findUser(provider: OAuth2Provider, id: String): F[Option[User]] =
-    provider match
-      case Google => googleIdSearch.getByGoogleId(id)
+  override def findUser(
+      provider: OAuth2Provider,
+      id: ExternalId,
+  ): F[Option[User]] = provider match
+    case Google => googleIdSearch.getByGoogleId(id)

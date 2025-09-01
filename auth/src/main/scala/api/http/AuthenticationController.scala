@@ -17,7 +17,7 @@ import application.dto.{
   AuthenticateUserResponse,
   CreateUserRequest,
 }
-import application.errors.UserRegistrationError
+import application.errors.AuthenticationServiceError
 
 import cats.Functor
 import cats.data.NonEmptyChain

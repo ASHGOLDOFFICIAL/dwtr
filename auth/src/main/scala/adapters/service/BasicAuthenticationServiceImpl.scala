@@ -1,15 +1,14 @@
 package org.aulune.auth
 package adapters.service
 
-import application.dto.AuthenticateUserRequest
-import application.dto.AuthenticateUserRequest.BasicAuthentication
+
 import domain.model.{User, Username}
+import domain.repositories.UserRepository
+import domain.services.{BasicAuthenticationService, PasswordHashingService}
 
 import cats.Monad
 import cats.data.OptionT
-import cats.syntax.all.*
-import org.aulune.auth.domain.repositories.UserRepository
-import org.aulune.auth.domain.services.{BasicAuthenticationService, PasswordHashingService}
+import cats.syntax.all.given 
 
 
 /** Service that manages authentication via username and passwords.
@@ -24,11 +23,11 @@ final class BasicAuthenticationServiceImpl[F[_]: Monad](
 ) extends BasicAuthenticationService[F]:
 
   override def authenticate(
-                             credentials: BasicAuthentication,
+      username: Username,
+      password: String,
   ): F[Option[User]] = (for
-    username <- OptionT.fromOption(Username(credentials.username))
     user <- OptionT(repo.getByUsername(username))
-    _ <- verifyPassword(user, credentials.password)
+    _ <- verifyPassword(user, password)
   yield user).value
 
   /** Return `Unit` if given password is user's password.

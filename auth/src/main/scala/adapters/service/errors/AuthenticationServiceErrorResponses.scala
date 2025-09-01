@@ -2,13 +2,13 @@ package org.aulune.auth
 package adapters.service.errors
 
 
-import application.errors.UserRegistrationError.{InvalidDetails, InvalidOAuthCode, UserAlreadyExists}
+import application.errors.AuthenticationServiceError.{InvalidCredentials, InvalidOAuthCode, InvalidUser, UserAlreadyExists, UserNotFound}
 import domain.errors.UserValidationError
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
+import org.aulune.commons.errors.ErrorStatus.{AlreadyExists, Internal, InvalidArgument, NotFound, Unauthenticated, Unknown}
 import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
-import org.aulune.commons.errors.ErrorStatus.{AlreadyExists, Internal, InvalidArgument, Unauthenticated}
 
 
 /** Error responses for
@@ -17,19 +17,30 @@ import org.aulune.commons.errors.ErrorStatus.{AlreadyExists, Internal, InvalidAr
 object AuthenticationServiceErrorResponses:
   private val authDomain = "org.aulune.auth"
 
-  val internalError: ErrorResponse = ErrorResponse(
+  val internal: ErrorResponse = ErrorResponse(
     status = Internal,
     message = "Internal error.",
     details = ErrorDetails(),
   )
 
-  val failedLoginResponse: ErrorResponse = ErrorResponse(
-    status = Unauthenticated,
-    message = "Login failed. Check your credentials.",
-    details = ErrorDetails(),
+  val external: ErrorResponse = ErrorResponse(
+    status = Unknown,
+    message = "External service was unavailable",
+    details = ErrorDetails()
   )
 
-  val failedToRetrieveId: ErrorResponse = ErrorResponse(
+  val invalidCredentials: ErrorResponse = ErrorResponse(
+    status = Unauthenticated,
+    message = "Login failed. Check your credentials.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = InvalidCredentials,
+        domain = authDomain,
+      ).some,
+    ),
+  )
+
+  val invalidOAuthCode: ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = "Couldn't exchange code for access token.",
     details = ErrorDetails(
@@ -38,6 +49,16 @@ object AuthenticationServiceErrorResponses:
         domain = authDomain,
       ).some,
     ),
+  )
+
+  val notRegistered: ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = "Account with given info doesn't exist yet.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = UserNotFound,
+        domain = authDomain,
+      ).some),
   )
 
   val alreadyRegistered: ErrorResponse = ErrorResponse(
@@ -61,7 +82,7 @@ object AuthenticationServiceErrorResponses:
     message = errs.map(validationErrorToString).mkString_(" "),
     details = ErrorDetails(
       info = ErrorInfo(
-        reason = InvalidDetails,
+        reason = InvalidUser,
         domain = authDomain,
       ).some,
     ),

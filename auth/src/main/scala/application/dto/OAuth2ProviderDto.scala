@@ -1,0 +1,8 @@
+package org.aulune.auth
+package application.dto
+
+
+/** OAuth2 providers recognized by the app. */
+enum OAuth2ProviderDto:
+  /** Authentication via Google services. */
+  case Google

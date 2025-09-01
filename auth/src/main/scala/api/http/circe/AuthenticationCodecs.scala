@@ -4,26 +4,20 @@ package api.http.circe
 
 import api.mappers.OAuth2ProviderMapper
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import application.dto.{
-  AuthenticateUserRequest,
-  AuthenticateUserResponse,
-  OAuth2Provider,
-}
+import application.dto.{AuthenticateUserRequest, AuthenticateUserResponse, OAuth2ProviderDto}
 
 import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.{
-  deriveConfiguredDecoder,
-  deriveConfiguredEncoder,
-}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
+import org.aulune.auth.domain.model.OAuth2Provider
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 
 private[api] object AuthenticationCodecs:
-  given Encoder[OAuth2Provider] = Encoder.encodeString
+  given Encoder[OAuth2ProviderDto] = Encoder.encodeString
     .contramap(OAuth2ProviderMapper.toString)
 
-  given Decoder[OAuth2Provider] = Decoder.decodeString.emap { str =>
+  given Decoder[OAuth2ProviderDto] = Decoder.decodeString.emap { str =>
     OAuth2ProviderMapper
       .fromString(str)
       .toRight(s"Invalid OAuth2Provider: $str")

@@ -18,6 +18,7 @@ import cats.syntax.all.*
 import doobie.Transactor
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.http4s.ember.client.EmberClientBuilder
+import org.typelevel.log4cats.LoggerFactory
 import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.duration.DurationInt
@@ -38,7 +39,7 @@ object AuthApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: Async: UUIDGen](
+  def build[F[_]: Async: UUIDGen: LoggerFactory](
       config: AuthConfig,
       transactor: Transactor[F],
   ): F[AuthApp[F]] = EmberClientBuilder.default[F].build.use { httpClient =>

@@ -1,17 +1,28 @@
 package org.aulune.auth
 package adapters.service.oauth2
 
-import application.dto.OAuth2Provider.Google
 
+import org.aulune.auth.domain.model.OAuth2Provider.Google
+import domain.errors.OAuthError
+import domain.errors.OAuthError.{InvalidToken, Rejected, Unavailable}
+import domain.model.{AuthorizationCode, ExternalId}
+import domain.services.OAuth2CodeExchangeService
+
+import cats.Applicative
+import cats.data.{EitherT, OptionT}
 import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.syntax.all.*
 import io.circe.Decoder
-import org.aulune.auth.domain.services.OAuth2CodeExchangeService
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.implicits.uri
 import org.http4s.{EntityDecoder, Method, Request, Uri, UrlForm}
+import org.typelevel.log4cats.syntax.given
+import org.typelevel.log4cats.{Logger, LoggerFactory}
+import org.typelevel.log4cats.Logger.eitherTLogger
+
+import scala.xml.dtd.ExternalID
 
 
 /** Services managing authorization code exchange with Google. */
@@ -21,7 +32,7 @@ object GoogleOAuth2CodeExchangeService:
    *  @param client [[Client]] to make requests.
    *  @tparam F effect type.
    */
-  def build[F[_]: Concurrent: Clock](
+  def build[F[_]: Concurrent: Clock: LoggerFactory](
       googleClient: AuthConfig.OAuth2.GoogleClient,
       client: Client[F],
   ): F[OAuth2CodeExchangeService[F, Google]] =
@@ -40,7 +51,7 @@ object GoogleOAuth2CodeExchangeService:
 
 
 private final class GoogleOAuth2CodeExchangeService[
-    F[_]: Concurrent: Clock,
+    F[_]: Concurrent: Clock: LoggerFactory,
 ] private (
     openIdConfig: OpenIdProviderMetadata,
     googleClient: AuthConfig.OAuth2.GoogleClient,
@@ -48,20 +59,37 @@ private final class GoogleOAuth2CodeExchangeService[
     jwkSetFetcher: CachingFetcher[F],
 ) extends OAuth2CodeExchangeService[F, Google]:
 
-  override def getId(authorizationCode: String): F[Option[String]] =
-    for
-      response <- exchangeCodeForToken(authorizationCode)
-      jwkString <- jwkSetFetcher.fetch
-      tokenValidated <- IdTokenPayload.verify(
-        jwkString,
-        googleClient.clientId,
-        openIdConfig.issuer.renderString)(response.idToken)
-    yield tokenValidated.toOption.map(_.sub)
+  private given Logger[F] = LoggerFactory[F].getLogger
+
+  override def getId(
+      code: AuthorizationCode,
+  ): F[Either[OAuthError, ExternalId]] = (for
+    _ <- eitherTLogger.info(s"Exchanging OAuth code: $code")
+    response <- EitherT
+      .fromOptionF(exchangeCodeForToken(code), Rejected)
+    jwkString <- jwkSetFetcher.fetch.attemptT
+      .leftSemiflatMap(e =>
+        for _ <- error"Couldn't fetch JWKs, error: $e"
+        yield Unavailable)
+    payload <- EitherT(
+      IdTokenPayload
+        .verify(
+          jwkString,
+          googleClient.clientId,
+          openIdConfig.issuer.renderString)(response.idToken)
+        .map(_.toEither))
+      .leftSemiflatMap(e =>
+        for _ <- warn"Received invalid token: ${response.idToken}, error: $e"
+        yield InvalidToken)
+    id <- EitherT.fromOption(ExternalId(payload.sub), InvalidToken)
+  yield id).value
 
   /** Returns result of authorization code exchange with Google services.
    *  @param code authorization code.
    */
-  private def exchangeCodeForToken(code: String): F[ExchangeResponse] =
+  private def exchangeCodeForToken(
+      code: String,
+  ): F[Option[ExchangeResponse]] =
     val form = UrlForm(
       "code" -> code,
       "client_id" -> googleClient.clientId,
@@ -73,7 +101,21 @@ private final class GoogleOAuth2CodeExchangeService[
       method = Method.POST,
       uri = openIdConfig.tokenEndpoint,
     ).withEntity(form)
-    client.expect[ExchangeResponse](request)
+
+    client.run(request).use { response =>
+      response
+        .attemptAs[ExchangeResponse]
+        .leftSemiflatTap { e =>
+          val status = response.status.code
+          for
+            body <- response.bodyText.compile.string
+            _ <- Logger[F].warn(
+              s"Received bad response from Google: [$status] $body, error: $e")
+          yield ()
+        }
+        .toOption
+        .value
+    }
 
   /** Google response representation.
    *

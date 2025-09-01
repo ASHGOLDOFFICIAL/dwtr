@@ -1,6 +1,7 @@
 package org.aulune.auth
 package domain.services
 
+
 import application.dto.{AccessTokenPayload, AuthenticatedUser}
 import domain.model.{TokenString, User}
 

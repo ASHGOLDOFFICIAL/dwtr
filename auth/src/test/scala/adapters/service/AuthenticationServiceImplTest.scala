@@ -2,23 +2,28 @@ package org.aulune.auth
 package adapters.service
 
 
+import application.AuthenticationService
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.CreateUserRequest
-import application.dto.OAuth2Provider.Google
-import application.errors.UserRegistrationError.{
+import org.aulune.auth.domain.model.OAuth2Provider.Google
+import application.errors.AuthenticationServiceError.{
   InvalidOAuthCode,
   UserAlreadyExists,
 }
-import application.AuthenticationService
 import domain.model.{User, Username}
-import domain.services.{AccessTokenService, BasicAuthenticationService, IdTokenService, OAuth2AuthenticationService}
+import domain.repositories.UserRepository
+import domain.services.{
+  AccessTokenService,
+  BasicAuthenticationService,
+  IdTokenService,
+  OAuth2AuthenticationService,
+}
 
 import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.auth.domain.repositories.UserRepository
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory

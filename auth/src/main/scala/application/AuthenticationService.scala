@@ -3,12 +3,18 @@ package application
 
 
 import application.dto.{
-  AuthenticatedUser,
   AuthenticateUserRequest,
   AuthenticateUserResponse,
+  AuthenticatedUser,
   CreateUserRequest
 }
-import application.errors.UserRegistrationError
+import application.errors.AuthenticationServiceError.{
+  InvalidAccessToken,
+  InvalidCredentials,
+  InvalidOAuthCode,
+  InvalidUser,
+  UserAlreadyExists,
+}
 
 import org.aulune.commons.errors.ErrorResponse
 
@@ -18,14 +24,24 @@ import org.aulune.commons.errors.ErrorResponse
  */
 trait AuthenticationService[F[_]]:
   /** Returns access token if given authentication info is correct.
+   *
+   *  [[InvalidCredentials]] will be returned when given invalid credentials.
+   *
    *  @param request request with authentication info.
    */
   def login(
-             request: AuthenticateUserRequest,
+      request: AuthenticateUserRequest,
   ): F[Either[ErrorResponse, AuthenticateUserResponse]]
 
   /** Creates new user if request is valid, otherwise errors indicating what's
    *  wrong.
+   *
+   *  Errors:
+   *    - [[InvalidUser]] will be returned when registering invalid user.
+   *    - [[InvalidOAuthCode]] will be returned when given invalid OAuth code.
+   *    - [[UserAlreadyExists]] will be returned when user is already
+   *      registered.
+   *
    *  @param request registration request.
    *  @return `Unit` if user is created, errors otherwise.
    */
@@ -34,6 +50,9 @@ trait AuthenticationService[F[_]]:
   ): F[Either[ErrorResponse, AuthenticateUserResponse]]
 
   /** Returns authenticated user's info if token is valid.
+   *
+   *  [[InvalidAccessToken]] will be returned if token is invalid.
+   *
    *  @param idToken user's token.
    */
   def getUserInfo(
