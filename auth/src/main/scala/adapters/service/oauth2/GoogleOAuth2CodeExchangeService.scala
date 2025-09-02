@@ -2,9 +2,10 @@ package org.aulune.auth
 package adapters.service.oauth2
 
 
-import org.aulune.auth.domain.model.OAuth2Provider.Google
+import adapters.utils.CachingFetcher
 import domain.errors.OAuthError
 import domain.errors.OAuthError.{InvalidToken, Rejected, Unavailable}
+import domain.model.OAuth2Provider.Google
 import domain.model.{AuthorizationCode, ExternalId}
 import domain.services.OAuth2CodeExchangeService
 
@@ -12,15 +13,15 @@ import cats.Applicative
 import cats.data.{EitherT, OptionT}
 import cats.effect.Concurrent
 import cats.effect.kernel.Clock
-import cats.syntax.all.*
+import cats.syntax.all.given
 import io.circe.Decoder
 import org.http4s.circe.jsonOf
 import org.http4s.client.Client
 import org.http4s.implicits.uri
 import org.http4s.{EntityDecoder, Method, Request, Uri, UrlForm}
+import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.given
 import org.typelevel.log4cats.{Logger, LoggerFactory}
-import org.typelevel.log4cats.Logger.eitherTLogger
 
 import scala.xml.dtd.ExternalID
 

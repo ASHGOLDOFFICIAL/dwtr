@@ -2,12 +2,25 @@ package org.aulune.auth
 package adapters.service.errors
 
 
-import application.errors.AuthenticationServiceError.{InvalidCredentials, InvalidOAuthCode, InvalidUser, UserAlreadyExists, UserNotFound}
+import application.errors.AuthenticationServiceError.{
+  InvalidCredentials,
+  InvalidOAuthCode,
+  InvalidUser,
+  UserAlreadyExists,
+  UserNotFound
+}
 import domain.errors.UserValidationError
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus.{AlreadyExists, Internal, InvalidArgument, NotFound, Unauthenticated, Unknown}
+import org.aulune.commons.errors.ErrorStatus.{
+  AlreadyExists,
+  Internal,
+  InvalidArgument,
+  NotFound,
+  Unauthenticated,
+  Unknown,
+}
 import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 
 
@@ -26,7 +39,7 @@ object AuthenticationServiceErrorResponses:
   val external: ErrorResponse = ErrorResponse(
     status = Unknown,
     message = "External service was unavailable",
-    details = ErrorDetails()
+    details = ErrorDetails(),
   )
 
   val invalidCredentials: ErrorResponse = ErrorResponse(

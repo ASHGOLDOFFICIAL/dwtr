@@ -1,8 +1,8 @@
 package org.aulune.auth
-package adapters.service.oauth2
+package adapters.utils
 
 
-import adapters.service.oauth2.CachingFetcher.{Cache, CachedResponse}
+import adapters.utils.CachingFetcher.{Cache, CachedResponse}
 
 import cats.Monad
 import cats.effect.{Clock, Concurrent, Ref}
@@ -18,7 +18,7 @@ import java.time.Instant
 /** Fetcher that caches responses until their expiration which is taken from
  *  `Expires` header.
  */
-private[oauth2] object CachingFetcher:
+private[adapters] object CachingFetcher:
   /** Builds caching fetcher for given [[Client]] and URI.
    *  @param client [[Client]] to make requests with.
    *  @param uri URI to fetch resource from.
@@ -57,7 +57,13 @@ private[oauth2] object CachingFetcher:
   private final case class CachedResponse(body: String, expiresAt: Instant)
 
 
-private final class CachingFetcher[F[_]: Concurrent] private (
+/** Fetches given URL with caching.
+ *  @param client client to make requests.
+ *  @param uri URI to fetch results from.
+ *  @param cache cache object to use.
+ *  @tparam F effect type.
+ */
+final class CachingFetcher[F[_]: Concurrent] private (
     client: Client[F],
     uri: Uri,
     cache: Cache[F],
