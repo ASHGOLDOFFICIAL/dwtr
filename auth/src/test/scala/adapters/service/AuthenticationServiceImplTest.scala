@@ -37,13 +37,11 @@ import domain.services.{
   OAuth2AuthenticationService,
 }
 
-import cats.Functor
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.errors.ErrorStatus.Internal
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.testing.ErrorAssertions.{
   assertDomainError,
