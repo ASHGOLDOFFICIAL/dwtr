@@ -6,7 +6,7 @@ import adapters.utils.CachingFetcher.{Cache, CachedResponse}
 
 import cats.Monad
 import cats.effect.{Clock, Concurrent, Ref}
-import cats.syntax.all.*
+import cats.syntax.all.given 
 import org.http4s.EntityDecoder.text
 import org.http4s.client.Client
 import org.http4s.headers.Expires

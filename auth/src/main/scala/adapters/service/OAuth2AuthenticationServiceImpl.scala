@@ -2,16 +2,13 @@ package org.aulune.auth
 package adapters.service
 
 
-import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import org.aulune.auth.domain.model.OAuth2Provider.Google
-import application.dto.AuthenticateUserRequest
 import domain.errors.OAuthError
+import domain.model.OAuth2Provider.Google
 import domain.model.{AuthorizationCode, ExternalId, OAuth2Provider, User}
 import domain.repositories.GoogleIdSearch
 import domain.services.{OAuth2AuthenticationService, OAuth2CodeExchangeService}
 
 import cats.Monad
-import cats.data.OptionT
 import cats.effect.Concurrent
 
 

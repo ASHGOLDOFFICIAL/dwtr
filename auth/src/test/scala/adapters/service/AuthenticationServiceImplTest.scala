@@ -107,25 +107,25 @@ final class AuthenticationServiceImplTest
     "should " - {
       "create new user if everything is OK" in stand { service =>
         // OAuth code exchange is successful.
-        (mockOauth.getId _)
+        val _ = (mockOauth.getId _)
           .expects(provider, authorizationCode)
           .returning(oid.asRight.pure[IO])
 
         // User isn't registered yet.
-        (mockOauth.findUser _)
+        val _ = (mockOauth.findUser _)
           .expects(provider, oid)
           .returning(None.pure[IO])
 
         // Persisting doesn't lead to errors.
-        (mockRepo.persist _)
+        val _ = (mockRepo.persist _)
           .expects(newUser)
           .returning(newUser.pure[IO])
 
         // Tokens are successfully generated.
-        (mockAccess.generateAccessToken _)
+        val _ = (mockAccess.generateAccessToken _)
           .expects(newUser)
           .returning(accessToken.pure[IO])
-        (mockId.generateIdToken _)
+        val _ = (mockId.generateIdToken _)
           .expects(newUser)
           .returning(idToken.pure[IO])
 
@@ -135,7 +135,7 @@ final class AuthenticationServiceImplTest
 
       "result in InvalidOAuthCode if authentication code was rejected" in stand {
         service =>
-          (mockOauth.getId _)
+          val _ = (mockOauth.getId _)
             .expects(provider, authorizationCode)
             .returning(OAuthError.Rejected.asLeft.pure[IO])
 
@@ -148,7 +148,7 @@ final class AuthenticationServiceImplTest
 
       "result in ExternalServiceFailure when invalid token was received" in stand {
         service =>
-          (mockOauth.getId _)
+          val _ = (mockOauth.getId _)
             .expects(provider, authorizationCode)
             .returning(OAuthError.InvalidToken.asLeft.pure[IO])
 
@@ -161,7 +161,7 @@ final class AuthenticationServiceImplTest
 
       "result in ExternalServiceFailure when external service is unavalible" in stand {
         service =>
-          (mockOauth.getId _)
+          val _ = (mockOauth.getId _)
             .expects(provider, authorizationCode)
             .returning(OAuthError.Unavailable.asLeft.pure[IO])
 
@@ -174,12 +174,12 @@ final class AuthenticationServiceImplTest
 
       "result in error if user's already registered" in stand { service =>
         // OAuth code exchange is successful.
-        (mockOauth.getId _)
+        val _ = (mockOauth.getId _)
           .expects(provider, authorizationCode)
           .returning(oid.asRight.pure[IO])
 
         // User is already registered.
-        (mockOauth.findUser _)
+        val _ = (mockOauth.findUser _)
           .expects(provider, oid)
           .returning(Some(newUser).pure[IO])
 
@@ -192,17 +192,17 @@ final class AuthenticationServiceImplTest
 
       "result in error if user's already persisted" in stand { service =>
         // OAuth code exchange is successful.
-        (mockOauth.getId _)
+        val _ = (mockOauth.getId _)
           .expects(provider, authorizationCode)
           .returning(oid.asRight.pure[IO])
 
         // User isn't registered yet.
-        (mockOauth.findUser _)
+        val _ = (mockOauth.findUser _)
           .expects(provider, oid)
           .returning(None.pure[IO])
 
         // User already in repository.
-        (mockRepo.persist _)
+        val _ = (mockRepo.persist _)
           .expects(newUser)
           .returning(IO.raiseError(RepositoryError.AlreadyExists))
 
