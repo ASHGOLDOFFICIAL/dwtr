@@ -1,6 +1,5 @@
 package org.aulune.auth
-package adapters.jdbc.postgres.metas
-
+package adapters.jdbc.postgres
 
 import domain.model.{ExternalId, Username}
 

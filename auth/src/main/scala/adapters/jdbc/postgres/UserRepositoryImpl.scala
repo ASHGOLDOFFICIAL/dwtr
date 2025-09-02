@@ -2,7 +2,7 @@ package org.aulune.auth
 package adapters.jdbc.postgres
 
 
-import adapters.jdbc.postgres.metas.UserMetas.given
+import UserMetas.given
 import domain.model.{ExternalId, User, Username}
 import domain.repositories.UserRepository
 
