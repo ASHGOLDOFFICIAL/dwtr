@@ -35,6 +35,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.commons.errors.ErrorStatus.Internal
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
@@ -172,25 +173,77 @@ final class AuthenticationServiceImplTest
             case Right(value) => fail("Error was expected.")
       }
 
-      "result in error if user's already registered" in stand { service =>
+      "result in UserAlreadyExists if user's already registered" in stand {
+        service =>
+          // OAuth code exchange is successful.
+          val _ = (mockOauth.getId _)
+            .expects(provider, authorizationCode)
+            .returning(oid.asRight.pure[IO])
+
+          // User is already registered.
+          val _ = (mockOauth.findUser _)
+            .expects(provider, oid)
+            .returning(Some(newUser).pure[IO])
+
+          for result <- service.register(createUserRequest)
+          yield result match
+            case Left(err) =>
+              err.details.info.get.reason shouldBe UserAlreadyExists
+            case Right(value) => fail("Error was expected.")
+      }
+
+      "result in UserAlreadyExists if user's already persisted" in stand {
+        service =>
+          // OAuth code exchange is successful.
+          val _ = (mockOauth.getId _)
+            .expects(provider, authorizationCode)
+            .returning(oid.asRight.pure[IO])
+
+          // User isn't registered yet.
+          val _ = (mockOauth.findUser _)
+            .expects(provider, oid)
+            .returning(None.pure[IO])
+
+          // User already in repository.
+          val _ = (mockRepo.persist _)
+            .expects(newUser)
+            .returning(IO.raiseError(RepositoryError.AlreadyExists))
+
+          for result <- service.register(createUserRequest)
+          yield result match
+            case Left(err) =>
+              err.details.info.get.reason shouldBe UserAlreadyExists
+            case Right(value) => fail("Error was expected.")
+      }
+
+      "handle exceptions from getId gracefully" in stand { service =>
+        val _ = (mockOauth.getId _)
+          .expects(provider, authorizationCode)
+          .returning(IO.raiseError(new Throwable()))
+
+        for result <- service.register(createUserRequest)
+        yield result match
+          case Left(error)  => error.status shouldBe Internal
+          case Right(value) => fail("Error was expected.")
+      }
+
+      "handle exceptions from findUser gracefully" in stand { service =>
         // OAuth code exchange is successful.
         val _ = (mockOauth.getId _)
           .expects(provider, authorizationCode)
           .returning(oid.asRight.pure[IO])
 
-        // User is already registered.
         val _ = (mockOauth.findUser _)
           .expects(provider, oid)
-          .returning(Some(newUser).pure[IO])
+          .returning(IO.raiseError(new Throwable()))
 
         for result <- service.register(createUserRequest)
         yield result match
-          case Left(err) =>
-            err.details.info.get.reason shouldBe UserAlreadyExists
+          case Left(error)  => error.status shouldBe Internal
           case Right(value) => fail("Error was expected.")
       }
 
-      "result in error if user's already persisted" in stand { service =>
+      "handle exceptions from persist gracefully" in stand { service =>
         // OAuth code exchange is successful.
         val _ = (mockOauth.getId _)
           .expects(provider, authorizationCode)
@@ -201,16 +254,69 @@ final class AuthenticationServiceImplTest
           .expects(provider, oid)
           .returning(None.pure[IO])
 
-        // User already in repository.
         val _ = (mockRepo.persist _)
           .expects(newUser)
-          .returning(IO.raiseError(RepositoryError.AlreadyExists))
+          .returning(IO.raiseError(new Throwable()))
 
         for result <- service.register(createUserRequest)
         yield result match
-          case Left(err) =>
-            err.details.info.get.reason shouldBe UserAlreadyExists
+          case Left(error)  => error.status shouldBe Internal
           case Right(value) => fail("Error was expected.")
+      }
+
+      "handle exceptions from generateAccessToken gracefully" in stand { service =>
+        // OAuth code exchange is successful.
+        val _ = (mockOauth.getId _)
+          .expects(provider, authorizationCode)
+          .returning(oid.asRight.pure[IO])
+
+        // User isn't registered yet.
+        val _ = (mockOauth.findUser _)
+          .expects(provider, oid)
+          .returning(None.pure[IO])
+
+        // Persisting doesn't lead to errors.
+        val _ = (mockRepo.persist _)
+          .expects(newUser)
+          .returning(newUser.pure[IO])
+
+        val _ = (mockAccess.generateAccessToken _)
+          .expects(newUser)
+          .returning(IO.raiseError(new Throwable()))
+
+        for result <- service.register(createUserRequest)
+          yield result match
+            case Left(error) => error.status shouldBe Internal
+            case Right(value) => fail("Error was expected.")
+      }
+
+      "handle exceptions from generateIdToken gracefully" in stand { service =>
+        // OAuth code exchange is successful.
+        val _ = (mockOauth.getId _)
+          .expects(provider, authorizationCode)
+          .returning(oid.asRight.pure[IO])
+
+        // User isn't registered yet.
+        val _ = (mockOauth.findUser _)
+          .expects(provider, oid)
+          .returning(None.pure[IO])
+
+        // Persisting doesn't lead to errors.
+        val _ = (mockRepo.persist _)
+          .expects(newUser)
+          .returning(newUser.pure[IO])
+
+        val _ = (mockAccess.generateAccessToken _)
+          .expects(newUser)
+          .returning(accessToken.pure[IO])
+        val _ = (mockId.generateIdToken _)
+          .expects(newUser)
+          .returning(IO.raiseError(new Throwable()))
+
+        for result <- service.register(createUserRequest)
+          yield result match
+            case Left(error) => error.status shouldBe Internal
+            case Right(value) => fail("Error was expected.")
       }
     }
   }

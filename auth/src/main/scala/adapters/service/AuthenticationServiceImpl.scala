@@ -155,14 +155,19 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
   private def getExternalId(
       provider: OAuth2Provider,
       code: AuthorizationCode,
-  ): EitherT[F, ErrorResponse, ExternalId] = EitherT(
-    for result <- oauth2AuthService.getId(provider, code)
-    yield result.leftMap {
-      case OAuthError.Unavailable  => ErrorResponses.externalUnavailable
-      case OAuthError.Rejected     => ErrorResponses.invalidOAuthCode
-      case OAuthError.InvalidToken => ErrorResponses.externalUnavailable
-    })
-    .leftSemiflatTap(_ => warn"Couldn't get user's ID from $provider.")
+  ): EitherT[F, ErrorResponse, ExternalId] =
+    val getIdResult = oauth2AuthService.getId(provider, code).attemptT
+    for
+      resultAttempt <- getIdResult.leftSemiflatMap { e =>
+        for _ <- Logger[F].error(e)("Uncaught exception.")
+        yield ErrorResponses.internal
+      }
+      result <- EitherT.fromEither(resultAttempt).leftMap {
+        case OAuthError.Unavailable  => ErrorResponses.externalUnavailable
+        case OAuthError.Rejected     => ErrorResponses.invalidOAuthCode
+        case OAuthError.InvalidToken => ErrorResponses.externalUnavailable
+      }
+    yield result
 
   /** Checks if user is already in repository.
    *  @param provider third-party OAuth2 provider.
@@ -172,12 +177,17 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
   private def checkIfRegistered(
       provider: OAuth2Provider,
       id: ExternalId,
-  ): EitherT[F, ErrorResponse, Unit] = EitherT(
-    for result <- oauth2AuthService.findUser(provider, id).attempt
-    yield result.leftMap(_ => ErrorResponses.internal).flatMap {
+  ): EitherT[F, ErrorResponse, Unit] = oauth2AuthService
+    .findUser(provider, id)
+    .attemptT
+    .leftSemiflatMap { e =>
+      for _ <- Logger[F].error(e)("Uncaught exception.")
+      yield ErrorResponses.internal
+    }
+    .map {
       case Some(user) => ErrorResponses.alreadyRegistered.asLeft
-      case None       => ().asRight
-    })
+      case None => ().asRight
+    }
 
   /** Creates user from registration request and third-party id.
    *  @param username user chosen username.
