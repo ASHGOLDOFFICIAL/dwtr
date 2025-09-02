@@ -2,20 +2,19 @@ package org.aulune.auth
 package adapters.service
 
 
-import application.dto.AuthenticatedUser
 import domain.model.{
   AccessTokenPayload,
   IdTokenPayload,
   TokenString,
   User,
-  Username,
+  Username
 }
 import domain.services.{AccessTokenService, IdTokenService}
 
 import cats.Monad
 import cats.data.OptionT
 import cats.effect.Clock
-import cats.syntax.all.*
+import cats.syntax.all.given
 import io.circe.parser.decode
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
@@ -26,6 +25,12 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 
 
+/** Implementation of both [[AccessTokenService]] and [[IdTokenService]].
+ *  @param issuer what to put in `iss`.
+ *  @param secretKey secret key to encode tokens.
+ *  @param expiration default expiration time.
+ *  @tparam F effect type.
+ */
 final class JwtTokenService[F[_]: Clock: Monad](
     issuer: String,
     secretKey: String,
@@ -89,12 +94,12 @@ final class JwtTokenService[F[_]: Clock: Monad](
 
   override def decodeAccessToken(
       token: TokenString,
-  ): F[Option[AuthenticatedUser]] = (for
+  ): F[Option[Uuid[User]]] = (for
     claim <- decodeClaim(token).toOptionT
     payload <- decode[AccessTokenPayload](claim.toJson).toOption.toOptionT
     expirationValid <- OptionT.liftF(validateExpiration(payload.exp))
-    user <- OptionT.when(expirationValid)(payload.toAuthenticatedUser)
-  yield user).value
+    id <- OptionT.when(expirationValid)(payload.sub)
+  yield id).value
 
   /** Returns claim if token is successfully decoded.
    *  @param token token.
@@ -109,25 +114,15 @@ final class JwtTokenService[F[_]: Clock: Monad](
    *    - its expiration timestamp is after the current time (i.e. not expired),
    *      and
    *    - its expiration timestamp is not too far in the future, based on given
-   *      [[exp]].
+   *      [[expiration]].
    *
    *  @param exp token `exp` claim.
    *  @return `true` if the token is valid, `false` otherwise.
    */
   private def validateExpiration(exp: Long): F[Boolean] =
-    Clock[F].realTimeInstant.map(now => validateExpirationPure(now, exp))
-
-  /** Pure function to check whether a token's expiration is within the allowed
-   *  range.
-   *  @param now current timestamp.
-   *  @param expiration token's expiration timestamp.
-   *  @return `true` if the token expires after `now` and not beyond the
-   *    configured max duration.
-   */
-  private def validateExpirationPure(
-      now: Instant,
-      expiration: Long,
-  ): Boolean = now.getEpochSecond < expiration && expiration < maxAllowed(now)
+    Clock[F].realTimeInstant.map { now =>
+      now.getEpochSecond < exp && exp < maxAllowed(now)
+    }
 
   private val maxExp = expiration.toSeconds
 
@@ -136,14 +131,10 @@ final class JwtTokenService[F[_]: Clock: Monad](
    */
   private def maxAllowed(now: Instant) = now.plusSeconds(maxExp).getEpochSecond
 
-  extension (p: AccessTokenPayload)
-    /** Makes [[AuthenticatedUser]] out of given payload. */
-    private def toAuthenticatedUser: AuthenticatedUser =
-      AuthenticatedUser(p.sub, p.username)
-
   private given Encoder[AccessTokenPayload] = Encoder.derived
   private given Decoder[AccessTokenPayload] = Decoder.derived
   private given Encoder[IdTokenPayload] = Encoder.derived
+
   private given Decoder[Uuid[User]] = Decoder.decodeUUID.map(Uuid[User].apply)
   private given Encoder[Uuid[User]] = Encoder.encodeUUID.contramap(identity)
   private given Decoder[Username] = Decoder.decodeString.emap(str =>

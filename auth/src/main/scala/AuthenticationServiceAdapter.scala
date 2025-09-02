@@ -2,7 +2,7 @@ package org.aulune.auth
 
 
 import application.AuthenticationService
-import application.dto.AuthenticatedUser
+import application.dto.UserInfo
 
 import cats.Functor
 import cats.syntax.all.given
@@ -21,8 +21,8 @@ private[auth] final class AuthenticationServiceAdapter[F[_]: Functor](
     for maybeUser <- service.getUserInfo(token)
     yield maybeUser.map(makeUser)
 
-  /** Makes [[User]] out of [[AuthenticatedUser]]. */
-  private def makeUser(authenticatedUser: AuthenticatedUser): User = User(
-    id = authenticatedUser.id,
-    username = authenticatedUser.username,
+  /** Makes [[User]] out of [[UserInfo]]. */
+  private def makeUser(userInfo: UserInfo): User = User(
+    id = userInfo.id,
+    username = userInfo.username,
   )

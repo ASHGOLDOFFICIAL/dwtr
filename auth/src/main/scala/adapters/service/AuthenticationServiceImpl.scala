@@ -12,7 +12,7 @@ import application.dto.AuthenticateUserRequest.{
 import application.dto.{
   AuthenticateUserRequest,
   AuthenticateUserResponse,
-  AuthenticatedUser,
+  UserInfo,
   CreateUserRequest,
 }
 import application.errors.AuthenticationServiceError
@@ -107,10 +107,20 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
 
   override def getUserInfo(
       accessToken: String,
-  ): F[Either[ErrorResponse, AuthenticatedUser]] = (for
-    token <- OptionT.fromOption(TokenString(accessToken))
-    user <- OptionT(accessTokenService.decodeAccessToken(token))
-  yield user).toRight(ErrorResponses.invalidAccessToken).value
+  ): F[Either[ErrorResponse, UserInfo]] = (for
+    token <- EitherT.fromOption(
+      TokenString(accessToken),
+      ErrorResponses.invalidAccessToken)
+    id <- EitherT.fromOptionF(
+      accessTokenService.decodeAccessToken(token),
+      ErrorResponses.invalidAccessToken)
+    userO <- repo.get(id).attemptT.leftSemiflatMap { e =>
+      for _ <- error"Error during getting element from repo: $e"
+      yield ErrorResponses.internal
+    }
+    user <- EitherT.fromOption(userO, ErrorResponses.notRegistered)
+    userInfo = UserInfo(id = user.id, username = user.username)
+  yield userInfo).value
 
   /** Makes [[AuthenticateUserResponse]] for given user.
    *  @param user user for whom response is being made.

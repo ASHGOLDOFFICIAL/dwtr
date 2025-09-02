@@ -2,8 +2,9 @@ package org.aulune.auth
 package domain.services
 
 
-import application.dto.AuthenticatedUser
 import domain.model.{AccessTokenPayload, TokenString, User}
+
+import org.aulune.commons.types.Uuid
 
 
 /** Service that generates and decodes access tokens. Access token payload
@@ -13,10 +14,10 @@ import domain.model.{AccessTokenPayload, TokenString, User}
  *  @tparam F effect type.
  */
 trait AccessTokenService[F[_]]:
-  /** Returns [[AuthenticatedUser]] whom this token identifies.
+  /** Returns ID of the user whom this token identifies.
    *  @param token token as string.
    */
-  def decodeAccessToken(token: TokenString): F[Option[AuthenticatedUser]]
+  def decodeAccessToken(token: TokenString): F[Option[Uuid[User]]]
 
   /** Generates access token for given user.
    *  @param user user for whom to generate access token.

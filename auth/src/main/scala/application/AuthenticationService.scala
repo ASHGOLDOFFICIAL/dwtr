@@ -5,7 +5,7 @@ package application
 import application.dto.{
   AuthenticateUserRequest,
   AuthenticateUserResponse,
-  AuthenticatedUser,
+  UserInfo,
   CreateUserRequest
 }
 import application.errors.AuthenticationServiceError.{
@@ -57,4 +57,4 @@ trait AuthenticationService[F[_]]:
    */
   def getUserInfo(
       idToken: String,
-  ): F[Either[ErrorResponse, AuthenticatedUser]]
+  ): F[Either[ErrorResponse, UserInfo]]
