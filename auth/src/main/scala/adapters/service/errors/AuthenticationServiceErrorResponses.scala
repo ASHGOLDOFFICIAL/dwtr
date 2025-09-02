@@ -4,6 +4,7 @@ package adapters.service.errors
 
 import application.errors.AuthenticationServiceError.{
   ExternalServiceFailure,
+  InvalidAccessToken,
   InvalidCredentials,
   InvalidOAuthCode,
   InvalidUser,
@@ -81,6 +82,16 @@ object AuthenticationServiceErrorResponses:
     ),
   )
 
+  val userNotFound: ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = "Account with given info doesn't exist. Maybe it was deleted.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = UserNotFound,
+        domain = authDomain,
+      ).some),
+  )
+
   val notRegistered: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Account with given info doesn't exist yet.",
@@ -121,7 +132,12 @@ object AuthenticationServiceErrorResponses:
   val invalidAccessToken: ErrorResponse = ErrorResponse(
     status = Unauthenticated,
     message = "Given access token is not valid",
-    details = ErrorDetails(),
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = InvalidAccessToken,
+        domain = authDomain,
+      ).some,
+    ),
   )
 
   private def validationErrorToString(err: UserValidationError): String =

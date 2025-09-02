@@ -2,13 +2,7 @@ package org.aulune.auth
 package adapters.service
 
 
-import domain.model.{
-  AccessTokenPayload,
-  IdTokenPayload,
-  TokenString,
-  User,
-  Username
-}
+import domain.model.{AccessTokenPayload, IdTokenPayload, TokenString, User, Username}
 import domain.services.{AccessTokenService, IdTokenService}
 
 import cats.Monad
@@ -19,6 +13,8 @@ import io.circe.parser.decode
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
 import org.aulune.commons.types.Uuid
+import org.typelevel.log4cats.{Logger, LoggerFactory}
+import org.typelevel.log4cats.Logger.optionTLogger
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim, JwtOptions}
 
 import java.time.Instant
@@ -31,12 +27,15 @@ import scala.concurrent.duration.FiniteDuration
  *  @param expiration default expiration time.
  *  @tparam F effect type.
  */
-final class JwtTokenService[F[_]: Clock: Monad](
+final class JwtTokenService[F[_]: Monad: Clock: LoggerFactory](
     issuer: String,
     secretKey: String,
     expiration: FiniteDuration,
 ) extends AccessTokenService[F]
     with IdTokenService[F]:
+  
+  private given Logger[F] = LoggerFactory[F].getLogger 
+  
   // Expiration checks are disable to do them manually
   private val options = JwtOptions(expiration = false)
   private val algo = JwtAlgorithm.HS256
@@ -95,6 +94,7 @@ final class JwtTokenService[F[_]: Clock: Monad](
   override def decodeAccessToken(
       token: TokenString,
   ): F[Option[Uuid[User]]] = (for
+    _ <- optionTLogger.info(s"Decoding access token: $token")
     claim <- decodeClaim(token).toOptionT
     payload <- decode[AccessTokenPayload](claim.toJson).toOption.toOptionT
     expirationValid <- OptionT.liftF(validateExpiration(payload.exp))

@@ -5,8 +5,8 @@ package application
 import application.dto.{
   AuthenticateUserRequest,
   AuthenticateUserResponse,
+  CreateUserRequest,
   UserInfo,
-  CreateUserRequest
 }
 import application.errors.AuthenticationServiceError.{
   InvalidAccessToken,
@@ -53,8 +53,8 @@ trait AuthenticationService[F[_]]:
    *
    *  [[InvalidAccessToken]] will be returned if token is invalid.
    *
-   *  @param idToken user's token.
+   *  @param accessToken user's access token.
    */
   def getUserInfo(
-      idToken: String,
+      accessToken: String,
   ): F[Either[ErrorResponse, UserInfo]]

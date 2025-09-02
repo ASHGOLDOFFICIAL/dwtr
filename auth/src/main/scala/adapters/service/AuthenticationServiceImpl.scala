@@ -115,8 +115,7 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
     id <- EitherT.fromOptionF(
       accessTokenService.decodeAccessToken(token),
       ErrorResponses.invalidAccessToken)
-
-    user <- EitherT.fromOptionF(repo.get(id), ErrorResponses.notRegistered)
+    user <- EitherT.fromOptionF(repo.get(id), ErrorResponses.userNotFound)
     userInfo = UserInfo(id = user.id, username = user.username)
   yield userInfo).value
     .handleErrorWith { e =>
