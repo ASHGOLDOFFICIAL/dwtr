@@ -2,13 +2,15 @@ package org.aulune.auth
 package adapters.jdbc.postgres.metas
 
 
-import domain.model.Username
+import domain.model.{ExternalId, Username}
 
 import doobie.Meta
 
 
+/** [[Meta]] instances for user object. */
 private[postgres] object UserMetas:
-  given Meta[Username] = Meta[String].tiemap { str =>
-    Username(str)
-      .toRight(s"Failed to decode Username from: $str.")
-  }(identity)
+  given Meta[Username] = Meta[String]
+    .imap(str => Username.unsafe(str))(identity)
+
+  given Meta[ExternalId] = Meta[String]
+    .imap(str => ExternalId.unsafe(str))(identity)

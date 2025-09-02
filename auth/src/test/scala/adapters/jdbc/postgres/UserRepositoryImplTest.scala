@@ -2,7 +2,7 @@ package org.aulune.auth
 package adapters.jdbc.postgres
 
 
-import domain.model.{User, Username}
+import domain.model.{ExternalId, User, Username}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -29,13 +29,12 @@ final class UserRepositoryImplTest
     id = Uuid.unsafe[User]("7690e9ab-700d-46ef-9e46-2bcce2d56ae3"),
     username = Username.unsafe("username"),
     hashedPassword = Option("test_hash"),
-    googleId = Option("google_id"),
+    googleId = Option(ExternalId.unsafe("google_id")),
   )
   private val updatedTestUser = testUser
     .update(
       username = Username.unsafe("new_username"),
       hashedPassword = Option("new_test_hash"),
-      googleId = Option("google_id"),
     )
     .toOption
     .get
@@ -86,7 +85,7 @@ final class UserRepositoryImplTest
           id = Uuid.unsafe("eab28102-2ecd-4ff2-8572-58143fbe920d"),
           username = Username.unsafe("another_username"),
           hashedPassword = None,
-          googleId = Some("google_id"),
+          googleId = testUser.googleId,
         )
         for
           _ <- repo.persist(testUser)

@@ -12,13 +12,10 @@ import application.dto.AuthenticateUserRequest.{
 import application.dto.{
   AuthenticateUserRequest,
   AuthenticateUserResponse,
-  UserInfo,
   CreateUserRequest,
+  UserInfo,
 }
-import application.errors.AuthenticationServiceError
-import application.errors.AuthenticationServiceError.InvalidUser
 import domain.errors.{OAuthError, UserValidationError}
-import domain.model.OAuth2Provider.Google
 import domain.model.{
   AuthorizationCode,
   ExternalId,
@@ -36,7 +33,7 @@ import domain.services.{
 }
 
 import cats.MonadThrow
-import cats.data.{EitherT, NonEmptyChain, OptionT}
+import cats.data.EitherT
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
@@ -70,55 +67,68 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
   override def login(
       request: AuthenticateUserRequest,
   ): F[Either[ErrorResponse, AuthenticateUserResponse]] = (for
-    _ <- eitherTLogger.info(s"Received authentication request: $request")
+    _ <- eitherTLogger.info(s"Authentication request: $request")
     user <- delegateLogin(request)
+    _ <- eitherTLogger.info(s"Successful login for $request")
     response <- makeResponseForUser(user)
   yield response).value
 
   override def register(
       request: CreateUserRequest,
   ): F[Either[ErrorResponse, AuthenticateUserResponse]] = (for
-    _ <- eitherTLogger.info(s"Received registration request: $request")
+    _ <- eitherTLogger.info(s"Registration request: $request.")
+
     code <- EitherT
       .fromOption(
         AuthorizationCode(request.oauth2.authorizationCode),
         ErrorResponses.invalidOAuthCode)
-      .leftSemiflatTap(_ => warn"Couldn't exchange code for token")
+      .leftSemiflatTap(_ => warn"Couldn't exchange code for token.")
+    _ <- eitherTLogger.info(s"Exchanged code: $request.")
+
     provider = OAuth2ProviderMapper.toDomain(request.oauth2.provider)
 
-    oid <- EitherT(getExternalId(provider, code))
-      .leftSemiflatTap(_ => warn"Couldn't get user's ID")
-    _ <- EitherT(checkIfRegistered(provider, oid))
-      .leftSemiflatTap(_ => warn"User is already registered")
+    oid <- getExternalId(provider, code)
+    _ <- eitherTLogger.info(s"Received user ID for request: $request.")
+
+    _ <- checkIfRegistered(provider, oid)
+      .leftSemiflatTap(_ => warn"User is already registered.")
+    _ <- eitherTLogger.info(s"User is unregistered: $request.")
 
     id <- EitherT.liftF(UUIDGen[F].randomUUID.map(Uuid[User]))
     user <- EitherT.fromEither(createUser(id, request.username, provider, oid))
 
     persisted <- repo.persist(user).attemptT.leftSemiflatMap {
       case RepositoryError.AlreadyExists =>
-        for _ <- warn"Already registered user's request: $request"
+        for _ <- warn"Already registered user's request: $request."
         yield ErrorResponses.alreadyRegistered
       case e =>
-        for _ <- error"Unexpected error: $e"
+        for _ <- Logger[F].error(e)("Unexpected error.")
         yield ErrorResponses.internal
     }
+    _ <- eitherTLogger.info(s"Persisted new user: $persisted.")
     response <- makeResponseForUser(persisted)
   yield response).value
 
   override def getUserInfo(
       accessToken: String,
   ): F[Either[ErrorResponse, UserInfo]] = (for
+    _ <- eitherTLogger.info(s"User info request for token: $accessToken.")
+
     token <- EitherT.fromOption(
       TokenString(accessToken),
       ErrorResponses.invalidAccessToken)
     id <- EitherT.fromOptionF(
       accessTokenService.decodeAccessToken(token),
       ErrorResponses.invalidAccessToken)
+    _ <- eitherTLogger.info(s"Token belongs to $id.")
+
     userO <- repo.get(id).attemptT.leftSemiflatMap { e =>
-      for _ <- error"Error during getting element from repo: $e"
+      for _ <- Logger[F].error(e)("Error when getting element from repo.")
       yield ErrorResponses.internal
     }
     user <- EitherT.fromOption(userO, ErrorResponses.notRegistered)
+    _ <- eitherTLogger.info(s"Retrieved user $user.")
+
     userInfo = UserInfo(id = user.id, username = user.username)
   yield userInfo).value
 
@@ -132,9 +142,11 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
     idToken <- idTokenService.generateIdToken(user)
   yield AuthenticateUserResponse(
     accessToken = accessToken,
-    idToken = idToken)).attemptT.leftSemiflatMap(e =>
-    for _ <- error"Couldn't produce tokens for user: $user, error: $e"
-    yield ErrorResponses.internal)
+    idToken = idToken)).attemptT
+    .leftSemiflatMap(e =>
+      for _ <- Logger[F].error(e)(s"Couldn't produce tokens for user: $user.")
+      yield ErrorResponses.internal)
+    .semiflatTap(_ => info"Made response for user: $user.")
 
   /** Gets user ID in third-party services.
    *  @param provider chosen OAuth2 provider.
@@ -143,13 +155,14 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
   private def getExternalId(
       provider: OAuth2Provider,
       code: AuthorizationCode,
-  ): F[Either[ErrorResponse, ExternalId]] =
+  ): EitherT[F, ErrorResponse, ExternalId] = EitherT(
     for result <- oauth2AuthService.getId(provider, code)
     yield result.leftMap {
-      case OAuthError.Unavailable  => ErrorResponses.external
+      case OAuthError.Unavailable  => ErrorResponses.externalUnavailable
       case OAuthError.Rejected     => ErrorResponses.invalidOAuthCode
-      case OAuthError.InvalidToken => ErrorResponses.external
-    }
+      case OAuthError.InvalidToken => ErrorResponses.externalUnavailable
+    })
+    .leftSemiflatTap(_ => warn"Couldn't get user's ID from $provider.")
 
   /** Checks if user is already in repository.
    *  @param provider third-party OAuth2 provider.
@@ -159,12 +172,12 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
   private def checkIfRegistered(
       provider: OAuth2Provider,
       id: ExternalId,
-  ): F[Either[ErrorResponse, Unit]] =
+  ): EitherT[F, ErrorResponse, Unit] = EitherT(
     for result <- oauth2AuthService.findUser(provider, id).attempt
     yield result.leftMap(_ => ErrorResponses.internal).flatMap {
       case Some(user) => ErrorResponses.alreadyRegistered.asLeft
       case None       => ().asRight
-    }
+    })
 
   /** Creates user from registration request and third-party id.
    *  @param username user chosen username.
@@ -179,13 +192,7 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
       oauth2Id: ExternalId,
   ): Either[ErrorResponse, User] = Username(username)
     .toValidNec(UserValidationError.InvalidUsername)
-    .andThen(username =>
-      User(
-        id = id,
-        username = username,
-        hashedPassword = None,
-        googleId = None,
-      ))
+    .andThen(username => User.create(id = id, username = username))
     .andThen(user => linkExternalAccount(user, provider, oauth2Id))
     .toEither
     .leftMap(ErrorResponses.invalidRegistrationDetails)
@@ -209,32 +216,30 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
    */
   private def delegateLogin(
       request: AuthenticateUserRequest,
-  ): EitherT[F, ErrorResponse, User] = (
-    request match
-      case req @ BasicAuthentication(username, password) =>
-        for
-          username <- EitherT.fromOption(
-            Username(username),
-            ErrorResponses.invalidCredentials)
-          user <- EitherT.fromOptionF(
+  ): EitherT[F, ErrorResponse, User] = request match
+    case req @ BasicAuthentication(username, password) =>
+      for
+        username <- EitherT
+          .fromOption(Username(username), ErrorResponses.invalidCredentials)
+          .leftSemiflatTap(_ => warn"Login with invalid username: $request.")
+        user <- EitherT
+          .fromOptionF(
             basicAuthService.authenticate(username, password),
             ErrorResponses.invalidCredentials)
-        yield user
+          .leftSemiflatTap(_ => warn"Basic authentication failed: $request.")
+      yield user
 
-      case OAuth2Authentication(providerDto, code) =>
-        for
-          code <- EitherT
-            .fromOption(
-              AuthorizationCode(code),
-              ErrorResponses.invalidOAuthCode)
-            .leftSemiflatTap(_ => warn"Received invalid OAuth code: $request")
-          provider = OAuth2ProviderMapper.toDomain(providerDto)
-          oid <- EitherT(getExternalId(provider, code))
-          user <- EitherT
-            .fromOptionF(
-              oauth2AuthService.findUser(provider, oid),
-              ErrorResponses.notRegistered)
-            .leftSemiflatTap(_ =>
-              warn"Unregistered user is trying to log in: $request")
-        yield user
-  ).leftSemiflatTap(e => error"Error while authentication: $e")
+    case OAuth2Authentication(providerDto, code) =>
+      for
+        code <- EitherT
+          .fromOption(AuthorizationCode(code), ErrorResponses.invalidOAuthCode)
+          .leftSemiflatTap(_ => warn"Invalid OAuth code: $request.")
+        provider = OAuth2ProviderMapper.toDomain(providerDto)
+        oid <- getExternalId(provider, code)
+        user <- EitherT
+          .fromOptionF(
+            oauth2AuthService.findUser(provider, oid),
+            ErrorResponses.notRegistered)
+          .leftSemiflatTap(_ =>
+            warn"Unregistered user is trying to log in: $request.")
+      yield user

@@ -3,6 +3,7 @@ package adapters.service.errors
 
 
 import application.errors.AuthenticationServiceError.{
+  ExternalServiceFailure,
   InvalidCredentials,
   InvalidOAuthCode,
   InvalidUser,
@@ -36,10 +37,26 @@ object AuthenticationServiceErrorResponses:
     details = ErrorDetails(),
   )
 
-  val external: ErrorResponse = ErrorResponse(
+  val externalUnavailable: ErrorResponse = ErrorResponse(
     status = Unknown,
-    message = "External service was unavailable",
-    details = ErrorDetails(),
+    message = "External service was unavailable.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = ExternalServiceFailure,
+        domain = authDomain,
+      ).some,
+    ),
+  )
+
+  val externalInvalid: ErrorResponse = ErrorResponse(
+    status = Unknown,
+    message = "External service sent invalid token.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = ExternalServiceFailure,
+        domain = authDomain,
+      ).some,
+    ),
   )
 
   val invalidCredentials: ErrorResponse = ErrorResponse(

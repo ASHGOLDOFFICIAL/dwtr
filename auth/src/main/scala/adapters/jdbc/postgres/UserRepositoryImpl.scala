@@ -3,15 +3,16 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.UserMetas.given
-import domain.model.{User, Username}
+import domain.model.{ExternalId, User, Username}
+import domain.repositories.UserRepository
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
-import cats.syntax.all.*
-import doobie.implicits.*
+import cats.syntax.all.given
+import doobie.implicits.toSqlInterpolator 
 import doobie.postgres.sqlstate
+import doobie.syntax.all.given 
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.auth.domain.repositories.UserRepository
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
@@ -127,7 +128,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       Uuid[User],
       Username,
       Option[String],
-      Option[String],
+      Option[ExternalId],
   )
 
   /** Makes users from given data. */
@@ -135,7 +136,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       id: Uuid[User],
       username: Username,
       password: Option[String],
-      googleId: Option[String],
+      googleId: Option[ExternalId],
   ) = User.unsafe(
     id = id,
     username = username,

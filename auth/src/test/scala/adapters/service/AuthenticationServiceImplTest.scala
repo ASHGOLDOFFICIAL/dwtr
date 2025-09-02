@@ -4,13 +4,25 @@ package adapters.service
 
 import application.AuthenticationService
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import application.dto.CreateUserRequest
-import org.aulune.auth.domain.model.OAuth2Provider.Google
+import application.dto.{
+  AuthenticateUserResponse,
+  CreateUserRequest,
+  OAuth2ProviderDto,
+}
 import application.errors.AuthenticationServiceError.{
+  ExternalServiceFailure,
   InvalidOAuthCode,
   UserAlreadyExists,
 }
-import domain.model.{User, Username}
+import domain.errors.OAuthError
+import domain.model.{
+  AuthorizationCode,
+  ExternalId,
+  OAuth2Provider,
+  TokenString,
+  User,
+  Username,
+}
 import domain.repositories.UserRepository
 import domain.services.{
   AccessTokenService,
@@ -19,7 +31,6 @@ import domain.services.{
   OAuth2AuthenticationService,
 }
 
-import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -30,6 +41,8 @@ import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
+import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import java.util.UUID
 
@@ -40,6 +53,7 @@ final class AuthenticationServiceImplTest
     with AsyncIOSpec
     with Matchers
     with AsyncMockFactory:
+  private given LoggerFactory[IO] = Slf4jFactory.create[IO]
 
   private val mockRepo = mock[UserRepository[IO]]
   private val mockAccess = mock[AccessTokenService[IO]]
@@ -62,19 +76,31 @@ final class AuthenticationServiceImplTest
       oauth2AuthService = mockOauth,
     ))
 
+  private val providerDto = OAuth2ProviderDto.Google
+  private val provider = OAuth2Provider.Google
+  private val authorizationCode = AuthorizationCode.unsafe("code")
+  private val oid = ExternalId.unsafe("google_id")
+
   private val newUser = User.unsafe(
     id = Uuid(uuid),
     username = Username.unsafe("username"),
     hashedPassword = None,
-    googleId = Some("google_id"),
+    googleId = Some(oid),
   )
 
   private val createUserRequest = CreateUserRequest(
     username = newUser.username,
     OAuth2Authentication(
-      provider = Google,
-      authorizationCode = "code",
+      provider = providerDto,
+      authorizationCode = authorizationCode,
     ),
+  )
+
+  private val accessToken = TokenString.unsafe("access_token_string")
+  private val idToken = TokenString.unsafe("id_token_string")
+  private val authenticateResponse = AuthenticateUserResponse(
+    accessToken = accessToken,
+    idToken = idToken,
   )
 
   "register method " - {
@@ -82,17 +108,12 @@ final class AuthenticationServiceImplTest
       "create new user if everything is OK" in stand { service =>
         // OAuth code exchange is successful.
         (mockOauth.getId _)
-          .expects(
-            createUserRequest.oauth2.provider,
-            createUserRequest.oauth2.authorizationCode)
-          .returning(newUser.googleId.pure[IO])
+          .expects(provider, authorizationCode)
+          .returning(oid.asRight.pure[IO])
 
         // User isn't registered yet.
         (mockOauth.findUser _)
-          .expects(
-            createUserRequest.oauth2.provider,
-            newUser.googleId.get,
-          )
+          .expects(provider, oid)
           .returning(None.pure[IO])
 
         // Persisting doesn't lead to errors.
@@ -100,66 +121,97 @@ final class AuthenticationServiceImplTest
           .expects(newUser)
           .returning(newUser.pure[IO])
 
+        // Tokens are successfully generated.
+        (mockAccess.generateAccessToken _)
+          .expects(newUser)
+          .returning(accessToken.pure[IO])
+        (mockId.generateIdToken _)
+          .expects(newUser)
+          .returning(idToken.pure[IO])
+
         for result <- service.register(createUserRequest)
-        yield result shouldBe ().asRight
+        yield result shouldBe authenticateResponse.asRight
       }
-    }
 
-    "result in error if code exchange failed" in stand { service =>
-      // OAuth code exchange failed.
-      (mockOauth.getId _)
-        .expects(
-          createUserRequest.oauth2.provider,
-          createUserRequest.oauth2.authorizationCode)
-        .returning(None.pure[IO])
+      "result in InvalidOAuthCode if authentication code was rejected" in stand {
+        service =>
+          (mockOauth.getId _)
+            .expects(provider, authorizationCode)
+            .returning(OAuthError.Rejected.asLeft.pure[IO])
 
-      for result <- service.register(createUserRequest)
-      yield result shouldBe NonEmptyChain.one(InvalidOAuthCode).asLeft
-    }
+          for result <- service.register(createUserRequest)
+          yield result match
+            case Left(err) =>
+              err.details.info.get.reason shouldBe InvalidOAuthCode
+            case Right(value) => fail("Error was expected.")
+      }
 
-    "result in error if user's already registered" in stand { service =>
-      // OAuth code exchange is successful.
-      (mockOauth.getId _)
-        .expects(
-          createUserRequest.oauth2.provider,
-          createUserRequest.oauth2.authorizationCode)
-        .returning(newUser.googleId.pure[IO])
+      "result in ExternalServiceFailure when invalid token was received" in stand {
+        service =>
+          (mockOauth.getId _)
+            .expects(provider, authorizationCode)
+            .returning(OAuthError.InvalidToken.asLeft.pure[IO])
 
-      // User is already registered.
-      (mockOauth.findUser _)
-        .expects(
-          createUserRequest.oauth2.provider,
-          newUser.googleId.get,
-        )
-        .returning(Some(newUser).pure[IO])
+          for result <- service.register(createUserRequest)
+          yield result match
+            case Left(err) =>
+              err.details.info.get.reason shouldBe ExternalServiceFailure
+            case Right(value) => fail("Error was expected.")
+      }
 
-      for result <- service.register(createUserRequest)
-      yield result shouldBe NonEmptyChain.one(UserAlreadyExists).asLeft
-    }
+      "result in ExternalServiceFailure when external service is unavalible" in stand {
+        service =>
+          (mockOauth.getId _)
+            .expects(provider, authorizationCode)
+            .returning(OAuthError.Unavailable.asLeft.pure[IO])
 
-    "result in error if user's already persisted" in stand { service =>
-      // OAuth code exchange is successful.
-      (mockOauth.getId _)
-        .expects(
-          createUserRequest.oauth2.provider,
-          createUserRequest.oauth2.authorizationCode)
-        .returning(newUser.googleId.pure[IO])
+          for result <- service.register(createUserRequest)
+          yield result match
+            case Left(err) =>
+              err.details.info.get.reason shouldBe ExternalServiceFailure
+            case Right(value) => fail("Error was expected.")
+      }
 
-      // User isn't registered yet.
-      (mockOauth.findUser _)
-        .expects(
-          createUserRequest.oauth2.provider,
-          newUser.googleId.get,
-        )
-        .returning(None.pure[IO])
+      "result in error if user's already registered" in stand { service =>
+        // OAuth code exchange is successful.
+        (mockOauth.getId _)
+          .expects(provider, authorizationCode)
+          .returning(oid.asRight.pure[IO])
 
-      // User already in repository.
-      (mockRepo.persist _)
-        .expects(newUser)
-        .returning(IO.raiseError(RepositoryError.AlreadyExists))
+        // User is already registered.
+        (mockOauth.findUser _)
+          .expects(provider, oid)
+          .returning(Some(newUser).pure[IO])
 
-      for result <- service.register(createUserRequest)
-      yield result shouldBe NonEmptyChain.one(UserAlreadyExists).asLeft
+        for result <- service.register(createUserRequest)
+        yield result match
+          case Left(err) =>
+            err.details.info.get.reason shouldBe UserAlreadyExists
+          case Right(value) => fail("Error was expected.")
+      }
+
+      "result in error if user's already persisted" in stand { service =>
+        // OAuth code exchange is successful.
+        (mockOauth.getId _)
+          .expects(provider, authorizationCode)
+          .returning(oid.asRight.pure[IO])
+
+        // User isn't registered yet.
+        (mockOauth.findUser _)
+          .expects(provider, oid)
+          .returning(None.pure[IO])
+
+        // User already in repository.
+        (mockRepo.persist _)
+          .expects(newUser)
+          .returning(IO.raiseError(RepositoryError.AlreadyExists))
+
+        for result <- service.register(createUserRequest)
+        yield result match
+          case Left(err) =>
+            err.details.info.get.reason shouldBe UserAlreadyExists
+          case Right(value) => fail("Error was expected.")
+      }
     }
   }
 

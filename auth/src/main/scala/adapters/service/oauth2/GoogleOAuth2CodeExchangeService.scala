@@ -9,8 +9,7 @@ import domain.model.OAuth2Provider.Google
 import domain.model.{AuthorizationCode, ExternalId}
 import domain.services.OAuth2CodeExchangeService
 
-import cats.Applicative
-import cats.data.{EitherT, OptionT}
+import cats.data.EitherT
 import cats.effect.Concurrent
 import cats.effect.kernel.Clock
 import cats.syntax.all.given
@@ -22,8 +21,6 @@ import org.http4s.{EntityDecoder, Method, Request, Uri, UrlForm}
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.given
 import org.typelevel.log4cats.{Logger, LoggerFactory}
-
-import scala.xml.dtd.ExternalID
 
 
 /** Services managing authorization code exchange with Google. */

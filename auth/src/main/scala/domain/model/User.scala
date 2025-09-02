@@ -21,14 +21,14 @@ final case class User private (
     id: Uuid[User],
     username: Username,
     hashedPassword: Option[String],
-    googleId: Option[String],
+    googleId: Option[ExternalId],
 ):
   /** Copies with validation. */
   def update(
       id: Uuid[User] = id,
       username: Username = username,
       hashedPassword: Option[String] = hashedPassword,
-      googleId: Option[String] = googleId,
+      googleId: Option[ExternalId] = googleId,
   ): ValidationResult[User] = User(
     id = id,
     username = username,
@@ -40,6 +40,22 @@ final case class User private (
 object User:
   private type ValidationResult[A] = ValidatedNec[UserValidationError, A]
 
+  /** Creates user using only required fields. Other fields are initialized as
+   *  `None`.
+   *  @param id user's UUID.
+   *  @param username unique username.
+   *  @return user validation result.
+   */
+  def create(
+      id: Uuid[User],
+      username: Username,
+  ): ValidationResult[User] = User(
+    id = id,
+    username = username,
+    hashedPassword = None,
+    googleId = None,
+  )
+
   /** Returns a user if all given arguments are valid.
    *  @param id UUID assigned to user.
    *  @param username unique username.
@@ -49,7 +65,7 @@ object User:
       id: Uuid[User],
       username: Username,
       hashedPassword: Option[String],
-      googleId: Option[String],
+      googleId: Option[ExternalId],
   ): ValidationResult[User] = validateState(
     new User(
       id = id,
@@ -64,7 +80,7 @@ object User:
       id: Uuid[User],
       username: Username,
       hashedPassword: Option[String],
-      googleId: Option[String],
+      googleId: Option[ExternalId],
   ): User = User(
     id = id,
     username = username,

@@ -13,8 +13,8 @@ inThisBuild {
       "-deprecation",
       "-unchecked",
       "-Wnonunit-statement",
-      "-Xmax-inlines:64"
-    )
+      "-Xmax-inlines:64",
+    ),
   )
 }
 
@@ -45,7 +45,6 @@ lazy val app = (project in file("."))
       "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
     ),
   )
@@ -63,7 +62,6 @@ lazy val commons = (project in file("commons")).settings(
     "org.typelevel" %% "cats-core"  % catsVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
-    "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
   ),
 )
 
@@ -78,8 +76,7 @@ lazy val auth = (project in file("auth"))
       "de.mkammerer"          % "argon2-jvm" % argon2Version,
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
+      "org.typelevel" %% "log4cats-core"   % log4catsVersion,
       "com.nimbusds"   % "nimbus-jose-jwt" % nimbusJoseJwt,
     ),
   )
@@ -93,7 +90,7 @@ lazy val permissions = (project in file("permissions"))
     libraryDependencies ++= testDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+      "org.typelevel" %% "log4cats-core" % log4catsVersion,
     ),
   )
 
@@ -106,8 +103,7 @@ lazy val aggregator = (project in file("aggregator"))
     libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+      "org.typelevel" %% "log4cats-core" % log4catsVersion,
     ),
   )
 
@@ -115,7 +111,6 @@ lazy val aggregator = (project in file("aggregator"))
 val argon2Version = "2.12"
 val catsEffectTestingVersion = "1.6.0"
 val catsEffectVersion = "3.6.3"
-val catsMtlVersion = "1.5.0"
 val catsVersion = "2.13.0"
 val circeGenericExtras = "0.14.5-RC1"
 val circeVersion = "0.14.14"
@@ -172,10 +167,12 @@ val doobieDeps = Seq(
 
 
 val testDeps = Seq(
-  "com.dimafeng"  %% "testcontainers-scala-scalatest"  % testcontainersVersion,
+  "ch.qos.logback" % "logback-classic"                 % logbackVersion,
   "com.dimafeng"  %% "testcontainers-scala-postgresql" % testcontainersVersion,
+  "com.dimafeng"  %% "testcontainers-scala-scalatest"  % testcontainersVersion,
   "org.postgresql" % "postgresql"                      % postgresqlVersion,
   "org.scalamock" %% "scalamock"                       % scalamockVersion,
   "org.scalatest" %% "scalatest"                       % scalatestVersion,
   "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
+  "org.typelevel" %% "log4cats-slf4j"                % log4catsVersion,
 ).map(_ % Test)
