@@ -1,8 +1,8 @@
 package org.aulune.auth
 package domain.services
 
-import application.dto.{AuthenticatedUser, IdTokenPayload}
-import domain.model.{TokenString, User}
+import application.dto.AuthenticatedUser
+import domain.model.{IdTokenPayload, TokenString, User}
 
 
 /** Service that generates ID tokens. ID token payload should be

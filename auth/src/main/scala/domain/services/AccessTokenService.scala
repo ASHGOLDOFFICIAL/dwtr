@@ -2,8 +2,8 @@ package org.aulune.auth
 package domain.services
 
 
-import application.dto.{AccessTokenPayload, AuthenticatedUser}
-import domain.model.{TokenString, User}
+import application.dto.AuthenticatedUser
+import domain.model.{AccessTokenPayload, TokenString, User}
 
 
 /** Service that generates and decodes access tokens. Access token payload

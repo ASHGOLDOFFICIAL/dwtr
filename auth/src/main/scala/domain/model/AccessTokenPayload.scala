@@ -1,5 +1,7 @@
 package org.aulune.auth
-package application.dto
+package domain.model
+
+import org.aulune.commons.types.Uuid
 
 import java.util.UUID
 
@@ -15,8 +17,8 @@ import java.util.UUID
  */
 final case class AccessTokenPayload(
     iss: String,
-    sub: UUID,
+    sub: Uuid[User],
     exp: Long,
     iat: Long,
-    username: String,
+    username: Username,
 )

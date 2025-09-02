@@ -1,8 +1,16 @@
 package org.aulune.auth
 package adapters.service
 
-import application.dto.{AccessTokenPayload, AuthenticatedUser, IdTokenPayload}
-import domain.model.{TokenString, User}
+
+import application.dto.AuthenticatedUser
+import domain.model.{
+  AccessTokenPayload,
+  IdTokenPayload,
+  TokenString,
+  User,
+  Username,
+}
+import domain.services.{AccessTokenService, IdTokenService}
 
 import cats.Monad
 import cats.data.OptionT
@@ -11,7 +19,7 @@ import cats.syntax.all.*
 import io.circe.parser.decode
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
-import org.aulune.auth.domain.services.{AccessTokenService, IdTokenService}
+import org.aulune.commons.types.Uuid
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim, JwtOptions}
 
 import java.time.Instant
@@ -73,8 +81,8 @@ final class JwtTokenService[F[_]: Clock: Monad](
     val exp = iat + maxExp
     IdTokenPayload(
       iss = issuer,
-      sub = user.username,
-      aud = "?",
+      sub = user.id,
+      aud = "?", // TODO: fix
       exp = exp,
       iat = iat,
       username = user.username)
@@ -136,3 +144,8 @@ final class JwtTokenService[F[_]: Clock: Monad](
   private given Encoder[AccessTokenPayload] = Encoder.derived
   private given Decoder[AccessTokenPayload] = Decoder.derived
   private given Encoder[IdTokenPayload] = Encoder.derived
+  private given Decoder[Uuid[User]] = Decoder.decodeUUID.map(Uuid[User].apply)
+  private given Encoder[Uuid[User]] = Encoder.encodeUUID.contramap(identity)
+  private given Decoder[Username] = Decoder.decodeString.emap(str =>
+    Username(str).toRight(s"Couldn't decode username: $str"))
+  private given Encoder[Username] = Encoder.encodeString.contramap(identity)

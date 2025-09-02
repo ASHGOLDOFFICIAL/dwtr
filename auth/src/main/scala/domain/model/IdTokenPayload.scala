@@ -1,8 +1,11 @@
 package org.aulune.auth
-package application.dto
+package domain.model
+
+import org.aulune.commons.types.Uuid
 
 
 /** ID token payload.
+ *
  *  @param iss Issuer Identifier, should be HTTPS URI of our backend.
  *  @param sub Subject Identifier, should be user's unique ID.
  *  @param aud audience that this ID Token is intended for. Right now should be
@@ -16,9 +19,9 @@ package application.dto
  */
 final case class IdTokenPayload(
     iss: String,
-    sub: String,
+    sub: Uuid[User],
     aud: String,
     exp: Long,
     iat: Long,
-    username: String,
+    username: Username,
 )
