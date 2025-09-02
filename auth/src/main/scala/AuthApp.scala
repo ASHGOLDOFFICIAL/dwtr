@@ -16,6 +16,7 @@ import cats.effect.Async
 import cats.effect.std.UUIDGen
 import cats.syntax.all.*
 import doobie.Transactor
+import fs2.io.net.Network
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.log4cats.LoggerFactory
@@ -39,7 +40,7 @@ object AuthApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: Async: UUIDGen: LoggerFactory](
+  def build[F[_]: Async: Network: UUIDGen: LoggerFactory](
       config: AuthConfig,
       transactor: Transactor[F],
   ): F[AuthApp[F]] = EmberClientBuilder.default[F].build.use { httpClient =>

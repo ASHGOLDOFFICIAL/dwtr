@@ -7,13 +7,13 @@ import permissions.PermissionApp
 
 import cats.effect.kernel.Resource
 import cats.effect.{Async, IO, IOApp}
-import cats.mtl.Handle.handleForApplicativeError
 import cats.syntax.all.given
 import doobie.Transactor
+import fs2.io.net.Network
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import org.http4s.{HttpRoutes, server}
-import org.typelevel.log4cats.{Logger, LoggerFactory}
+import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 import pureconfig.ConfigSource
 import sttp.apispec.openapi.Server
@@ -24,6 +24,7 @@ import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.SwaggerUI
 
 
+/** Main class. */
 object App extends IOApp.Simple:
   private given loggerFactory: LoggerFactory[IO] = Slf4jFactory.create[IO]
 
@@ -49,7 +50,7 @@ object App extends IOApp.Simple:
       _ <- makeServer[IO](endpoints).use(_ => IO.never)
     yield ()
 
-  private def makeServer[F[_]: Async](
+  private def makeServer[F[_]: Async: Network](
       endpoints: List[ServerEndpoint[Any, F]],
   ): Resource[F, server.Server] = EmberServerBuilder
     .default[F]
