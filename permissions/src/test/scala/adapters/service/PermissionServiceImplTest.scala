@@ -27,16 +27,16 @@ import domain.{
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorInfo
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
+import org.aulune.commons.testing.ErrorAssertions.assertDomainError
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-import org.typelevel.log4cats.Logger
-import org.typelevel.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.LoggerFactory
+import org.typelevel.log4cats.slf4j.Slf4jFactory
 
 import java.util.UUID
 
@@ -47,9 +47,8 @@ final class PermissionServiceImplTest
     with AsyncIOSpec
     with Matchers
     with AsyncMockFactory:
-  private given Logger[IO] = Slf4jLogger.getLogger[IO]
 
-  private val domain = "org.aulune.permissions"
+  private given LoggerFactory[IO] = Slf4jFactory.create
 
   private val adminNamespace = "adminNamespace"
   private val adminName = "adminName"
@@ -64,7 +63,7 @@ final class PermissionServiceImplTest
   private def stand(
       testCase: PermissionService[IO] => IO[Assertion],
   ): IO[Assertion] =
-    (mockRepo.upsert _)
+    val _ = (mockRepo.upsert _)
       .expects(where(hasAdminPermissionIdentity))
       .onCall(p => IO.pure(p))
     PermissionServiceImpl
@@ -107,12 +106,21 @@ final class PermissionServiceImplTest
       permission = checkRequest.permission,
     )
 
+  private def mockUpsert(returning: IO[Permission]) = (mockRepo.upsert _)
+    .expects(testPermission)
+    .returning(returning)
+
+  private def mockHasPermission(
+      permission: PermissionIdentity,
+      returning: IO[Boolean],
+  ) = (mockRepo.hasPermission _)
+    .expects(Uuid[User](user.id), permission)
+    .returning(returning)
+
   "registerPermission method " - {
     "should " - {
       "add new permissions" in stand { service =>
-        (mockRepo.upsert _)
-          .expects(testPermission)
-          .returning(testPermission.pure)
+        val _ = mockUpsert(testPermission.pure)
         for result <- service.registerPermission(createRequest)
         yield result shouldBe permissionResource.asRight
       }
@@ -124,23 +132,13 @@ final class PermissionServiceImplTest
             name = "the same",
             description = "",
           )
-          for result <- service.registerPermission(invalidRequest)
-          yield result match
-            case Left(error) => error.details.info shouldBe ErrorInfo(
-                reason = InvalidPermission,
-                domain = domain,
-              ).some
-            case Right(value) => fail("Error was expected.")
+          val register = service.registerPermission(invalidRequest)
+          assertDomainError(register)(InvalidPermission)
       }
 
       "be idempotent" in stand { service =>
-        (mockRepo.upsert _)
-          .expects(testPermission)
-          .returning(testPermission.pure)
-        (mockRepo.upsert _)
-          .expects(testPermission)
-          .returning(testPermission.pure)
-
+        val _ = mockUpsert(testPermission.pure)
+        val _ = mockUpsert(testPermission.pure)
         for
           _ <- service.registerPermission(createRequest)
           result <- service.registerPermission(createRequest)
@@ -152,58 +150,30 @@ final class PermissionServiceImplTest
   "checkPermission method " - {
     "should " - {
       "grant permission to those who have it" in stand { service =>
-        // Not an admin...
-        (mockRepo.hasPermission _)
-          .expects(Uuid[User](user.id), adminPermission)
-          .returning(false.pure)
-        // ...but has a permission.
-        (mockRepo.hasPermission _)
-          .expects(Uuid[User](user.id), testPermissionIdentity)
-          .returning(true.pure)
-
+        val _ = mockHasPermission(adminPermission, false.pure)
+        val _ = mockHasPermission(testPermissionIdentity, true.pure)
         for result <- service.checkPermission(checkRequest)
         yield result shouldBe checkResponse(Granted).asRight
       }
 
       "deny permission to those who don't have it" in stand { service =>
-        // Not an admin...
-        (mockRepo.hasPermission _)
-          .expects(Uuid[User](user.id), adminPermission)
-          .returning(false.pure)
-        // ...and doesn't have a permission either.
-        (mockRepo.hasPermission _)
-          .expects(Uuid[User](user.id), testPermissionIdentity)
-          .returning(false.pure)
-
+        val _ = mockHasPermission(adminPermission, false.pure)
+        val _ = mockHasPermission(testPermissionIdentity, false.pure)
         for result <- service.checkPermission(checkRequest)
         yield result shouldBe checkResponse(Denied).asRight
       }
 
       "grant permission to admin if they have it" in stand { service =>
-        // User is an admin...
-        (mockRepo.hasPermission _)
-          .expects(Uuid[User](user.id), adminPermission)
-          .returning(true.pure)
-        // ...and does have a required permission.
-        (mockRepo.hasPermission _)
-          .expects(Uuid[User](user.id), testPermissionIdentity)
-          .returning(true.pure)
-
+        val _ = mockHasPermission(adminPermission, true.pure)
+        val _ = mockHasPermission(testPermissionIdentity, true.pure)
         for result <- service.checkPermission(checkRequest)
         yield result shouldBe checkResponse(Granted).asRight
       }
 
       "grant permission to admin even if they don't have it" in stand {
         service =>
-          // User is an admin...
-          (mockRepo.hasPermission _)
-            .expects(Uuid[User](user.id), adminPermission)
-            .returning(true.pure)
-          // ...but doesn't have a required permission.
-          (mockRepo.hasPermission _)
-            .expects(Uuid[User](user.id), testPermissionIdentity)
-            .returning(false.pure)
-
+          val _ = mockHasPermission(adminPermission, true.pure)
+          val _ = mockHasPermission(testPermissionIdentity, false.pure)
           for result <- service.checkPermission(checkRequest)
           yield result shouldBe checkResponse(Granted).asRight
       }
@@ -215,29 +185,17 @@ final class PermissionServiceImplTest
             permission = "the same",
             user = user.id,
           )
-          for result <- service.checkPermission(invalidRequest)
-          yield result match
-            case Left(error) => error.details.info shouldBe ErrorInfo(
-                reason = InvalidPermission,
-                domain = domain,
-              ).some
-            case Right(value) => fail("Error was expected.")
+          val check = service.checkPermission(invalidRequest)
+          assertDomainError(check)(InvalidPermission)
       }
 
       "result in PermissionNotFound if permission hadn't been registered prior" in stand {
         service =>
-          // User doesn't have a required permission.
-          (mockRepo.hasPermission _)
-            .expects(Uuid[User](user.id), testPermissionIdentity)
-            .returning(IO.raiseError(RepositoryError.FailedPrecondition))
-
-          for result <- service.checkPermission(checkRequest)
-          yield result match
-            case Left(error) => error.details.info shouldBe ErrorInfo(
-                reason = PermissionNotFound,
-                domain = domain,
-              ).some
-            case Right(value) => fail("Error was expected.")
+          val _ = mockHasPermission(
+            testPermissionIdentity,
+            IO.raiseError(RepositoryError.FailedPrecondition))
+          val check = service.checkPermission(checkRequest)
+          assertDomainError(check)(PermissionNotFound)
       }
     }
   }
