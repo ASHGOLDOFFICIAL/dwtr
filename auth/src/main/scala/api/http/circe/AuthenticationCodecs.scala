@@ -2,17 +2,25 @@ package org.aulune.auth
 package api.http.circe
 
 
+import api.http.AuthenticationController
 import api.mappers.OAuth2ProviderMapper
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import application.dto.{AuthenticateUserRequest, AuthenticateUserResponse, OAuth2ProviderDto}
+import application.dto.{
+  AuthenticateUserRequest,
+  AuthenticateUserResponse,
+  OAuth2ProviderDto,
+}
 
 import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.{
+  deriveConfiguredDecoder,
+  deriveConfiguredEncoder,
+}
 import io.circe.{Decoder, Encoder}
-import org.aulune.auth.domain.model.OAuth2Provider
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 
+/** [[Decoder]] and [[Encoder]] instances for [[AuthenticationController]]. */
 private[api] object AuthenticationCodecs:
   given Encoder[OAuth2ProviderDto] = Encoder.encodeString
     .contramap(OAuth2ProviderMapper.toString)
@@ -25,9 +33,9 @@ private[api] object AuthenticationCodecs:
 
   private given Configuration = config.copy(
     transformConstructorNames = {
-      case "BasicAuthenticationRequest"  => "basic"
-      case "OAuth2AuthenticationRequest" => "oauth2"
-      case other                         => other
+      case "BasicAuthentication"  => "basic"
+      case "OAuth2Authentication" => "oauth2"
+      case other                  => other
     },
   )
 

@@ -39,10 +39,11 @@ import sttp.tapir.{endpoint, statusCode, stringBody, stringToPath}
 final class AuthenticationController[F[_]: Functor](
     service: AuthenticationService[F],
 ):
-  private val authTag = "Authentication"
+  private val collection = "users"
+  private val tag = "Users"
 
   private val loginEndpoint = endpoint.post
-    .in("auth" / "login")
+    .in(collection + ":authenticate")
     .in(jsonBody[AuthenticateUserRequest]
       .description("Login information.")
       .examples(requestExamples))
@@ -52,15 +53,14 @@ final class AuthenticationController[F[_]: Functor](
     .errorOut(statusCode.and(jsonBody[ErrorResponse]))
     .name("Login")
     .summary("Authenticate to receive token.")
-    .tag(authTag)
+    .tag(tag)
     .serverLogic { request =>
       for result <- service.login(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
-  private val usersTag = "Users"
   private val postEndpoint = endpoint.post
-    .in("users")
+    .in(collection)
     .in(jsonBody[CreateUserRequest]
       .description("Registration details.")
       .example(createRequestExample))
@@ -70,7 +70,7 @@ final class AuthenticationController[F[_]: Functor](
     .errorOut(statusCode.and(jsonBody[ErrorResponse]))
     .name("CreateUser")
     .summary("Register new user.")
-    .tag(usersTag)
+    .tag(tag)
     .serverLogic { request =>
       for result <- service.register(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
