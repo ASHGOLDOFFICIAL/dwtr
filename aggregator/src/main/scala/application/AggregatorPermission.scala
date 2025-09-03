@@ -5,10 +5,8 @@ import org.aulune.commons.service.permission.Permission
 
 
 /** Permissions of aggregator module. */
-enum AggregatorPermission(
-    override val name: String,
-    override val description: String,
-) extends Permission(
+enum AggregatorPermission(name: String, description: String)
+    extends Permission(
       namespace = "aggregator",
       name = name,
       description = description):
