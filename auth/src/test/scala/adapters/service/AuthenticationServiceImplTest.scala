@@ -32,9 +32,9 @@ import domain.model.{
 import domain.repositories.UserRepository
 import domain.services.{
   AccessTokenService,
-  BasicAuthenticationService,
+  BasicAuthenticationHandler,
   IdTokenService,
-  OAuth2AuthenticationService,
+  OAuth2AuthenticationHandler,
 }
 
 import cats.effect.IO
@@ -69,8 +69,8 @@ final class AuthenticationServiceImplTest
   private val mockRepo = mock[UserRepository[IO]]
   private val mockAccess = mock[AccessTokenService[IO]]
   private val mockId = mock[IdTokenService[IO]]
-  private val mockBasic = mock[BasicAuthenticationService[IO]]
-  private val mockOauth = mock[OAuth2AuthenticationService[IO]]
+  private val mockBasic = mock[BasicAuthenticationHandler[IO]]
+  private val mockOauth = mock[OAuth2AuthenticationHandler[IO]]
 
   private val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
   private given UUIDGen[IO] = new UUIDGen[IO]:
@@ -83,8 +83,8 @@ final class AuthenticationServiceImplTest
       repo = mockRepo,
       accessTokenService = mockAccess,
       idTokenService = mockId,
-      basicAuthService = mockBasic,
-      oauth2AuthService = mockOauth,
+      basicAuthHandler = mockBasic,
+      oauth2AuthHandler = mockOauth,
     ))
 
   private val providerDto = OAuth2ProviderDto.Google
@@ -93,12 +93,18 @@ final class AuthenticationServiceImplTest
   private val oid = ExternalId.unsafe("google_id")
   private val username = Username.unsafe("username")
   private val password = "password"
+  private val accessToken = TokenString.unsafe("access_token_string")
+  private val idToken = TokenString.unsafe("id_token_string")
 
   private val user = User.unsafe(
     id = Uuid(uuid),
     username = username,
     hashedPassword = None,
     googleId = Some(oid),
+  )
+  private val userInfo = UserInfo(
+    id = user.id,
+    username = user.username,
   )
 
   private val createUserRequest = CreateUserRequest(
@@ -114,23 +120,14 @@ final class AuthenticationServiceImplTest
       username = username,
       password = password,
     )
-
   private val oauthAuthenticateUserRequest =
     AuthenticateUserRequest.OAuth2Authentication(
       provider = Google,
       authorizationCode = authorizationCode,
     )
-
-  private val accessToken = TokenString.unsafe("access_token_string")
-  private val idToken = TokenString.unsafe("id_token_string")
   private val authenticateResponse = AuthenticateUserResponse(
     accessToken = accessToken,
     idToken = idToken,
-  )
-
-  private val userInfo = UserInfo(
-    id = user.id,
-    username = user.username,
   )
 
   private def mockBasicAuthenticate(returning: IO[Option[User]]) =
@@ -138,14 +135,10 @@ final class AuthenticationServiceImplTest
       .expects(user.username, password)
       .returning(returning)
 
-  private def mockGetId(returning: IO[Either[OAuthError, ExternalId]]) =
-    (mockOauth.getId _)
+  private def mockOAuthAuthenticate(returning: IO[Either[OAuthError, User]]) =
+    (mockOauth.authenticate _)
       .expects(provider, authorizationCode)
       .returning(returning)
-
-  private def mockFindUser(returning: IO[Option[User]]) = (mockOauth.findUser _)
-    .expects(provider, oid)
-    .returning(returning)
 
   private def mockPersist(returning: IO[User]) = (mockRepo.persist _)
     .expects(user)
@@ -213,8 +206,7 @@ final class AuthenticationServiceImplTest
   "login method with OAuth authentication " - {
     "should " - {
       "return tokens for user if everything is OK" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(user.some.pure)
+        val _ = mockOAuthAuthenticate(user.asRight.pure)
         val _ = mockGenerateAccessToken(accessToken.pure)
         val _ = mockGenerateIdToken(idToken.pure)
         for result <- service.login(oauthAuthenticateUserRequest)
@@ -223,57 +215,41 @@ final class AuthenticationServiceImplTest
 
       "result in InvalidOAuthCode if authentication code was rejected" in stand {
         service =>
-          val _ = mockGetId(OAuthError.Rejected.asLeft.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.Rejected.asLeft.pure)
           val login = service.login(oauthAuthenticateUserRequest)
           assertDomainError(login)(InvalidOAuthCode)
       }
 
       "result in ExternalServiceFailure when invalid token was received" in stand {
         service =>
-          val _ = mockGetId(OAuthError.InvalidToken.asLeft.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.InvalidToken.asLeft.pure)
           val login = service.login(oauthAuthenticateUserRequest)
           assertDomainError(login)(ExternalServiceFailure)
       }
 
       "result in ExternalServiceFailure when external service is unavailable" in stand {
         service =>
-          val _ = mockGetId(OAuthError.Unavailable.asLeft.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.Unavailable.asLeft.pure)
           val login = service.login(oauthAuthenticateUserRequest)
           assertDomainError(login)(ExternalServiceFailure)
       }
 
-      "result in UserNotFound if user is not registered" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(None.pure)
-        val login = service.login(oauthAuthenticateUserRequest)
-        assertDomainError(login)(UserNotFound)
-      }
-
-      "handle exceptions from getId gracefully" in stand { service =>
-        val _ = mockGetId(IO.raiseError(new Throwable()))
+      "handle exceptions from OAuthHandler gracefully" in stand { service =>
+        val _ = mockOAuthAuthenticate(IO.raiseError(new Throwable()))
         val login = service.login(oauthAuthenticateUserRequest)
         assertInternalError(login)
       }
 
-      "handle exceptions from findUser gracefully" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(IO.raiseError(new Throwable()))
-        val login = service.login(oauthAuthenticateUserRequest)
-        assertInternalError(login)
-      }
-
-      "handle exceptions from generateAccessToken gracefully" in stand {
+      "handle exceptions from AccessTokenService gracefully" in stand {
         service =>
-          val _ = mockGetId(oid.asRight.pure)
-          val _ = mockFindUser(user.some.pure)
+          val _ = mockOAuthAuthenticate(user.asRight.pure)
           val _ = mockGenerateAccessToken(IO.raiseError(new Throwable()))
           val login = service.login(oauthAuthenticateUserRequest)
           assertInternalError(login)
       }
 
-      "handle exceptions from generateIdToken gracefully" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(user.some.pure)
+      "handle exceptions from IdTokenService gracefully" in stand { service =>
+        val _ = mockOAuthAuthenticate(user.asRight.pure)
         val _ = mockGenerateAccessToken(accessToken.pure)
         val _ = mockGenerateIdToken(IO.raiseError(new Throwable()))
         val login = service.login(oauthAuthenticateUserRequest)
@@ -285,8 +261,7 @@ final class AuthenticationServiceImplTest
   "register method " - {
     "should " - {
       "create new user if everything is OK" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(None.pure)
+        val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
         val _ = mockPersist(user.pure)
         val _ = mockGenerateAccessToken(accessToken.pure)
         val _ = mockGenerateIdToken(idToken.pure)
@@ -296,72 +271,61 @@ final class AuthenticationServiceImplTest
 
       "result in InvalidOAuthCode if authentication code was rejected" in stand {
         service =>
-          val _ = mockGetId(OAuthError.Rejected.asLeft.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.Rejected.asLeft.pure)
           val register = service.register(createUserRequest)
           assertDomainError(register)(InvalidOAuthCode)
       }
 
       "result in ExternalServiceFailure when invalid token was received" in stand {
         service =>
-          val _ = mockGetId(OAuthError.InvalidToken.asLeft.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.InvalidToken.asLeft.pure)
           val register = service.register(createUserRequest)
           assertDomainError(register)(ExternalServiceFailure)
       }
 
       "result in ExternalServiceFailure when external service is unavailable" in stand {
         service =>
-          val _ = mockGetId(OAuthError.Unavailable.asLeft.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.Unavailable.asLeft.pure)
           val register = service.register(createUserRequest)
           assertDomainError(register)(ExternalServiceFailure)
       }
 
       "result in UserAlreadyExists if user's already registered" in stand {
         service =>
-          val _ = mockGetId(oid.asRight.pure)
-          val _ = mockFindUser(Some(user).pure)
+          val _ = mockOAuthAuthenticate(user.asRight.pure)
           val register = service.register(createUserRequest)
           assertDomainError(register)(UserAlreadyExists)
       }
 
       "result in UserAlreadyExists if user's already persisted" in stand {
         service =>
-          val _ = mockGetId(oid.asRight.pure)
-          val _ = mockFindUser(None.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
           val _ = mockPersist(IO.raiseError(RepositoryError.AlreadyExists))
           val register = service.register(createUserRequest)
           assertDomainError(register)(UserAlreadyExists)
       }
 
       "handle exceptions from getId gracefully" in stand { service =>
-        val _ = mockGetId(IO.raiseError(new Throwable()))
+        val _ = mockOAuthAuthenticate(IO.raiseError(new Throwable()))
         assertInternalError(service.register(createUserRequest))
       }
-
-      "handle exceptions from findUser gracefully" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(IO.raiseError(new Throwable()))
-        assertInternalError(service.register(createUserRequest))
-      }
-
+      
       "handle exceptions from persist gracefully" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(None.pure)
+        val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
         val _ = mockPersist(IO.raiseError(new Throwable()))
         assertInternalError(service.register(createUserRequest))
       }
 
       "handle exceptions from generateAccessToken gracefully" in stand {
         service =>
-          val _ = mockGetId(oid.asRight.pure)
-          val _ = mockFindUser(None.pure)
+          val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
           val _ = mockPersist(user.pure)
           val _ = mockGenerateAccessToken(IO.raiseError(new Throwable()))
           assertInternalError(service.register(createUserRequest))
       }
 
       "handle exceptions from generateIdToken gracefully" in stand { service =>
-        val _ = mockGetId(oid.asRight.pure)
-        val _ = mockFindUser(None.pure)
+        val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
         val _ = mockPersist(user.pure)
         val _ = mockGenerateAccessToken(accessToken.pure)
         val _ = mockGenerateIdToken(IO.raiseError(new Throwable()))

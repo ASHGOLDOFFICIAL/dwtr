@@ -2,7 +2,7 @@ package org.aulune.auth
 package adapters.service
 
 
-import domain.services.PasswordHashingService
+import domain.services.PasswordHasher
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -11,15 +11,15 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 
-/** Tests for [[Argon2iPasswordHashingService]]. */
-final class Argon2iPasswordHashingServiceTest
+/** Tests for [[Argon2IPasswordHasher]]. */
+final class Argon2IPasswordHasherTest
     extends AsyncFreeSpec
     with AsyncIOSpec
     with Matchers:
 
   private def stand(
-      testCase: PasswordHashingService[IO] => IO[Assertion],
-  ): IO[Assertion] = Argon2iPasswordHashingService.build[IO].flatMap(testCase)
+                     testCase: PasswordHasher[IO] => IO[Assertion],
+  ): IO[Assertion] = Argon2IPasswordHasher.build[IO].flatMap(testCase)
 
   private val password = "password"
 

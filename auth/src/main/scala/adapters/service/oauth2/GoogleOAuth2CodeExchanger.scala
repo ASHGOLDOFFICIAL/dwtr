@@ -7,7 +7,7 @@ import domain.errors.OAuthError
 import domain.errors.OAuthError.{InvalidToken, Rejected, Unavailable}
 import domain.model.OAuth2Provider.Google
 import domain.model.{AuthorizationCode, ExternalId}
-import domain.services.OAuth2CodeExchangeService
+import domain.services.OAuth2CodeExchanger
 
 import cats.data.EitherT
 import cats.effect.Concurrent
@@ -24,7 +24,7 @@ import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 
 /** Services managing authorization code exchange with Google. */
-object GoogleOAuth2CodeExchangeService:
+object GoogleOAuth2CodeExchanger:
   /** Builds a service.
    *  @param googleClient Google client config.
    *  @param client [[Client]] to make requests.
@@ -33,11 +33,11 @@ object GoogleOAuth2CodeExchangeService:
   def build[F[_]: Concurrent: Clock: LoggerFactory](
       googleClient: AuthConfig.OAuth2.GoogleClient,
       client: Client[F],
-  ): F[OAuth2CodeExchangeService[F, Google]] =
+  ): F[OAuth2CodeExchanger[F, Google]] =
     for
       config <- OpenIdProviderMetadata.fetch(client, discoveryDocumentUrl)
       fetcher <- CachingFetcher.build(client, config.jwksUri)
-      service = new GoogleOAuth2CodeExchangeService[F](
+      service = new GoogleOAuth2CodeExchanger[F](
         config,
         googleClient,
         client,
@@ -48,18 +48,18 @@ object GoogleOAuth2CodeExchangeService:
     uri"https://accounts.google.com/.well-known/openid-configuration"
 
 
-private final class GoogleOAuth2CodeExchangeService[
+private final class GoogleOAuth2CodeExchanger[
     F[_]: Concurrent: Clock: LoggerFactory,
 ] private (
     openIdConfig: OpenIdProviderMetadata,
     googleClient: AuthConfig.OAuth2.GoogleClient,
     client: Client[F],
     jwkSetFetcher: CachingFetcher[F],
-) extends OAuth2CodeExchangeService[F, Google]:
+) extends OAuth2CodeExchanger[F, Google]:
 
   private given Logger[F] = LoggerFactory[F].getLogger
 
-  override def getId(
+  override def exchangeForId(
       code: AuthorizationCode,
   ): F[Either[OAuthError, ExternalId]] = (for
     _ <- eitherTLogger.info(s"Exchanging OAuth code: $code")

@@ -5,21 +5,21 @@ package adapters.service
 import cats.effect.{Resource, Sync}
 import cats.syntax.all.*
 import de.mkammerer.argon2.{Argon2, Argon2Factory}
-import org.aulune.auth.domain.services.PasswordHashingService
+import org.aulune.auth.domain.services.PasswordHasher
 
 
 /** Password hashing service with Argon2i as its hashing algorithm. */
-object Argon2iPasswordHashingService:
+object Argon2IPasswordHasher:
   /** Builds the service.
    *  @tparam F effect type.
    */
-  def build[F[_]: Sync]: F[PasswordHashingService[F]] = Sync[F]
+  def build[F[_]: Sync]: F[PasswordHasher[F]] = Sync[F]
     .delay(Argon2Factory.create())
-    .map(argon2 => new Argon2iPasswordHashingService[F](argon2))
+    .map(argon2 => new Argon2IPasswordHasher[F](argon2))
 
 
-private final class Argon2iPasswordHashingService[F[_]: Sync](argon2i: Argon2)
-    extends PasswordHashingService[F]:
+private final class Argon2IPasswordHasher[F[_]: Sync](argon2i: Argon2)
+    extends PasswordHasher[F]:
   override def hashPassword(password: String): F[String] =
     passwordResource(password)
       .use(chars => Sync[F].blocking(argon2i.hash(10, 65536, 1, chars)))

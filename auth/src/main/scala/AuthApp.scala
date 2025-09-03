@@ -2,13 +2,13 @@ package org.aulune.auth
 
 
 import adapters.jdbc.postgres.UserRepositoryImpl
-import adapters.service.oauth2.GoogleOAuth2CodeExchangeService
+import adapters.service.oauth2.GoogleOAuth2CodeExchanger
 import adapters.service.{
-  Argon2iPasswordHashingService,
+  Argon2IPasswordHasher,
   AuthenticationServiceImpl,
-  BasicAuthenticationServiceImpl,
+  BasicAuthenticationHandlerImpl,
   JwtTokenService,
-  OAuth2AuthenticationServiceImpl,
+  OAuth2AuthenticationHandlerImpl,
 }
 import api.http.AuthenticationController
 
@@ -47,21 +47,21 @@ object AuthApp:
     for
       userRepo <- UserRepositoryImpl.build[F](transactor)
 
-      googleCode <-
-        GoogleOAuth2CodeExchangeService.build(config.oauth.google, httpClient)
-      oauthService =
-        new OAuth2AuthenticationServiceImpl[F](googleCode, userRepo)
+      googleCode <- GoogleOAuth2CodeExchanger
+        .build(config.oauth.google, httpClient)
+      oauthHandler =
+        new OAuth2AuthenticationHandlerImpl[F](googleCode, userRepo)
 
-      hasher <- Argon2iPasswordHashingService.build[F]
-      basicLogin = new BasicAuthenticationServiceImpl[F](userRepo, hasher)
+      hasher <- Argon2IPasswordHasher.build[F]
+      basicHandler = new BasicAuthenticationHandlerImpl[F](userRepo, hasher)
 
       tokenServ = new JwtTokenService[F](config.issuer, config.key, 24.hours)
       service = new AuthenticationServiceImpl(
         userRepo,
         tokenServ,
         tokenServ,
-        basicLogin,
-        oauthService)
+        basicHandler,
+        oauthHandler)
       authEndpoints = new AuthenticationController[F](service).endpoints
     yield new AuthApp[F]:
       override val clientAuthentication: AuthenticationClientService[F] =

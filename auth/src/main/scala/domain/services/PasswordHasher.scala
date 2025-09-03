@@ -4,7 +4,7 @@ package domain.services
 /** Manages password hashing and verification.
  *  @tparam F effect type.
  */
-trait PasswordHashingService[F[_]]:
+trait PasswordHasher[F[_]]:
   /** Hashes the provided plain-text password.
    *
    *  @param password plain password.

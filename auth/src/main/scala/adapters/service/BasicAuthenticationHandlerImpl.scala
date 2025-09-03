@@ -4,23 +4,22 @@ package adapters.service
 
 import domain.model.{User, Username}
 import domain.repositories.UserRepository
-import domain.services.{BasicAuthenticationService, PasswordHashingService}
+import domain.services.{BasicAuthenticationHandler, PasswordHasher}
 
 import cats.Monad
 import cats.data.OptionT
-import cats.syntax.all.given 
+import cats.syntax.all.given
 
 
 /** Service that manages authentication via username and passwords.
- *
  *  @param repo [[UserRepository]] implementation.
  *  @param hasher password hasher.
  *  @tparam F effect type.
  */
-final class BasicAuthenticationServiceImpl[F[_]: Monad](
+final class BasicAuthenticationHandlerImpl[F[_]: Monad](
     repo: UserRepository[F],
-    hasher: PasswordHashingService[F],
-) extends BasicAuthenticationService[F]:
+    hasher: PasswordHasher[F],
+) extends BasicAuthenticationHandler[F]:
 
   override def authenticate(
       username: Username,

@@ -8,7 +8,7 @@ import domain.model.{User, Username}
 /** Service that manages basic authentication via username and password.
  *  @tparam F effect type.
  */
-trait BasicAuthenticationService[F[_]]:
+trait BasicAuthenticationHandler[F[_]]:
   /** Returns user if authentication is successful, otherwise `None`.
    *  @param username username.
    *  @param password raw password.
