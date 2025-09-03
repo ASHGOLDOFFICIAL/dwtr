@@ -11,15 +11,15 @@ import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
 
-/** Tests for [[Argon2IPasswordHasher]]. */
-final class Argon2IPasswordHasherTest
+/** Tests for [[Argon2iPasswordHasher]]. */
+final class Argon2iPasswordHasherTest
     extends AsyncFreeSpec
     with AsyncIOSpec
     with Matchers:
 
   private def stand(
-                     testCase: PasswordHasher[IO] => IO[Assertion],
-  ): IO[Assertion] = Argon2IPasswordHasher.build[IO].flatMap(testCase)
+      testCase: PasswordHasher[IO] => IO[Assertion],
+  ): IO[Assertion] = Argon2iPasswordHasher.build[IO].flatMap(testCase)
 
   private val password = "password"
 

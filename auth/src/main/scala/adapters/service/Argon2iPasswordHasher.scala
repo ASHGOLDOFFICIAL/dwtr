@@ -9,16 +9,16 @@ import org.aulune.auth.domain.services.PasswordHasher
 
 
 /** Password hashing service with Argon2i as its hashing algorithm. */
-object Argon2IPasswordHasher:
+object Argon2iPasswordHasher:
   /** Builds the service.
    *  @tparam F effect type.
    */
   def build[F[_]: Sync]: F[PasswordHasher[F]] = Sync[F]
     .delay(Argon2Factory.create())
-    .map(argon2 => new Argon2IPasswordHasher[F](argon2))
+    .map(argon2 => new Argon2iPasswordHasher[F](argon2))
 
 
-private final class Argon2IPasswordHasher[F[_]: Sync](argon2i: Argon2)
+private final class Argon2iPasswordHasher[F[_]: Sync](argon2i: Argon2)
     extends PasswordHasher[F]:
   override def hashPassword(password: String): F[String] =
     passwordResource(password)

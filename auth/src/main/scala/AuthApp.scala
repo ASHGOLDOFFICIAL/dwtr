@@ -4,7 +4,7 @@ package org.aulune.auth
 import adapters.jdbc.postgres.UserRepositoryImpl
 import adapters.service.oauth2.GoogleOAuth2CodeExchanger
 import adapters.service.{
-  Argon2IPasswordHasher,
+  Argon2iPasswordHasher,
   AuthenticationServiceImpl,
   BasicAuthenticationHandlerImpl,
   JwtTokenService,
@@ -52,7 +52,7 @@ object AuthApp:
       oauthHandler =
         new OAuth2AuthenticationHandlerImpl[F](googleCode, userRepo)
 
-      hasher <- Argon2IPasswordHasher.build[F]
+      hasher <- Argon2iPasswordHasher.build[F]
       basicHandler = new BasicAuthenticationHandlerImpl[F](userRepo, hasher)
 
       tokenServ = new JwtTokenService[F](config.issuer, config.key, 24.hours)
