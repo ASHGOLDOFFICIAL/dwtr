@@ -2,7 +2,6 @@ package org.aulune.auth
 package adapters.service
 
 
-import adapters.service.errors.AuthenticationServiceErrorResponses as ErrorResponses
 import domain.errors.OAuthError
 import domain.errors.OAuthError.NotRegistered
 import domain.model.OAuth2Provider.Google
@@ -12,9 +11,6 @@ import domain.services.{OAuth2AuthenticationHandler, OAuth2CodeExchanger}
 
 import cats.Monad
 import cats.data.EitherT
-import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorResponse
-import org.typelevel.log4cats.syntax.given
 
 
 /** [[OAuth2AuthenticationHandler]] implementation.
