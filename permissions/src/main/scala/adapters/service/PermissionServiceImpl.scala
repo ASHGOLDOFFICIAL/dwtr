@@ -110,12 +110,13 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
       .leftSemiflatTap { _ =>
         warn"Received invalid permission create request: $request"
       }
-    result <- repo
-      .upsert(permission)
-      .attemptT
-      .leftSemiflatMap(handleUnexpectedError)
+    result <- EitherT.liftF(repo.upsert(permission))
     response = PermissionMapper.toResponse(result)
   yield response).value
+    .handleErrorWith { e =>
+      for _ <- Logger[F].error(e)("Uncaught exception.")
+      yield ErrorResponses.internal.asLeft
+    }
 
   override def checkPermission(
       request: CheckPermissionRequest,
@@ -130,11 +131,15 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
         .leftSemiflatTap { _ =>
           warn"Received invalid permission check request: $request"
         }
-      permCheck <- hasPermission(id, domain)
-      adminCheck <- hasPermission(id, adminPermissionIdentity)
+      permCheck <- EitherT(hasPermission(id, domain))
+      adminCheck <- EitherT(hasPermission(id, adminPermissionIdentity))
       response = PermissionMapper
         .toCheckResponse(request, permCheck || adminCheck)
     yield response).value
+      .handleErrorWith { e =>
+        for _ <- Logger[F].error(e)("Uncaught exception.")
+        yield ErrorResponses.internal.asLeft
+      }
 
   /** Checks if user has a permission.
    *  @param id user's ID.
@@ -143,16 +148,10 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
   private def hasPermission(
       id: Uuid[User],
       permission: PermissionIdentity,
-  ): EitherT[F, ErrorResponse, Boolean] = repo
+  ): F[Either[ErrorResponse, Boolean]] = repo
     .hasPermission(id, permission)
-    .attemptT
-    .leftSemiflatMap {
-      case RepositoryError.FailedPrecondition =>
-        for _ <- warn"Checking for unregistered permission: $permission"
-        yield ErrorResponses.unregisteredPermission
-      case e => handleUnexpectedError(e)
+    .map(_.asRight)
+    .recoverWith { case RepositoryError.FailedPrecondition =>
+      for _ <- warn"Checking for unregistered permission: $permission"
+      yield ErrorResponses.unregisteredPermission.asLeft
     }
-
-  private def handleUnexpectedError(err: Throwable): F[ErrorResponse] =
-    for _ <- error"Unexpected error happened: $err"
-    yield ErrorResponses.internal
