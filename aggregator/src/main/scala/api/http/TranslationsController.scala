@@ -73,7 +73,7 @@ private final class TranslationsController[F[_]: Applicative](
   private val translationId = path[UUID]("translation_id")
     .description("ID of the translation")
 
-  private val collectionPath = rootPath / "aggregator"
+  private val collectionPath = rootPath / "translations"
   private val elementPath = collectionPath / translationId
   private val tag = tagPrefix + "Translations"
 
