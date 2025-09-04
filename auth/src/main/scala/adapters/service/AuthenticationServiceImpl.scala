@@ -32,10 +32,10 @@ import domain.services.{
   OAuth2AuthenticationHandler,
 }
 
+import cats.MonadThrow
 import cats.data.EitherT
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
-import cats.{Eq, MonadThrow}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.types.Uuid
@@ -71,11 +71,7 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
     user <- delegateLogin(request)
     _ <- eitherTLogger.info(s"Successful login for $request")
     response <- EitherT(makeResponseForUser(user))
-  yield response).value
-    .handleErrorWith { e =>
-      for _ <- Logger[F].error(e)("Uncaught exception.")
-      yield ErrorResponses.internal.asLeft
-    }
+  yield response).value.handleErrorWith(handleInternal)
 
   override def register(
       request: CreateUserRequest,
@@ -98,11 +94,7 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
     })
     _ <- eitherTLogger.info(s"Persisted new user: $persisted.")
     response <- EitherT(makeResponseForUser(persisted))
-  yield response).value
-    .handleErrorWith { e =>
-      for _ <- Logger[F].error(e)("Uncaught exception.")
-      yield ErrorResponses.internal.asLeft
-    }
+  yield response).value.handleErrorWith(handleInternal)
 
   override def getUserInfo(
       accessToken: String,
@@ -116,11 +108,7 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
       ErrorResponses.invalidAccessToken)
     user <- EitherT.fromOptionF(repo.get(id), ErrorResponses.userNotFound)
     userInfo = UserInfo(id = user.id, username = user.username)
-  yield userInfo).value
-    .handleErrorWith { e =>
-      for _ <- Logger[F].error(e)("Uncaught exception.")
-      yield ErrorResponses.internal.asLeft
-    }
+  yield userInfo).value.handleErrorWith(handleInternal)
 
   /** Gets user's ID in external if they're unregistered. Otherwise, error.
    *  @param provider external authentication provider.
@@ -215,6 +203,12 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
             case OAuthError.Unavailable  => ErrorResponses.externalUnavailable
             case OAuthError.Rejected     => ErrorResponses.invalidOAuthCode
             case OAuthError.InvalidToken => ErrorResponses.externalUnavailable
+            case OAuthError.NotRegistered(_) => ErrorResponses.notRegistered
           }
           .leftSemiflatTap(_ => warn"OAuth authentication failed: $request")
       yield user
+
+  /** Logs any error and returns internal error response. */
+  private def handleInternal[A](e: Throwable) =
+    for _ <- Logger[F].error(e)("Uncaught exception.")
+    yield ErrorResponses.internal.asLeft[A]
