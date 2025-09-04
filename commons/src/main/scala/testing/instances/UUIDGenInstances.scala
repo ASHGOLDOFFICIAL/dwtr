@@ -2,6 +2,8 @@ package org.aulune.commons
 package testing.instances
 
 
+import typeclasses.SortableUUIDGen
+
 import cats.Applicative
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
@@ -9,9 +11,9 @@ import cats.syntax.all.given
 import java.util.UUID
 
 
-/** [[UUIDGen]] instances for testing. */
+/** [[UUIDGen]] and [[SortableUUIDGen]] instances for testing. */
 object UUIDGenInstances:
-  /** [[UUIDGen]] that always returns given UUID. */
-  def makeFixedUuidGen[F[_]: Applicative](uuid: UUID): UUIDGen[F] =
-    new UUIDGen[F]:
+  /** [[SortableUUIDGen]] and [[UUIDGen]] that always returns given UUID. */
+  def makeFixedUuidGen[F[_]: Applicative](uuid: UUID): SortableUUIDGen[F] =
+    new SortableUUIDGen[F]:
       override def randomUUID: F[UUID] = uuid.pure[F]

@@ -5,7 +5,7 @@ package adapters.service
 import adapters.service.mappers.{
   AudioPlayTranslationMapper,
   AudioPlayTranslationTypeMapper,
-  LanguageMapper,
+  LanguageMapper
 }
 import application.AggregatorPermission.Modify
 import application.AudioPlayTranslationService
@@ -42,6 +42,7 @@ import org.aulune.commons.testing.ErrorAssertions.{
   assertInternalError,
 }
 import org.aulune.commons.testing.instances.UUIDGenInstances.makeFixedUuidGen
+import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
@@ -67,7 +68,7 @@ final class AudioPlayTranslationServiceImplTest
   private val mockPermissions = mock[PermissionClientService[IO]]
 
   private val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
-  private given UUIDGen[IO] = makeFixedUuidGen(uuid)
+  private given SortableUUIDGen[IO] = makeFixedUuidGen(uuid)
 
   private val user = User(
     id = UUID.fromString("f04eb510-229c-4cdd-bd7b-9691c3b28ae1"),

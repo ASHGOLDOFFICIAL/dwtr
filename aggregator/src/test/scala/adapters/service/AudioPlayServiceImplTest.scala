@@ -5,19 +5,8 @@ package adapters.service
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.Modify
 import application.AudioPlayService
-import application.dto.audioplay.{
-  AudioPlayResource,
-  AudioPlaySeriesResource,
-  CastMemberDto,
-  CreateAudioPlayRequest,
-  ListAudioPlaysRequest,
-  ListAudioPlaysResponse,
-}
-import application.errors.AudioPlayServiceError.{
-  AudioPlayNotFound,
-  AudioPlaySeriesNotFound,
-  InvalidAudioPlay,
-}
+import application.dto.audioplay.{AudioPlayResource, AudioPlaySeriesResource, CastMemberDto, CreateAudioPlayRequest, ListAudioPlaysRequest, ListAudioPlaysResponse}
+import application.errors.AudioPlayServiceError.{AudioPlayNotFound, AudioPlaySeriesNotFound, InvalidAudioPlay}
 import application.repositories.AudioPlayRepository
 import application.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
@@ -29,16 +18,10 @@ import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
-import org.aulune.commons.service.permission.{
-  Permission,
-  PermissionClientService,
-}
-import org.aulune.commons.testing.ErrorAssertions.{
-  assertDomainError,
-  assertErrorStatus,
-  assertInternalError,
-}
+import org.aulune.commons.service.permission.{Permission, PermissionClientService}
+import org.aulune.commons.testing.ErrorAssertions.{assertDomainError, assertErrorStatus, assertInternalError}
 import org.aulune.commons.testing.instances.UUIDGenInstances.makeFixedUuidGen
+import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
@@ -64,7 +47,7 @@ final class AudioPlayServiceImplTest
   private val mockPermissions = mock[PermissionClientService[IO]]
 
   private val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
-  private given UUIDGen[IO] = makeFixedUuidGen(uuid)
+  private given SortableUUIDGen[IO] = makeFixedUuidGen(uuid)
 
   private val user = User(
     id = UUID.fromString("f04eb510-229c-4cdd-bd7b-9691c3b28ae1"),
