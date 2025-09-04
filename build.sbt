@@ -20,6 +20,7 @@ inThisBuild {
 
 
 lazy val app = (project in file("."))
+  .aggregate(commons, auth, permissions, aggregator)
   .dependsOn(auth, permissions, aggregator)
   .settings(
     name := "app",

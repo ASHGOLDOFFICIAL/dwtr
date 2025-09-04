@@ -9,7 +9,7 @@ import domain.model.audioplay.{
   AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
-  CastMember
+  CastMember,
 }
 import domain.model.person.Person
 import domain.shared.{ExternalResource, ExternalResourceType}

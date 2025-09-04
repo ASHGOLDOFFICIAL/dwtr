@@ -9,7 +9,11 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.aggregator.application.dto.audioplay.translation.{ExternalResourceDto, ExternalResourceTypeDto, LanguageDto}
+import org.aulune.aggregator.application.dto.audioplay.translation.{
+  ExternalResourceDto,
+  ExternalResourceTypeDto,
+  LanguageDto,
+}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 import java.net.{URI, URL}

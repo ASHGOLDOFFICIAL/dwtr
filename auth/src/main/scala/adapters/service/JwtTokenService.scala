@@ -2,7 +2,13 @@ package org.aulune.auth
 package adapters.service
 
 
-import domain.model.{AccessTokenPayload, IdTokenPayload, TokenString, User, Username}
+import domain.model.{
+  AccessTokenPayload,
+  IdTokenPayload,
+  TokenString,
+  User,
+  Username,
+}
 import domain.services.{AccessTokenService, IdTokenService}
 
 import cats.Monad
@@ -33,9 +39,9 @@ final class JwtTokenService[F[_]: Monad: Clock: LoggerFactory](
     expiration: FiniteDuration,
 ) extends AccessTokenService[F]
     with IdTokenService[F]:
-  
-  private given Logger[F] = LoggerFactory[F].getLogger 
-  
+
+  private given Logger[F] = LoggerFactory[F].getLogger
+
   // Expiration checks are disable to do them manually
   private val options = JwtOptions(expiration = false)
   private val algo = JwtAlgorithm.HS256

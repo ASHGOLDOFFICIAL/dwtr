@@ -37,11 +37,8 @@ object GoogleOAuth2CodeExchanger:
     for
       config <- OpenIdProviderMetadata.fetch(client, discoveryDocumentUrl)
       fetcher <- CachingFetcher.build(client, config.jwksUri)
-      service = new GoogleOAuth2CodeExchanger[F](
-        config,
-        googleClient,
-        client,
-        fetcher)
+      service =
+        new GoogleOAuth2CodeExchanger[F](config, googleClient, client, fetcher)
     yield service
 
   private val discoveryDocumentUrl =

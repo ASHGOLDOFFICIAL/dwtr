@@ -1,6 +1,7 @@
 package org.aulune.auth
 package domain.services
 
+
 /** Manages password hashing and verification.
  *  @tparam F effect type.
  */

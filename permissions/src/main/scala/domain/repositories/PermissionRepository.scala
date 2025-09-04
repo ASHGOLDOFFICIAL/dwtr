@@ -1,6 +1,7 @@
 package org.aulune.permissions
 package domain.repositories
 
+
 import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{Permission, PermissionName, PermissionNamespace}
 

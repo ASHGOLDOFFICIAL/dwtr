@@ -10,7 +10,7 @@ import domain.model.audioplay.{
   AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
-  CastMember
+  CastMember,
 }
 import domain.shared.ExternalResourceType.{
   Download,

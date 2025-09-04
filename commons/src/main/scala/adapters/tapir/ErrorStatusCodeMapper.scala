@@ -1,6 +1,7 @@
 package org.aulune.commons
 package adapters.tapir
 
+
 import errors.ErrorStatus.{
   Aborted,
   AlreadyExists,
@@ -17,7 +18,7 @@ import errors.ErrorStatus.{
   Unauthenticated,
   Unavailable,
   Unimplemented,
-  Unknown
+  Unknown,
 }
 import errors.{ErrorResponse, ErrorStatus}
 

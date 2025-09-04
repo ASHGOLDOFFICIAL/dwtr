@@ -1,7 +1,6 @@
 package org.aulune.auth
 package domain.services
 
-
 import domain.model.{User, Username}
 
 

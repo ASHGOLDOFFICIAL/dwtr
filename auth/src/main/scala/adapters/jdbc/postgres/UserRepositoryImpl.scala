@@ -9,9 +9,9 @@ import domain.repositories.UserRepository
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
-import doobie.implicits.toSqlInterpolator 
+import doobie.implicits.toSqlInterpolator
 import doobie.postgres.sqlstate
-import doobie.syntax.all.given 
+import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError

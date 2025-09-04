@@ -61,5 +61,5 @@ object PermissionClientService:
   private val permissionDenied = ErrorResponse(
     status = PermissionDenied,
     message = "Permission denied or not found",
-    details = ErrorDetails()
+    details = ErrorDetails(),
   )

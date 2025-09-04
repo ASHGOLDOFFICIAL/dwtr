@@ -5,7 +5,7 @@ package adapters.service.mappers
 import application.dto.audioplay.{
   CreateAudioPlayRequest,
   AudioPlayResource,
-  ListAudioPlaysResponse
+  ListAudioPlaysResponse,
 }
 import application.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.errors.AudioPlayValidationError
@@ -40,9 +40,9 @@ private[service] object AudioPlayMapper:
    *  @return created domain object if valid.
    */
   def fromRequest(
-                   request: CreateAudioPlayRequest,
-                   id: UUID,
-                   series: Option[AudioPlaySeries],
+      request: CreateAudioPlayRequest,
+      id: UUID,
+      series: Option[AudioPlaySeries],
   ): ValidatedNec[AudioPlayValidationError, AudioPlay] = (for
     title <- AudioPlayTitle(request.title)
     synopsis <- Synopsis(request.synopsis)

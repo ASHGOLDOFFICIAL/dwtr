@@ -9,7 +9,7 @@ import application.errors.AuthenticationServiceError.{
   InvalidOAuthCode,
   InvalidUser,
   UserAlreadyExists,
-  UserNotFound
+  UserNotFound,
 }
 import domain.errors.UserValidationError
 

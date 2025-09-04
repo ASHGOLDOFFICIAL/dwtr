@@ -1,7 +1,11 @@
 package org.aulune.aggregator
 package adapters.service.mappers
 
-import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto.{Russian, Ukrainian}
+
+import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto.{
+  Russian,
+  Ukrainian,
+}
 import domain.shared.Language
 import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto
 

@@ -4,7 +4,7 @@ package api.http.tapir.examples
 
 import application.dto.AuthenticateUserRequest.{
   BasicAuthentication,
-  OAuth2Authentication
+  OAuth2Authentication,
 }
 import application.dto.OAuth2ProviderDto.Google
 import application.dto.{AuthenticateUserRequest, AuthenticateUserResponse}

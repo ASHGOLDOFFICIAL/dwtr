@@ -1,6 +1,7 @@
 package org.aulune.commons
 package adapters.doobie.postgres
 
+
 import doobie.Meta
 import doobie.postgres.implicits.{
   UuidType,

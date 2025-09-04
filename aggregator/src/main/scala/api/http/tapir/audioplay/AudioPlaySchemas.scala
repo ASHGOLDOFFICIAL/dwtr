@@ -11,7 +11,10 @@ import application.dto.audioplay.{
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
-import org.aulune.aggregator.application.dto.audioplay.translation.{ExternalResourceDto, ExternalResourceTypeDto}
+import org.aulune.aggregator.application.dto.audioplay.translation.{
+  ExternalResourceDto,
+  ExternalResourceTypeDto,
+}
 
 import sttp.tapir.{Schema, Validator}
 

@@ -3,11 +3,20 @@ package adapters.service.errors
 
 
 import domain.errors.AudioPlayValidationError
-import application.errors.AudioPlayServiceError.{AudioPlayNotFound, AudioPlaySeriesNotFound, InvalidAudioPlay}
+import application.errors.AudioPlayServiceError.{
+  AudioPlayNotFound,
+  AudioPlaySeriesNotFound,
+  InvalidAudioPlay,
+}
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorStatus.{FailedPrecondition, Internal, InvalidArgument, NotFound}
+import org.aulune.commons.errors.ErrorStatus.{
+  FailedPrecondition,
+  Internal,
+  InvalidArgument,
+  NotFound,
+}
 import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 
 
@@ -22,7 +31,7 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
       info = ErrorInfo(
         reason = AudioPlayNotFound,
         domain = domain,
-      ).some
+      ).some,
     ),
   )
 
@@ -33,7 +42,7 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
       info = ErrorInfo(
         reason = AudioPlaySeriesNotFound,
         domain = domain,
-      ).some
+      ).some,
     ),
   )
 
@@ -48,7 +57,7 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
       info = ErrorInfo(
         reason = InvalidAudioPlay,
         domain = domain,
-      ).some
+      ).some,
     ),
   )
 

@@ -1,6 +1,7 @@
 package org.aulune.commons
 package adapters.tapir
 
+
 import errors.{ErrorDetails, ErrorInfo, ErrorReason, ErrorResponse, ErrorStatus}
 
 import sttp.tapir.SchemaType.{SInteger, SString}

@@ -299,7 +299,8 @@ final class AuthenticationServiceImplTest
 
       "result in UserAlreadyExists if user's already persisted" in stand {
         service =>
-          val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
+          val _ =
+            mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
           val _ = mockPersist(IO.raiseError(RepositoryError.AlreadyExists))
           val register = service.register(createUserRequest)
           assertDomainError(register)(UserAlreadyExists)
@@ -309,7 +310,7 @@ final class AuthenticationServiceImplTest
         val _ = mockOAuthAuthenticate(IO.raiseError(new Throwable()))
         assertInternalError(service.register(createUserRequest))
       }
-      
+
       "handle exceptions from persist gracefully" in stand { service =>
         val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
         val _ = mockPersist(IO.raiseError(new Throwable()))
@@ -318,7 +319,8 @@ final class AuthenticationServiceImplTest
 
       "handle exceptions from generateAccessToken gracefully" in stand {
         service =>
-          val _ = mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
+          val _ =
+            mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
           val _ = mockPersist(user.pure)
           val _ = mockGenerateAccessToken(IO.raiseError(new Throwable()))
           assertInternalError(service.register(createUserRequest))

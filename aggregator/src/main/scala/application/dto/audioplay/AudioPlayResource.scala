@@ -1,6 +1,7 @@
 package org.aulune.aggregator
 package application.dto.audioplay
 
+
 import application.dto.person.PersonResource
 import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceDto
 
@@ -22,15 +23,15 @@ import java.util.UUID
  *  @param externalResources links to external resources.
  */
 final case class AudioPlayResource(
-                                    id: UUID,
-                                    title: String,
-                                    synopsis: String,
-                                    releaseDate: LocalDate,
-                                    writers: List[UUID],
-                                    cast: List[CastMemberDto],
-                                    series: Option[AudioPlaySeriesResource],
-                                    seriesSeason: Option[Int],
-                                    seriesNumber: Option[Int],
-                                    coverUrl: Option[URL],
-                                    externalResources: List[ExternalResourceDto],
+    id: UUID,
+    title: String,
+    synopsis: String,
+    releaseDate: LocalDate,
+    writers: List[UUID],
+    cast: List[CastMemberDto],
+    series: Option[AudioPlaySeriesResource],
+    seriesSeason: Option[Int],
+    seriesNumber: Option[Int],
+    coverUrl: Option[URL],
+    externalResources: List[ExternalResourceDto],
 )

@@ -1,6 +1,7 @@
 package org.aulune.auth
 package adapters.jdbc.postgres
 
+
 import domain.model.{ExternalId, Username}
 
 import doobie.Meta

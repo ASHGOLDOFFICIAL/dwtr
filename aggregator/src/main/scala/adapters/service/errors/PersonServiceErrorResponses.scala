@@ -22,7 +22,7 @@ object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
       info = ErrorInfo(
         reason = PersonNotFound,
         domain = domain,
-      ).some
+      ).some,
     ),
   )
 
@@ -37,7 +37,7 @@ object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
       info = ErrorInfo(
         reason = InvalidPerson,
         domain = domain,
-      ).some
+      ).some,
     ),
   )
 

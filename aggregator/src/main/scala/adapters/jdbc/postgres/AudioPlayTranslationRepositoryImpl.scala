@@ -17,7 +17,7 @@ import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
-import doobie.syntax.all.given 
+import doobie.syntax.all.given
 import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode

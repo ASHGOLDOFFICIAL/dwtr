@@ -6,7 +6,7 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   AudioPlayResource,
   ListAudioPlaysRequest,
-  ListAudioPlaysResponse
+  ListAudioPlaysResponse,
 }
 
 import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
@@ -43,8 +43,8 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
-              user: User,
-              ac: CreateAudioPlayRequest,
+      user: User,
+      ac: CreateAudioPlayRequest,
   ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Deletes existing audio play.

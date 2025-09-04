@@ -16,8 +16,15 @@ import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.errors.{ErrorResponse, ErrorStatus}
 import org.aulune.commons.service.auth.User
-import org.aulune.commons.service.permission.{Permission, PermissionClientService}
-import org.aulune.commons.testing.ErrorAssertions.{assertDomainError, assertErrorStatus, assertInternalError}
+import org.aulune.commons.service.permission.{
+  Permission,
+  PermissionClientService,
+}
+import org.aulune.commons.testing.ErrorAssertions.{
+  assertDomainError,
+  assertErrorStatus,
+  assertInternalError,
+}
 import org.aulune.commons.testing.instances.UUIDGenInstances.makeFixedUuidGen
 import org.aulune.commons.types.Uuid
 import org.scalamock.scalatest.AsyncMockFactory

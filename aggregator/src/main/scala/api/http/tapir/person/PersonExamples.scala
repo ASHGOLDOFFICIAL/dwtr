@@ -2,7 +2,10 @@ package org.aulune.aggregator
 package api.http.tapir.person
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto.{Private, Purchase}
+import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto.{
+  Private,
+  Purchase,
+}
 import application.dto.person.{CreatePersonRequest, PersonResource}
 
 import java.util.UUID

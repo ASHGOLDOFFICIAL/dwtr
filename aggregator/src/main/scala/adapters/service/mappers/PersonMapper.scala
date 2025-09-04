@@ -20,8 +20,8 @@ object PersonMapper:
    *  @return created domain object if valid.
    */
   def fromCreateRequest(
-                         request: CreatePersonRequest,
-                         id: Uuid[Person],
+      request: CreatePersonRequest,
+      id: Uuid[Person],
   ): ValidatedNec[PersonValidationError, Person] =
     FullName(request.name).map(name => Person(id = id, name = name)) match
       case Some(person) => person

@@ -1,6 +1,7 @@
 package org.aulune.auth
 package domain.model
 
+
 import org.aulune.commons.types.Uuid
 
 import java.util.UUID

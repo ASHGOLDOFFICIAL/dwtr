@@ -6,7 +6,7 @@ import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
   CreatePermissionRequest,
-  PermissionResource
+  PermissionResource,
 }
 import application.errors.PermissionServiceError.{
   InvalidPermission,

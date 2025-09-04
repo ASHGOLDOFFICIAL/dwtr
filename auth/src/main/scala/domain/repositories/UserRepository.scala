@@ -1,6 +1,7 @@
 package org.aulune.auth
 package domain.repositories
 
+
 import domain.model.{User, Username}
 
 import org.aulune.commons.repositories.GenericRepository

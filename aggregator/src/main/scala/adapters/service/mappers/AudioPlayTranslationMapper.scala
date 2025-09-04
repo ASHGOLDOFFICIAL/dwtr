@@ -5,7 +5,7 @@ package adapters.service.mappers
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
-  ListAudioPlayTranslationsResponse
+  ListAudioPlayTranslationsResponse,
 }
 import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.errors.TranslationValidationError
