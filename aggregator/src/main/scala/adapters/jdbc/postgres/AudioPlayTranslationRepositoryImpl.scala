@@ -5,11 +5,7 @@ package adapters.jdbc.postgres
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import application.repositories.AudioPlayTranslationRepository
 import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
-import domain.model.audioplay.{
-  AudioPlay,
-  AudioPlayTranslation,
-  AudioPlayTranslationType,
-}
+import domain.model.audioplay.{AudioPlay, AudioPlayTranslation, AudioPlayTranslationType}
 import domain.shared.{Language, TranslatedTitle}
 
 import cats.MonadThrow
@@ -17,17 +13,19 @@ import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
+import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode
 import io.circe.syntax.given
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
-import org.aulune.commons.repositories.RepositoryError.FailedPrecondition
+import org.aulune.commons.repositories.RepositoryError
+import org.aulune.commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
 import org.aulune.commons.types.Uuid
 
 import java.net.URI
-import java.time.Instant
+import java.sql.SQLException
 
 
 /** [[AudioPlayTranslationRepository]] implementation for PostgreSQL. */
@@ -81,6 +79,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
+    .handleErrorWith(toRepositoryError)
 
   override def get(
       id: Uuid[AudioPlayTranslation],
@@ -91,6 +90,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toTranslation)
       .option
       .transact(transactor)
+      .handleErrorWith(toRepositoryError)
 
   override def update(
       elem: AudioPlayTranslation,
@@ -112,14 +112,14 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       .flatMap(rows => checkIfAny(rows))
       .as(elem)
       .transact(transactor)
+      .handleErrorWith(toRepositoryError)
   end update
 
   override def delete(
       id: Uuid[AudioPlayTranslation],
-  ): F[Unit] = sql"""
-    |DELETE FROM translations
-    |WHERE id = $id""".update.run.void
+  ): F[Unit] = sql"DELETE FROM translations WHERE id = $id".update.run.void
     .transact(transactor)
+    .handleErrorWith(toRepositoryError)
 
   override def list(
       cursor: Option[AudioPlayTranslationCursor],
@@ -135,6 +135,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toTranslation)
       .to[List]
       .transact(transactor)
+      .handleErrorWith(toRepositoryError)
   end list
 
   private type SelectResult = (
@@ -169,6 +170,13 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     language = language,
     links = links,
   )
+
+  /** Converts caught errors to [[RepositoryError]]. */
+  private def toRepositoryError[A](err: Throwable) = err match
+    case e: RepositoryError => e.raiseError[F, A]
+    case e: SQLException    => e.getSQLState match
+        case sqlstate.class23.UNIQUE_VIOLATION.value =>
+          AlreadyExists.raiseError[F, A]
 
   /* It should only be used here, since other repositories
   may want to encode list of URIs differently. */
