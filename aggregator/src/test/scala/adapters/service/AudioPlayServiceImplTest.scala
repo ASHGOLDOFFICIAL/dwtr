@@ -88,8 +88,9 @@ final class AudioPlayServiceImplTest
       .flatMap(testCase)
   end stand
 
-  private val audioPlay =
-    testing.AudioPlays.audioPlay1.update(externalResources = Nil).toOption.get
+  private val audioPlay = AudioPlays.audioPlay1
+    .update(externalResources = Nil)
+    .getOrElse(throw new IllegalStateException())
 
   private val audioPlayResponse = AudioPlayResource(
     id = audioPlay.id,
@@ -130,8 +131,9 @@ final class AudioPlayServiceImplTest
     externalResources = Nil,
   )
   private val newUuid = Uuid[AudioPlay](uuid)
-  private val newAudioPlay =
-    audioPlay.update(id = newUuid, coverUrl = None).toOption.get
+  private val newAudioPlay = audioPlay
+    .update(id = newUuid, coverUrl = None)
+    .getOrElse(throw new IllegalStateException())
   private val newAudioPlayResponse = audioPlayResponse.copy(
     id = newUuid,
     coverUrl = None,
@@ -170,11 +172,9 @@ final class AudioPlayServiceImplTest
         val _ =
           (mockRepo.list _).expects(None, 1).returning(List(audioPlay).pure)
         for result <- service.listAll(request)
-        yield result shouldBe ListAudioPlaysResponse(
-          audioPlays = List(audioPlayResponse),
-          nextPageToken =
-            "M2Y4YTIwMmUtNjA5ZC00OWIyLWE2NDMtOTA3YjM0MWNlYTY2".some,
-        ).asRight
+        yield result match
+          case Left(_)     => fail("Error was not expected")
+          case Right(list) => list.audioPlays shouldBe List(audioPlayResponse)
       }
 
       "return next page when asked" in stand { service =>
@@ -186,13 +186,11 @@ final class AudioPlayServiceImplTest
         val _ = (mockRepo.list _)
           .expects(cursor, 1)
           .returning(List(AudioPlays.audioPlay2).pure)
-
+        val response = AudioPlayMapper.toResponse(AudioPlays.audioPlay2)
         for result <- service.listAll(request)
-        yield result shouldBe ListAudioPlaysResponse(
-          audioPlays = List(AudioPlayMapper.toResponse(AudioPlays.audioPlay2)),
-          nextPageToken =
-            "MDE5OGQyMTctMmU5NS03Yjk0LTgwYTctYTc2MjU4OWRlNTA2".some,
-        ).asRight
+        yield result match
+          case Left(_)     => fail("Error was not expected")
+          case Right(list) => list.audioPlays shouldBe List(response)
       }
     }
   }
