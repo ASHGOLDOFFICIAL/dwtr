@@ -86,7 +86,7 @@ private[aggregator] object AudioPlays:
   )
 
   val audioPlay2: AudioPlay = AudioPlay.unsafe(
-    id = Uuid.unsafe("0198d217-2e95-7b94-80a7-a762589de506"),
+    id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea67"),
     title = AudioPlayTitle.unsafe("Audio Play 1"),
     synopsis = Synopsis.unsafe("Synopsis 1"),
     releaseDate = makeReleaseDate(1999, 10, 3),
@@ -101,7 +101,7 @@ private[aggregator] object AudioPlays:
   )
 
   val audioPlay3: AudioPlay = AudioPlay.unsafe(
-    id = Uuid.unsafe("0198d217-859b-71b7-947c-dd2548d7f8f4"),
+    id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea68"),
     title = AudioPlayTitle.unsafe("Audio Play 2"),
     synopsis = Synopsis.unsafe("Synopsis 2"),
     releaseDate = makeReleaseDate(2024, 3, 15),

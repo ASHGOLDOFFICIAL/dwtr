@@ -13,12 +13,12 @@ import domain.model.person.Person
 
 import cats.MonadThrow
 import cats.data.EitherT
-import cats.effect.std.UUIDGen
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
+import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.Uuid
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
@@ -35,7 +35,7 @@ object PersonServiceImpl:
    *    perform permission checks.
    *  @tparam F effect type.
    */
-  def build[F[_]: MonadThrow: UUIDGen: LoggerFactory](
+  def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
       repo: PersonRepository[F],
       permissionService: PermissionClientService[F],
   ): F[PersonService[F]] =
@@ -47,7 +47,7 @@ object PersonServiceImpl:
 
 
 private final class PersonServiceImpl[
-    F[_]: MonadThrow: UUIDGen: LoggerFactory,
+    F[_]: MonadThrow: SortableUUIDGen: LoggerFactory,
 ] private (
     repo: PersonRepository[F],
     permissionService: PermissionClientService[F],
@@ -71,7 +71,7 @@ private final class PersonServiceImpl[
       request: CreatePersonRequest,
   ): F[Either[ErrorResponse, PersonResource]] =
     requirePermissionOrDeny(Modify, user) {
-      val uuid = UUIDGen.randomUUID[F].map(Uuid[Person])
+      val uuid = SortableUUIDGen.randomTypedUUID[F, Person]
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")
         id <- EitherT.liftF(uuid)

@@ -26,13 +26,13 @@ import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
 import cats.MonadThrow
 import cats.data.EitherT
-import cats.effect.std.UUIDGen
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
+import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.Uuid
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
@@ -53,7 +53,7 @@ object AudioPlayTranslationServiceImpl:
    *  @tparam F effect type.
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
-  def build[F[_]: MonadThrow: UUIDGen: LoggerFactory](
+  def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
       pagination: AggregatorConfig.Pagination,
       repo: AudioPlayTranslationRepository[F],
       audioPlayService: AudioPlayService[F],
@@ -80,7 +80,7 @@ end AudioPlayTranslationServiceImpl
 
 private final class AudioPlayTranslationServiceImpl[F[
     _,
-]: MonadThrow: UUIDGen: LoggerFactory](
+]: MonadThrow: SortableUUIDGen: LoggerFactory](
     paginationParser: PaginationParamsParser[AudioPlayTranslationCursor],
     repo: AudioPlayTranslationRepository[F],
     audioPlayService: AudioPlayService[F],
@@ -121,7 +121,7 @@ private final class AudioPlayTranslationServiceImpl[F[
       request: CreateAudioPlayTranslationRequest,
   ): F[Either[ErrorResponse, AudioPlayTranslationResource]] =
     requirePermissionOrDeny(Modify, user) {
-      val uuid = UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
+      val uuid = SortableUUIDGen.randomTypedUUID[F, AudioPlayTranslation]
       val originalId = Uuid[AudioPlay](request.originalId)
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")

@@ -19,12 +19,13 @@ import api.http.{
 
 import cats.effect.Clock
 import cats.effect.kernel.MonadCancelThrow
-import cats.effect.std.{SecureRandom, UUIDGen}
+import cats.effect.std.SecureRandom
 import cats.syntax.all.given
 import doobie.Transactor
 import org.aulune.commons.instances.UUIDv7Gen.uuidv7Instance
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.permission.PermissionClientService
+import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.typelevel.log4cats.LoggerFactory
 import sttp.tapir.server.ServerEndpoint
 
@@ -48,7 +49,7 @@ object AggregatorApp:
       permissionServ: PermissionClientService[F],
       transactor: Transactor[F],
   ): F[AggregatorApp[F]] =
-    given UUIDGen[F] = uuidv7Instance
+    given SortableUUIDGen[F] = uuidv7Instance
     for
       personRepo <- PersonRepositoryImpl.build[F](transactor)
       personServ <- PersonServiceImpl.build[F](personRepo, permissionServ)

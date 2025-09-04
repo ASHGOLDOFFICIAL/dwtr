@@ -2,10 +2,12 @@ package org.aulune.commons
 package instances
 
 
+import typeclasses.SortableUUIDGen
+
 import cats.Monad
 import cats.effect.kernel.Clock
-import cats.effect.std.{SecureRandom, UUIDGen}
-import cats.syntax.all.*
+import cats.effect.std.SecureRandom
+import cats.syntax.all.given
 
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -34,8 +36,8 @@ object UUIDv7Gen:
       _ = bytes(8) = ((bytes(8) & 0x3f) | 0x80).toByte
     yield bytes
 
-  given uuidv7Instance[F[_]: Monad: SecureRandom: Clock]: UUIDGen[F] =
-    new UUIDGen[F]:
+  given uuidv7Instance[F[_]: Monad: SecureRandom: Clock]: SortableUUIDGen[F] =
+    new SortableUUIDGen[F]:
       def randomUUID: F[UUID] =
         for
           value <- randomBytes[F]
