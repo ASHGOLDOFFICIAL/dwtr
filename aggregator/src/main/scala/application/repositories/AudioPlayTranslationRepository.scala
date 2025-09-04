@@ -2,10 +2,7 @@ package org.aulune.aggregator
 package application.repositories
 
 
-import application.repositories.TranslationRepository.{
-  AudioPlayTranslationCursor,
-  AudioPlayTranslationIdentity
-}
+import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
 import org.aulune.commons.pagination.{CursorDecoder, CursorEncoder}
@@ -22,43 +19,30 @@ import scala.util.Try
  *
  *  @tparam F effect type.
  */
-trait TranslationRepository[F[_]]
+trait AudioPlayTranslationRepository[F[_]]
     extends GenericRepository[
       F,
       AudioPlayTranslation,
-      AudioPlayTranslationIdentity]
+      Uuid[AudioPlayTranslation]]
     with PaginatedList[F, AudioPlayTranslation, AudioPlayTranslationCursor]
 
 
-object TranslationRepository:
-  /** Translation identity.
-   *  @param originalId original work ID.
-   *  @param id translation ID.
-   */
-  final case class AudioPlayTranslationIdentity(
-      originalId: Uuid[AudioPlay],
-      id: Uuid[AudioPlayTranslation],
-  )
-
+object AudioPlayTranslationRepository:
   /** Cursor to resume pagination of translations.
-   *  @param originalId ID of original work.
    *  @param id ID of this translation.
    */
   final case class AudioPlayTranslationCursor(
-      originalId: Uuid[AudioPlay],
       id: Uuid[AudioPlayTranslation],
   )
 
   given CursorDecoder[AudioPlayTranslationCursor] = token =>
     Try {
       val decoded = Base64.getUrlDecoder.decode(token)
-      val raw = new String(decoded, UTF_8)
-      val Array(originalStr, idStr) = raw.split('|')
-      val originalId = Uuid[AudioPlay](originalStr).get
-      val id = Uuid[AudioPlayTranslation](idStr).get
-      AudioPlayTranslationCursor(originalId, id)
+      val rawId = new String(decoded, UTF_8)
+      val id = Uuid[AudioPlayTranslation](rawId).get
+      AudioPlayTranslationCursor(id)
     }.toOption
 
   given CursorEncoder[AudioPlayTranslationCursor] = token =>
-    val raw = s"${token.originalId}|${token.id}"
+    val raw = token.id.toString
     Base64.getUrlEncoder.withoutPadding.encodeToString(raw.getBytes(UTF_8))

@@ -3,11 +3,8 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
-import application.repositories.TranslationRepository
-import application.repositories.TranslationRepository.{
-  AudioPlayTranslationCursor,
-  AudioPlayTranslationIdentity,
-}
+import application.repositories.AudioPlayTranslationRepository
+import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlayTranslation,
@@ -20,8 +17,7 @@ import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
-import doobie.postgres.implicits.*
-import doobie.syntax.all.*
+import doobie.syntax.all.given 
 import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode
@@ -34,39 +30,37 @@ import java.net.URI
 import java.time.Instant
 
 
-/** [[TranslationRepository]] implementation for PostgreSQL. */
-object TranslationRepositoryImpl:
+/** [[AudioPlayTranslationRepository]] implementation for PostgreSQL. */
+object AudioPlayTranslationRepositoryImpl:
   /** Builds an instance.
    *  @param transactor [[Transactor]] instance.
    *  @tparam F effect type.
    */
   def build[F[_]: MonadCancelThrow](
       transactor: Transactor[F],
-  ): F[TranslationRepository[F]] =
+  ): F[AudioPlayTranslationRepository[F]] =
     for _ <- createTranslationsTable.transact(transactor)
-    yield TranslationRepositoryImpl[F](transactor)
+    yield AudioPlayTranslationRepositoryImpl[F](transactor)
 
   private val createTranslationsTable = sql"""
     |CREATE TABLE IF NOT EXISTS translations (
     |  original_id UUID    NOT NULL,
-    |  id          UUID    NOT NULL,
+    |  id          UUID    NOT NULL PRIMARY KEY,
     |  title       TEXT    NOT NULL,
     |  type        INTEGER NOT NULL,
     |  language    TEXT    NOT NULL,
-    |  links       TEXT    NOT NULL,
-    |  PRIMARY KEY(id, original_id)
+    |  links       TEXT    NOT NULL
     |)""".stripMargin.update.run
 
 
-private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
+private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F],
-) extends TranslationRepository[F]:
+) extends AudioPlayTranslationRepository[F]:
 
-  override def contains(id: AudioPlayTranslationIdentity): F[Boolean] = sql"""
+  override def contains(id: Uuid[AudioPlayTranslation]): F[Boolean] = sql"""
     |SELECT EXISTS (
     |  SELECT 1 FROM translations
-    |  WHERE id = ${id.id}
-    |  AND original_id = ${id.originalId}
+    |  WHERE id = $id
     |)""".stripMargin
     .query[Boolean]
     .unique
@@ -89,10 +83,9 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .transact(transactor)
 
   override def get(
-      id: AudioPlayTranslationIdentity,
+      id: Uuid[AudioPlayTranslation],
   ): F[Option[AudioPlayTranslation]] =
-    val query = selectBase ++
-      fr0"WHERE id = ${id.originalId} AND original_id = ${id.originalId}"
+    val query = selectBase ++ fr0"WHERE id = $id"
     query
       .query[SelectResult]
       .map(toTranslation)
@@ -104,11 +97,12 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[AudioPlayTranslation] =
     val query = sql"""
       |UPDATE translations
-      |SET title    = ${elem.title},
-      |    type     = ${elem.translationType},
-      |    language = ${elem.language},
-      |    links    = ${elem.links}
-      |WHERE id = ${elem.id} AND original_id = ${elem.originalId}
+      |SET original_id = ${elem.originalId},
+      |    title       = ${elem.title},
+      |    type        = ${elem.translationType},
+      |    language    = ${elem.language},
+      |    links       = ${elem.links}
+      |WHERE id = ${elem.id}
       |""".stripMargin.update.run
 
     def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
@@ -121,11 +115,10 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
   end update
 
   override def delete(
-      id: AudioPlayTranslationIdentity,
+      id: Uuid[AudioPlayTranslation],
   ): F[Unit] = sql"""
     |DELETE FROM translations
-    |WHERE id = ${id.id}
-    |AND original_id = ${id.id}""".update.run.void
+    |WHERE id = $id""".update.run.void
     .transact(transactor)
 
   override def list(
@@ -134,11 +127,8 @@ private final class TranslationRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[List[AudioPlayTranslation]] =
     val sort = fr0"LIMIT $count"
     val full = cursor match
-      case Some(t) => selectBase ++ fr"""
-        |WHERE id > ${t.id}
-        |AND original_id = ${t.originalId}
-        |""".stripMargin ++ sort
-      case None => selectBase ++ sort
+      case Some(t) => selectBase ++ fr"WHERE id > ${t.id}" ++ sort
+      case None    => selectBase ++ sort
 
     full.stripMargin
       .query[SelectResult]

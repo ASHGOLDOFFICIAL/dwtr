@@ -21,11 +21,11 @@ import application.dto.audioplay.translation.{
 import cats.Applicative
 import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
-import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
 import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
@@ -34,37 +34,15 @@ import sttp.tapir.{EndpointInput, endpoint, path, statusCode, stringToPath}
 import java.util.UUID
 
 
-/** Controller with Tapir endpoints for translations. */
-object TranslationsController:
-  /** Builds controller with endpoints for translations.
-   *
-   *  @param mountPath where to mount endpoints.
-   *  @param tagPrefix prefix of tags for documentation without trailing space.
-   *  @param pagination pagination config.
-   *  @param service [[AudioPlayTranslationService]] to use.
-   *  @param authService [[AuthenticationClientService]] to use for restricted
-   *    endpoints.
-   *  @tparam F effect type.
-   *  @return translations controller.
-   */
-  def build[F[_]: Applicative](
-      mountPath: EndpointInput[UUID],
-      tagPrefix: String,
-      pagination: AggregatorConfig.Pagination,
-      service: AudioPlayTranslationService[F],
-      authService: AuthenticationClientService[F],
-  ): TranslationsController[F] = new TranslationsController[F](
-    pagination,
-    mountPath,
-    tagPrefix,
-    service,
-    authService)
-
-
-private final class TranslationsController[F[_]: Applicative](
+/** Controller with Tapir endpoints for translations.
+ *  @param pagination pagination config.
+ *  @param service [[AudioPlayTranslationService]] to use.
+ *  @param authService [[AuthenticationClientService]] to use for restricted
+ *    endpoints.
+ *  @tparam F effect type.
+ */
+final class AudioPlayTranslationsController[F[_]: Applicative](
     pagination: AggregatorConfig.Pagination,
-    rootPath: EndpointInput[UUID],
-    tagPrefix: String,
     service: AudioPlayTranslationService[F],
     authService: AuthenticationClientService[F],
 ):
@@ -73,9 +51,9 @@ private final class TranslationsController[F[_]: Applicative](
   private val translationId = path[UUID]("translation_id")
     .description("ID of the translation")
 
-  private val collectionPath = rootPath / "translations"
+  private val collectionPath = "audioPlayTranslations"
   private val elementPath = collectionPath / translationId
-  private val tag = tagPrefix + "Translations"
+  private val tag = "AudioPlayTranslations"
 
   private val getEndpoint = endpoint.get
     .in(elementPath)
@@ -87,8 +65,8 @@ private final class TranslationsController[F[_]: Applicative](
     .name("GetTranslation")
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
-    .serverLogic { case (mediaId, id) =>
-      for result <- service.findById(mediaId, id)
+    .serverLogic { id =>
+      for result <- service.findById(id)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -106,7 +84,7 @@ private final class TranslationsController[F[_]: Applicative](
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
-    .serverLogic { case (mediaId, request) =>
+    .serverLogic { request =>
       for result <- service.listAll(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
@@ -123,8 +101,8 @@ private final class TranslationsController[F[_]: Applicative](
     .name("CreateTranslation")
     .summary("Creates a new translation for parent resource and returns it.")
     .tag(tag)
-    .serverLogic { user => (mediaId, request) =>
-      for result <- service.create(user, request, mediaId)
+    .serverLogic { user => request =>
+      for result <- service.create(user, request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -134,8 +112,8 @@ private final class TranslationsController[F[_]: Applicative](
     .name("DeleteTranslation")
     .summary("Deletes translation resource with given ID.")
     .tag(tag)
-    .serverLogic { user => (mediaId, translationId) =>
-      for result <- service.delete(user, mediaId, translationId)
+    .serverLogic { user => id =>
+      for result <- service.delete(user, id)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -147,4 +125,4 @@ private final class TranslationsController[F[_]: Applicative](
     deleteEndpoint,
   )
 
-end TranslationsController
+end AudioPlayTranslationsController

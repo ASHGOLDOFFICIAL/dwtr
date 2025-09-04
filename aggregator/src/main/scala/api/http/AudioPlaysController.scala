@@ -11,8 +11,8 @@ import api.http.tapir.audioplay.AudioPlayExamples.{
 }
 import api.http.tapir.audioplay.AudioPlaySchemas.given
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
@@ -21,11 +21,11 @@ import application.{AudioPlayService, AudioPlayTranslationService}
 import cats.Applicative
 import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
-import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
 import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
@@ -35,27 +35,23 @@ import java.util.UUID
 
 
 /** Controller with Tapir endpoints for audio plays.
- *
  *  @param pagination pagination config.
  *  @param service [[AudioPlayService]] to use.
  *  @param authService [[AuthenticationClientService]] to use for restricted
  *    endpoints.
- *  @param translationService [[AudioPlayTranslationService]] implementation to
- *    create subtree with audio play translations.
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Applicative](
     pagination: AggregatorConfig.Pagination,
     service: AudioPlayService[F],
     authService: AuthenticationClientService[F],
-    translationService: AudioPlayTranslationService[F],
 ):
   private given AuthenticationClientService[F] = authService
 
   private val audioPlayId = path[UUID]("audio_play_id")
     .description("ID of the audio play.")
 
-  private val collectionPath = "audioplays"
+  private val collectionPath = "audioPlays"
   private val elementPath = collectionPath / audioPlayId
   private val tag = "AudioPlays"
 
@@ -125,6 +121,4 @@ final class AudioPlaysController[F[_]: Applicative](
     listEndpoint,
     postEndpoint,
     deleteEndpoint,
-  ) ++ TranslationsController
-    .build(elementPath, tag, pagination, translationService, authService)
-    .endpoints
+  )

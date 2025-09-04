@@ -22,19 +22,13 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait AudioPlayTranslationService[F[_]]:
-  /** Find translation by given identity.
-   *
-   *  @param originalId ID of original.
-   *  @param id translation identity.
+  /** Find translation by given ID.
+   *  @param id translation ID.
    *  @return requested translation if found.
    */
-  def findById(
-      originalId: UUID,
-      id: UUID,
-  ): F[Either[ErrorResponse, AudioPlayTranslationResource]]
+  def findById(id: UUID): F[Either[ErrorResponse, AudioPlayTranslationResource]]
 
-  /** Find all translations of given media resource.
-   *
+  /** Lists all translations in pages.
    *  @param request request to list audio play translations.
    *  @return list of found translations if success, otherwise error.
    */
@@ -42,30 +36,21 @@ trait AudioPlayTranslationService[F[_]]:
       request: ListAudioPlayTranslationsRequest,
   ): F[Either[ErrorResponse, ListAudioPlayTranslationsResponse]]
 
-  /** Create new translation.
-   *
+  /** Creates new translation.
    *  @param user user who performs this action.
-   *  @param tc translation request.
-   *  @param originalId ID of original.
+   *  @param request translation creation request.
    *  @return created translation if success, otherwise error.
    *  @note user must have [[Modify]] permission.
    */
   def create(
       user: User,
-      tc: CreateAudioPlayTranslationRequest,
-      originalId: UUID,
+      request: CreateAudioPlayTranslationRequest,
   ): F[Either[ErrorResponse, AudioPlayTranslationResource]]
 
   /** Deletes existing translation.
-   *
    *  @param user user who performs this action.
-   *  @param originalId ID of original.
-   *  @param id translation identity.
+   *  @param id translation ID.
    *  @return `Unit` if success, otherwise error.
    *  @note user must have [[Modify]] permission.
    */
-  def delete(
-      user: User,
-      originalId: UUID,
-      id: UUID,
-  ): F[Either[ErrorResponse, Unit]]
+  def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]]

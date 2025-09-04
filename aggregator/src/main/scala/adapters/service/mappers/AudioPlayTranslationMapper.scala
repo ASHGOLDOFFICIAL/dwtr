@@ -1,14 +1,19 @@
 package org.aulune.aggregator
 package adapters.service.mappers
 
-import application.repositories.TranslationRepository.AudioPlayTranslationCursor
+
+import application.dto.audioplay.translation.{
+  AudioPlayTranslationResource,
+  CreateAudioPlayTranslationRequest,
+  ListAudioPlayTranslationsResponse
+}
+import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.errors.TranslationValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import domain.shared.TranslatedTitle
 
 import cats.data.{NonEmptyList, ValidatedNec}
 import cats.syntax.all.given
-import org.aulune.aggregator.application.dto.audioplay.translation.{AudioPlayTranslationResource, CreateAudioPlayTranslationRequest, ListAudioPlayTranslationsResponse}
 import org.aulune.commons.pagination.CursorEncoder
 import org.aulune.commons.types.Uuid
 
@@ -21,14 +26,12 @@ import org.aulune.commons.types.Uuid
 private[service] object AudioPlayTranslationMapper:
   /** Converts request to domain object and verifies it.
    *  @param request audio play request DTO.
-   *  @param originalId ID of original audio play.
    *  @param id ID assigned to this audio play translation.
    *  @return created domain object if valid.
    */
   def fromRequest(
-                   request: CreateAudioPlayTranslationRequest,
-                   originalId: Uuid[AudioPlay],
-                   id: Uuid[AudioPlayTranslation],
+      request: CreateAudioPlayTranslationRequest,
+      id: Uuid[AudioPlayTranslation],
   ): ValidatedNec[TranslationValidationError, AudioPlayTranslation] = (for
     title <- TranslatedTitle(request.title)
     translationType = AudioPlayTranslationTypeMapper
@@ -36,7 +39,7 @@ private[service] object AudioPlayTranslationMapper:
     language = LanguageMapper.toDomain(request.language)
     links <- NonEmptyList.fromList(request.links)
   yield AudioPlayTranslation(
-    originalId = originalId,
+    originalId = Uuid[AudioPlay](request.originalId),
     id = id,
     title = title,
     translationType = translationType,
@@ -65,7 +68,7 @@ private[service] object AudioPlayTranslationMapper:
       translations: List[AudioPlayTranslation],
   ): ListAudioPlayTranslationsResponse =
     val nextPageToken = translations.lastOption.map { elem =>
-      val cursor = AudioPlayTranslationCursor(elem.originalId, elem.id)
+      val cursor = AudioPlayTranslationCursor(elem.id)
       CursorEncoder[AudioPlayTranslationCursor].encode(cursor)
     }
     val elements = translations.map(toResponse)

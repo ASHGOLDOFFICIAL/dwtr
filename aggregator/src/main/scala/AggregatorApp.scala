@@ -3,15 +3,19 @@ package org.aulune.aggregator
 
 import adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
-  PersonRepositoryImpl,
-  TranslationRepositoryImpl
+  AudioPlayTranslationRepositoryImpl,
+  PersonRepositoryImpl
 }
 import adapters.service.{
   AudioPlayServiceImpl,
   AudioPlayTranslationServiceImpl,
   PersonServiceImpl,
 }
-import api.http.{AudioPlaysController, PersonsController}
+import api.http.{
+  AudioPlayTranslationsController,
+  AudioPlaysController,
+  PersonsController,
+}
 
 import cats.effect.Clock
 import cats.effect.kernel.MonadCancelThrow
@@ -21,6 +25,7 @@ import doobie.Transactor
 import org.aulune.commons.instances.UUIDv7Gen.uuidv7Instance
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.permission.PermissionClientService
+import org.typelevel.log4cats.LoggerFactory
 import sttp.tapir.server.ServerEndpoint
 
 
@@ -37,7 +42,7 @@ object AggregatorApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: MonadCancelThrow: Clock: SecureRandom](
+  def build[F[_]: MonadCancelThrow: Clock: SecureRandom: LoggerFactory](
       config: AggregatorConfig,
       authServ: AuthenticationClientService[F],
       permissionServ: PermissionClientService[F],
@@ -47,21 +52,26 @@ object AggregatorApp:
     for
       personRepo <- PersonRepositoryImpl.build[F](transactor)
       personServ <- PersonServiceImpl.build[F](personRepo, permissionServ)
-
-      transRepo <- TranslationRepositoryImpl.build[F](transactor)
-      transServ <- AudioPlayTranslationServiceImpl
-        .build[F](config.pagination, transRepo, permissionServ)
+      personEndpoints = new PersonsController[F](personServ, authServ).endpoints
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ <- AudioPlayServiceImpl
         .build[F](config.pagination, audioRepo, personServ, permissionServ)
-
       audioEndpoints = new AudioPlaysController[F](
         config.pagination,
         audioServ,
+        authServ).endpoints
+
+      transRepo <- AudioPlayTranslationRepositoryImpl.build[F](transactor)
+      transServ <- AudioPlayTranslationServiceImpl
+        .build[F](config.pagination, transRepo, permissionServ)
+      audioTranslationEndpoints = new AudioPlayTranslationsController[F](
+        config.pagination,
+        transServ,
         authServ,
-        transServ).endpoints
-      personEndpoints = new PersonsController[F](personServ, authServ).endpoints
-      allEndpoints = audioEndpoints ++ personEndpoints
+      ).endpoints
+
+      allEndpoints =
+        audioEndpoints ++ audioTranslationEndpoints ++ personEndpoints
     yield new AggregatorApp[F]:
       override val endpoints: List[ServerEndpoint[Any, F]] = allEndpoints
