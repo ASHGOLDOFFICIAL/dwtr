@@ -84,7 +84,7 @@ final class AudioPlayTranslationServiceImplTest
       .anyNumberOfTimes()
     AudioPlayTranslationServiceImpl
       .build(
-        AggregatorConfig.Pagination(2, 1),
+        AggregatorConfig.PaginationParams(2, 1),
         mockRepo,
         mockAudio,
         mockPermissions)

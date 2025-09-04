@@ -54,10 +54,10 @@ object AudioPlayTranslationServiceImpl:
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
   def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
-      pagination: AggregatorConfig.Pagination,
-      repo: AudioPlayTranslationRepository[F],
-      audioPlayService: AudioPlayService[F],
-      permissionService: PermissionClientService[F],
+                                                               pagination: AggregatorConfig.PaginationParams,
+                                                               repo: AudioPlayTranslationRepository[F],
+                                                               audioPlayService: AudioPlayService[F],
+                                                               permissionService: PermissionClientService[F],
   ): F[AudioPlayTranslationService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
     val parserO = PaginationParamsParser

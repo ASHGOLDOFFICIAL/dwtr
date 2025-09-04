@@ -24,10 +24,10 @@ import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
-  InvalidArgument
+  InvalidArgument,
 }
 import org.aulune.commons.testing.PostgresTestContainer
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -188,28 +188,29 @@ final class AudioPlayRepositoryImplTest
   "search method " - {
     "should " - {
       "return matching elements" in stand { repo =>
+        val query = NonEmptyString.unsafe(AudioPlays.audioPlay2.title)
         for
           _ <- persistAudios(repo)
-          result <- repo.search(AudioPlays.audioPlay2.title, 1)
+          result <- repo.search(query, 1)
         yield result.head shouldBe audioPlayTests(1)
       }
 
       "not return elements when none of them match" in stand { repo =>
         for
           _ <- persistAudios(repo)
-          result <- repo.search("nothing", 1)
+          result <- repo.search(NonEmptyString.unsafe("nothing"), 1)
         yield result shouldBe Nil
       }
 
       "return elements in order of likeness" in stand { repo =>
         for
           _ <- persistAudios(repo)
-          result <- repo.search("test thing", 3)
+          result <- repo.search(NonEmptyString.unsafe("test thing"), 3)
         yield result shouldBe List(AudioPlays.audioPlay3, AudioPlays.audioPlay2)
       }
 
       "throw InvalidArgument when given non-positive limit" in stand { repo =>
-        for result <- repo.search("something", 0).attempt
+        for result <- repo.search(NonEmptyString.unsafe("something"), 0).attempt
         yield result shouldBe InvalidArgument.asLeft
       }
     }

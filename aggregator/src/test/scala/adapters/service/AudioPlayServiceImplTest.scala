@@ -12,20 +12,20 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
 }
-import org.aulune.aggregator.domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import domain.repositories.AudioPlayRepository
+import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
 import cats.effect.IO
-import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.repositories.AudioPlayRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
@@ -40,7 +40,7 @@ import org.aulune.commons.testing.ErrorAssertions.{
 }
 import org.aulune.commons.testing.instances.UUIDGenInstances.makeFixedUuidGen
 import org.aulune.commons.typeclasses.SortableUUIDGen
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
@@ -81,7 +81,8 @@ final class AudioPlayServiceImplTest
       .anyNumberOfTimes()
     AudioPlayServiceImpl
       .build(
-        AggregatorConfig.Pagination(2, 1),
+        AggregatorConfig.PaginationParams(2, 1),
+        AggregatorConfig.SearchParams(2, 1),
         mockRepo,
         mockPerson,
         mockPermissions)
@@ -191,6 +192,31 @@ final class AudioPlayServiceImplTest
         yield result match
           case Left(_)     => fail("Error was not expected")
           case Right(list) => list.audioPlays shouldBe List(response)
+      }
+    }
+  }
+
+  "search method " - {
+    "should " - {
+      "return list of elements" in stand { service =>
+        val query = NonEmptyString.unsafe("thing")
+        val request = SearchAudioPlaysRequest(
+          query = query,
+          limit = 2.some,
+        )
+        val elements = List(
+          AudioPlays.audioPlay3,
+          AudioPlays.audioPlay2,
+        )
+        val _ = (mockRepo.search _)
+          .expects(query, 2)
+          .returning(elements.pure)
+
+        for result <- service.search(request)
+        yield result match
+          case Left(_)     => fail("Error was not expected")
+          case Right(list) =>
+            list.audioPlays shouldBe elements.map(AudioPlayMapper.toResponse)
       }
     }
   }

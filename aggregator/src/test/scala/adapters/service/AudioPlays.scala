@@ -10,6 +10,8 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
 import domain.model.audioplay.{
   ActorRole,
@@ -124,8 +126,8 @@ private[aggregator] object AudioPlays:
       List(ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
   )
 
-  /** Stub [[AudioPlayService]] implementation that supports only `findById`
-   *  operation.
+  /** Stub [[AudioPlayService]] implementation that supports only `findById` and
+   *  `search` operations.
    *
    *  Contains only persons given in [[AudioPlays]] object.
    *
@@ -148,6 +150,17 @@ private[aggregator] object AudioPlays:
         request: ListAudioPlaysRequest,
     ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
       throw new UnsupportedOperationException()
+
+    override def search(
+        request: SearchAudioPlaysRequest,
+    ): F[Either[ErrorResponse, SearchAudioPlaysResponse]] =
+      val elements = audioById.values
+        .filter(a => a.title == request.query)
+        .toList
+      AudioPlayMapper
+        .toSearchResponse(elements)
+        .asRight
+        .pure[F]
 
     override def create(
         user: User,

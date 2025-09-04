@@ -42,9 +42,9 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Applicative](
-    pagination: AggregatorConfig.Pagination,
-    service: AudioPlayService[F],
-    authService: AuthenticationClientService[F],
+                                                     pagination: AggregatorConfig.PaginationParams,
+                                                     service: AudioPlayService[F],
+                                                     authService: AuthenticationClientService[F],
 ):
   private given AuthenticationClientService[F] = authService
 

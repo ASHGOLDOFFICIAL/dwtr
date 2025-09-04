@@ -3,11 +3,11 @@ package adapters.service.mappers
 
 
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
+  CreateAudioPlayRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysResponse
 }
-import org.aulune.aggregator.domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{
   AudioPlay,
@@ -17,6 +17,7 @@ import domain.model.audioplay.{
   AudioPlayTitle,
 }
 import domain.model.person.Person
+import domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.shared.{ReleaseDate, Synopsis}
 
 import cats.data.ValidatedNec
@@ -93,3 +94,11 @@ private[service] object AudioPlayMapper:
       CursorEncoder[AudioPlayCursor].encode(cursor)
     }
     ListAudioPlaysResponse(audios.map(toResponse), nextPageToken)
+
+  /** Converts list of domain objects to one search response.
+   *  @param audios list of domain objects.
+   */
+  def toSearchResponse(audios: List[AudioPlay]): SearchAudioPlaysResponse =
+    SearchAudioPlaysResponse(
+      audioPlays = audios.map(toResponse),
+    )

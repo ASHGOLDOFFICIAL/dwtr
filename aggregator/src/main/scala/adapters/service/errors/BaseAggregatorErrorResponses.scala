@@ -16,6 +16,12 @@ trait BaseAggregatorErrorResponses:
     details = ErrorDetails(),
   )
 
+  val invalidSearchParams: ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = "Query should be non-empty",
+    details = ErrorDetails(),
+  )
+
   val invalidPaginationParams: ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = "Given pagination params are invalid.",

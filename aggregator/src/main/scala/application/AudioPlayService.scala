@@ -7,6 +7,8 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
@@ -21,16 +23,15 @@ import java.util.UUID
 
 
 /** Service managing audio plays.
- *
  *  @tparam F effect type.
  */
 trait AudioPlayService[F[_]]:
-  /** Find audio play by given identity.
+  /** Find audio play by given ID.
    *
    *  Domain error [[AudioPlayNotFound]] will be returned if audio play is not
    *  found.
    *
-   *  @param id audio play identity.
+   *  @param id audio play ID.
    *  @return requested audio play if found.
    */
   def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResource]]
@@ -42,6 +43,14 @@ trait AudioPlayService[F[_]]:
   def listAll(
       request: ListAudioPlaysRequest,
   ): F[Either[ErrorResponse, ListAudioPlaysResponse]]
+
+  /** Search audio plays by some query.
+   *  @param request request with search information.
+   *  @return response with matched audio plays if success, otherwise error.
+   */
+  def search(
+      request: SearchAudioPlaysRequest,
+  ): F[Either[ErrorResponse, SearchAudioPlaysResponse]]
 
   /** Create new audio play.
    *
@@ -62,7 +71,6 @@ trait AudioPlayService[F[_]]:
   ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Deletes existing audio play.
-   *
    *  @param user user who performs this action.
    *  @param id audio play id.
    *  @return `Unit` if success, otherwise error.

@@ -4,7 +4,7 @@ package org.aulune.aggregator
 import adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   AudioPlayTranslationRepositoryImpl,
-  PersonRepositoryImpl,
+  PersonRepositoryImpl
 }
 import adapters.service.{
   AudioPlayServiceImpl,
@@ -57,7 +57,12 @@ object AggregatorApp:
 
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ <- AudioPlayServiceImpl
-        .build[F](config.pagination, audioRepo, personServ, permissionServ)
+        .build[F](
+          config.pagination,
+          config.search,
+          audioRepo,
+          personServ,
+          permissionServ)
       audioEndpoints = new AudioPlaysController[F](
         config.pagination,
         audioServ,
