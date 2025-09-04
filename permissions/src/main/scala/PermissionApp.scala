@@ -1,0 +1,38 @@
+package org.aulune.permissions
+
+
+import adapters.jdbc.postgres.PermissionRepositoryImpl
+import adapters.service.PermissionServiceImpl
+
+import cats.effect.Async
+import cats.syntax.all.given
+import doobie.Transactor
+import org.aulune.commons.service.permission.PermissionClientService
+import org.typelevel.log4cats.LoggerFactory
+
+
+/** Permission app with client-side service implementation.
+ *  @tparam F effect type.
+ */
+trait PermissionApp[F[_]]:
+  val clientService: PermissionClientService[F]
+
+
+object PermissionApp:
+  /** Builds permission app. It's used to hide wiring logic.
+   *  @param transactor transactor for DB.
+   *  @tparam F effect type.
+   */
+  def build[F[_]: Async: LoggerFactory](
+      config: PermissionConfig,
+      transactor: Transactor[F],
+  ): F[PermissionApp[F]] =
+    for
+      repository <- PermissionRepositoryImpl.build(transactor)
+      service <- PermissionServiceImpl.build(
+        adminPermissionNamespace = config.adminPermissionNamespace,
+        adminPermissionName = config.adminPermissionName,
+        repo = repository)
+    yield new PermissionApp[F]:
+      override val clientService: PermissionClientService[F] =
+        PermissionServiceAdapter[F](service)

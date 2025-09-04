@@ -1,0 +1,25 @@
+package org.aulune.auth
+package domain.services
+
+
+import domain.model.{AccessTokenPayload, TokenString, User}
+
+import org.aulune.commons.types.Uuid
+
+
+/** Service that generates and decodes access tokens. Access token payload
+ *  should be [[AccessTokenPayload]].
+ *
+ *  Token type, generation and validation rules depend on implementation.
+ *  @tparam F effect type.
+ */
+trait AccessTokenService[F[_]]:
+  /** Returns ID of the user whom this token identifies.
+   *  @param token token as string.
+   */
+  def decodeAccessToken(token: TokenString): F[Option[Uuid[User]]]
+
+  /** Generates access token for given user.
+   *  @param user user for whom to generate access token.
+   */
+  def generateAccessToken(user: User): F[TokenString]

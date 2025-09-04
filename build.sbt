@@ -3,21 +3,28 @@ import sbtassembly.MergeStrategy
 
 inThisBuild {
   List(
-    idePackagePrefix := Some("org.aulune"),
     name := "dwtr",
     organization := "org.aulune",
     scalaVersion := "3.3.6",
     semanticdbEnabled := true,
     version := "0.1.0-SNAPSHOT",
+    scalacOptions ++= Seq(
+      "-feature",
+      "-deprecation",
+      "-unchecked",
+      "-Wnonunit-statement",
+      "-Xmax-inlines:64",
+    ),
   )
 }
 
 
-lazy val root = (project in file(".")).aggregate(core, integration)
-
-
-lazy val core = (project in file("core"))
+lazy val app = (project in file("."))
+  .aggregate(commons, auth, permissions, aggregator)
+  .dependsOn(auth, permissions, aggregator)
   .settings(
+    name := "app",
+    idePackagePrefix := Some("org.aulune"),
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList(
@@ -34,48 +41,77 @@ lazy val core = (project in file("core"))
       case x => (assembly / assemblyMergeStrategy).value.apply(x)
     },
     assembly / mainClass := Some("org.aulune.App"),
-    name := "core",
-    libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+    libraryDependencies ++= http4sDeps ++ tapirDeps ++ doobieDeps ++ Seq(
       "ch.qos.logback"         % "logback-classic" % logbackVersion,
-      "com.github.jwt-scala"  %% "jwt-circe"       % jwtVersion,
       "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
-      "de.mkammerer"           % "argon2-jvm"      % argon2Version,
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
-      "org.typelevel" %% "cats-mtl" % catsMtlVersion withSources () withJavadoc (),
-      "org.typelevel" %% "log4cats-slf4j"  % log4catsVersion,
-      "org.xerial"     % "sqlite-jdbc"     % sqliteVersion,
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+    ),
+  )
+
+
+lazy val commons = (project in file("commons")).settings(
+  name := "commons",
+  idePackagePrefix := Some("org.aulune.commons"),
+  libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+    "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion,
+    "com.dimafeng" %% "testcontainers-scala-scalatest"  % testcontainersVersion,
+    "org.postgresql" % "postgresql" % postgresqlVersion,
+    "org.scalamock" %% "scalamock"  % scalamockVersion,
+    "org.scalatest" %% "scalatest"  % scalatestVersion,
+    "org.typelevel" %% "cats-core"  % catsVersion withSources () withJavadoc (),
+    "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+    "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
+  ),
+)
+
+
+lazy val auth = (project in file("auth"))
+  .dependsOn(commons)
+  .settings(
+    name := "auth",
+    idePackagePrefix := Some("org.aulune.auth"),
+    libraryDependencies ++= testDeps ++ http4sDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+      "com.github.jwt-scala" %% "jwt-circe"  % jwtVersion,
+      "de.mkammerer"          % "argon2-jvm" % argon2Version,
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-core"   % log4catsVersion,
       "com.nimbusds"   % "nimbus-jose-jwt" % nimbusJoseJwt,
     ),
   )
 
 
-lazy val integration = (project in file("integration"))
-  .dependsOn(core)
+lazy val permissions = (project in file("permissions"))
+  .dependsOn(commons)
   .settings(
-    Test / fork := true,
-    publish / skip := true,
-    libraryDependencies ++= testDeps ++ doobieDeps.map(_ % Test) ++ Seq(
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersVersion % Test,
-      "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion % Test,
-      "org.postgresql" % "postgresql"  % postgresqlVersion % Test,
-      "org.typelevel" %% "cats-effect" % catsEffectVersion % Test,
+    name := "permissions",
+    idePackagePrefix := Some("org.aulune.permissions"),
+    libraryDependencies ++= testDeps ++ doobieDeps ++ Seq(
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-core" % log4catsVersion,
     ),
   )
 
 
-scalacOptions ++= Seq(
-  "-feature",
-  "-deprecation",
-  "-unchecked",
-  "-Wnonunit-statement",
-)
+lazy val aggregator = (project in file("aggregator"))
+  .dependsOn(commons)
+  .settings(
+    name := "aggregator",
+    idePackagePrefix := Some("org.aulune.aggregator"),
+    libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+      "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
+      "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
+      "org.typelevel" %% "log4cats-core" % log4catsVersion,
+    ),
+  )
 
 
 val argon2Version = "2.12"
 val catsEffectTestingVersion = "1.6.0"
 val catsEffectVersion = "3.6.3"
-val catsMtlVersion = "1.5.0"
 val catsVersion = "2.13.0"
 val circeGenericExtras = "0.14.5-RC1"
 val circeVersion = "0.14.14"
@@ -132,7 +168,12 @@ val doobieDeps = Seq(
 
 
 val testDeps = Seq(
-  "org.scalamock" %% "scalamock"                     % scalamockVersion,
-  "org.scalatest" %% "scalatest"                     % scalatestVersion,
+  "ch.qos.logback" % "logback-classic"                 % logbackVersion,
+  "com.dimafeng"  %% "testcontainers-scala-postgresql" % testcontainersVersion,
+  "com.dimafeng"  %% "testcontainers-scala-scalatest"  % testcontainersVersion,
+  "org.postgresql" % "postgresql"                      % postgresqlVersion,
+  "org.scalamock" %% "scalamock"                       % scalamockVersion,
+  "org.scalatest" %% "scalatest"                       % scalatestVersion,
   "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
+  "org.typelevel" %% "log4cats-slf4j"                % log4catsVersion,
 ).map(_ % Test)
