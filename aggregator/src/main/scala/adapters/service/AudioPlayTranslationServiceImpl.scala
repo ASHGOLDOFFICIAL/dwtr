@@ -128,7 +128,7 @@ private final class AudioPlayTranslationServiceImpl[F[
       id: UUID,
   ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
     val uuid = Uuid[AudioPlayTranslation](id)
-    repo.delete(uuid).map(_.asRight)
+    info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
 
   /** Makes translation from given creation request and assigned ID.

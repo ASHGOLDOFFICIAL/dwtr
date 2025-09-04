@@ -6,9 +6,9 @@ import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{DownloadAudioPlays, Modify}
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
   CastMemberDto,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
 }
@@ -20,15 +20,18 @@ import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
 import cats.MonadThrow
-import cats.data.{EitherT, Validated}
+import cats.data.EitherT
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.pagination.{PaginationParams, PaginationParamsParser}
+import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import org.aulune.commons.types.Uuid
+import org.typelevel.log4cats.Logger.eitherTLogger
+import org.typelevel.log4cats.syntax.LoggerInterpolator
+import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import java.util.UUID
 
@@ -45,17 +48,21 @@ object AudioPlayServiceImpl:
    *  @tparam F effect type.
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
-  def build[F[_]: MonadThrow: UUIDGen](
+  def build[F[_]: MonadThrow: UUIDGen: LoggerFactory](
       pagination: AggregatorConfig.Pagination,
       repo: AudioPlayRepository[F],
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
   ): F[AudioPlayService[F]] =
-    val maybeParser = PaginationParamsParser
+    given Logger[F] = LoggerFactory[F].getLogger
+    val parserO = PaginationParamsParser
       .build[AudioPlayCursor](pagination.default, pagination.max)
+
     for
+      _ <- info"Building service."
       parser <- MonadThrow[F]
-        .fromOption(maybeParser, new IllegalArgumentException())
+        .fromOption(parserO, new IllegalArgumentException())
+        .onError(_ => error"Invalid parser parameters are given.")
       _ <- permissionService.registerPermission(Modify)
       _ <- permissionService.registerPermission(DownloadAudioPlays)
     yield new AudioPlayServiceImpl[F](
@@ -68,66 +75,68 @@ object AudioPlayServiceImpl:
 end AudioPlayServiceImpl
 
 
-private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
+private final class AudioPlayServiceImpl[F[
+    _,
+]: MonadThrow: UUIDGen: LoggerFactory](
     paginationParser: PaginationParamsParser[AudioPlayCursor],
     repo: AudioPlayRepository[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
 ) extends AudioPlayService[F]:
+
+  private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
   override def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResource]] =
     val uuid = Uuid[AudioPlay](id)
-    val getResult = repo.get(uuid).attempt
     (for
-      elemOpt <- EitherT(getResult).leftMap(_ => ErrorResponses.internal)
-      elem <- EitherT.fromOption(elemOpt, ErrorResponses.audioPlayNotFound)
+      _ <- eitherTLogger.info(s"Find request: $id.")
+      elem <- EitherT
+        .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
+        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
       response = AudioPlayMapper.toResponse(elem)
-    yield response).value
+    yield response).value.handleErrorWith(handleInternal)
 
   override def listAll(
       request: ListAudioPlaysRequest,
   ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
-    paginationParser.parse(request.pageSize, request.pageToken) match
-      case Validated.Invalid(_) =>
-        ErrorResponses.invalidPaginationParams.asLeft.pure[F]
-      case Validated.Valid(PaginationParams(pageSize, cursor)) =>
-        val listResult = repo.list(cursor, pageSize).attempt
-        (for
-          audios <- EitherT(listResult).leftMap(_ => ErrorResponses.internal)
-          response = AudioPlayMapper.toListResponse(audios)
-        yield response).value
+    val paramsV = paginationParser.parse(request.pageSize, request.pageToken)
+    (for
+      _ <- eitherTLogger.info(s"List request: $request.")
+      params <- EitherT
+        .fromOption(paramsV.toOption, ErrorResponses.invalidPaginationParams)
+        .leftSemiflatTap(_ => warn"Invalid pagination params are given.")
+      listResult = repo.list(params.cursor, params.pageSize)
+      elems <- EitherT.liftF(listResult)
+      response = AudioPlayMapper.toListResponse(elems)
+    yield response).value.handleErrorWith(handleInternal)
 
   override def create(
-                       user: User,
-                       request: CreateAudioPlayRequest,
+      user: User,
+      request: CreateAudioPlayRequest,
   ): F[Either[ErrorResponse, AudioPlayResource]] =
     requirePermissionOrDeny(Modify, user) {
       val seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
+      val uuid = UUIDGen.randomUUID[F].map(Uuid[AudioPlay])
       (for
+        _ <- eitherTLogger.info(s"Create request $request from $user.")
         series <- getSeries(seriesId)
         _ <- EitherT(getWriters(request.writers))
         _ <- EitherT(getCastPersons(request.cast))
-        id <- EitherT.liftF(UUIDGen.randomUUID[F])
-        audio <- EitherT.fromEither(
-          AudioPlayMapper
-            .fromRequest(request, id, series)
-            .leftMap(ErrorResponses.invalidAudioPlay)
-            .toEither)
-        persisted <- repo
-          .persist(audio)
-          .attemptT
-          .leftMap(_ => ErrorResponses.internal)
+        id <- EitherT.liftF(uuid)
+        audio <- EitherT
+          .fromEither(makeAudioPlay(request, id, series))
+          .leftSemiflatTap(_ => warn"Request to create bad element: $request.")
+        persisted <- EitherT.liftF(repo.persist(audio))
         response = AudioPlayMapper.toResponse(persisted)
       yield response).value
-    }
+    }.handleErrorWith(handleInternal)
 
   override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
     requirePermissionOrDeny(Modify, user) {
       val uuid = Uuid[AudioPlay](id)
-      for result <- repo.delete(uuid).attempt
-      yield result.leftMap(_ => ErrorResponses.internal)
-    }
+      info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
+    }.handleErrorWith(handleInternal)
 
   /** Fetches cast member persons by their respective IDs.
    *  @param uuids persons UUIDs.
@@ -163,3 +172,22 @@ private final class AudioPlayServiceImpl[F[_]: MonadThrow: UUIDGen](
           EitherT.fromOption(seriesOpt, ErrorResponses.audioPlaySeriesNotFound)
       yield series
     }
+
+  /** Makes audio play from given creation request, assigned ID and series.
+   *  @param request creation request.
+   *  @param id ID assigned to this translation.
+   *  @note It's only purpose is to improve readability of [[create]] method.
+   */
+  private def makeAudioPlay(
+      request: CreateAudioPlayRequest,
+      id: Uuid[AudioPlay],
+      series: Option[AudioPlaySeries],
+  ) = AudioPlayMapper
+    .fromRequest(request, id, series)
+    .leftMap(ErrorResponses.invalidAudioPlay)
+    .toEither
+
+  /** Logs any error and returns internal error response. */
+  private def handleInternal[A](e: Throwable) =
+    for _ <- Logger[F].error(e)("Uncaught exception.")
+    yield ErrorResponses.internal.asLeft[A]
