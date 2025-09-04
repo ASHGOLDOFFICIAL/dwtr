@@ -1,8 +1,8 @@
 package org.aulune.aggregator
-package application.repositories
+package domain.repositories
 
 
-import application.repositories.AudioPlayRepository.AudioPlayCursor
+import AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 
 import org.aulune.commons.pagination.{CursorDecoder, CursorEncoder}

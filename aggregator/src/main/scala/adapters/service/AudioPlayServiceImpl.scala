@@ -13,8 +13,10 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
 }
 import application.dto.person.PersonResource
-import application.repositories.AudioPlayRepository
-import application.repositories.AudioPlayRepository.{AudioPlayCursor, given}
+import org.aulune.aggregator.domain.repositories.AudioPlayRepository.{
+  AudioPlayCursor,
+  given,
+}
 import application.{AggregatorPermission, AudioPlayService, PersonService}
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
@@ -22,6 +24,7 @@ import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.repositories.AudioPlayRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User

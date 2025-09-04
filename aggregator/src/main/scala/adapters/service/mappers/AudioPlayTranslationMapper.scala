@@ -7,7 +7,7 @@ import application.dto.audioplay.translation.{
   CreateAudioPlayTranslationRequest,
   ListAudioPlayTranslationsResponse,
 }
-import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.errors.TranslationValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import domain.shared.TranslatedTitle

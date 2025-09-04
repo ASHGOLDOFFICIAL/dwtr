@@ -1,5 +1,5 @@
 package org.aulune.aggregator
-package application.repositories
+package domain.repositories
 
 
 import domain.model.audioplay.AudioPlay

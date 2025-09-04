@@ -7,7 +7,7 @@ import application.dto.audioplay.{
   AudioPlayResource,
   ListAudioPlaysResponse,
 }
-import application.repositories.AudioPlayRepository.AudioPlayCursor
+import org.aulune.aggregator.domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{
   AudioPlay,

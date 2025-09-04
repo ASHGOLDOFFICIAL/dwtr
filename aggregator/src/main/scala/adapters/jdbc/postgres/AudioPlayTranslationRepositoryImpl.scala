@@ -3,8 +3,7 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
-import application.repositories.AudioPlayTranslationRepository
-import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlayTranslation,
@@ -23,6 +22,7 @@ import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode
 import io.circe.syntax.given
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{

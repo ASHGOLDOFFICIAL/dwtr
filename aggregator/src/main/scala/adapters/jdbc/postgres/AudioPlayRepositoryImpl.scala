@@ -4,8 +4,7 @@ package adapters.jdbc.postgres
 
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
-import application.repositories.AudioPlayRepository
-import application.repositories.AudioPlayRepository.AudioPlayCursor
+import org.aulune.aggregator.domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -24,6 +23,7 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
+import org.aulune.aggregator.domain.repositories.AudioPlayRepository
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{

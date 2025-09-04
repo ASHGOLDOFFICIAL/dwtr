@@ -1,8 +1,8 @@
 package org.aulune.aggregator
-package application.repositories
+package domain.repositories
 
 
-import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
+import AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
 import org.aulune.commons.pagination.{CursorDecoder, CursorEncoder}
