@@ -4,7 +4,6 @@ package adapters.jdbc.postgres
 
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
-import org.aulune.aggregator.domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -15,6 +14,8 @@ import domain.model.audioplay.{
   CastMember,
 }
 import domain.model.person.Person
+import domain.repositories.AudioPlayRepository
+import domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
 
 import cats.MonadThrow
@@ -23,12 +24,12 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.aggregator.domain.repositories.AudioPlayRepository
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
+  InvalidArgument,
 }
 import org.aulune.commons.types.Uuid
 
@@ -162,13 +163,33 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       case Some(t) => selectBase ++ fr"WHERE ap.id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
-    full.stripMargin
+    val query = full.stripMargin
       .query[SelectResult]
       .map(toAudioPlay)
       .to[List]
-      .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+
+    (for
+      _ <- MonadThrow[F].raiseWhen(count <= 0)(InvalidArgument)
+      result <- query.transact(transactor)
+    yield result).handleErrorWith(toRepositoryError)
   end list
+
+  override def search(query: String, limit: Int): F[List[AudioPlay]] =
+    val select = (selectBase ++ fr0"""
+      |WHERE TO_TSVECTOR(ap.title) @@ WEBSEARCH_TO_TSQUERY($query)
+      |ORDER BY TS_RANK(TO_TSVECTOR(ap.title),
+      |                 WEBSEARCH_TO_TSQUERY($query)) DESC
+      |LIMIT $limit
+      |""".stripMargin)
+      .query[SelectResult]
+      .map(toAudioPlay)
+      .to[List]
+
+    (for
+      _ <- MonadThrow[F].raiseWhen(limit <= 0)(InvalidArgument)
+      result <- select.transact(transactor)
+    yield result).handleErrorWith(toRepositoryError)
+  end search
 
   override def getSeries(
       id: Uuid[AudioPlaySeries],
@@ -210,7 +231,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |    ap.resources
     |FROM audio_plays ap
     |LEFT JOIN audio_play_series s ON ap.series_id = s.id
-    |"""
+    |""".stripMargin
 
   private def insertSeriesIfMissing(series: Option[AudioPlaySeries]) =
     series match
