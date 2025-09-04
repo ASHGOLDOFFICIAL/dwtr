@@ -1,7 +1,9 @@
 package org.aulune.commons
 package repositories
 
+
 import repositories.RepositoryError.InvalidArgument
+import types.NonEmptyString
 
 
 /** Text search operation for repository.
@@ -16,4 +18,4 @@ trait TextSearch[F[_], E]:
    *  @param query query string.
    *  @return elements ranked by their likeness.
    */
-  def search(query: String, limit: Int): F[List[E]]
+  def search(query: NonEmptyString, limit: Int): F[List[E]]

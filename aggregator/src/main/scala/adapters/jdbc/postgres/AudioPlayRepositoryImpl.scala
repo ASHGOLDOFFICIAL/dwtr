@@ -24,14 +24,17 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
+import org.aulune.commons.adapters.doobie.postgres.Metas.{
+  nonEmptyStringMeta,
+  uuidMeta,
+}
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
   InvalidArgument,
 }
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 
 import java.sql.SQLException
 
@@ -174,7 +177,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     yield result).handleErrorWith(toRepositoryError)
   end list
 
-  override def search(query: String, limit: Int): F[List[AudioPlay]] =
+  override def search(query: NonEmptyString, limit: Int): F[List[AudioPlay]] =
     val select = (selectBase ++ fr0"""
       |WHERE TO_TSVECTOR(ap.title) @@ WEBSEARCH_TO_TSQUERY($query)
       |ORDER BY TS_RANK(TO_TSVECTOR(ap.title),

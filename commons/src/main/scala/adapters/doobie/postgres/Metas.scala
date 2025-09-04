@@ -2,14 +2,14 @@ package org.aulune.commons
 package adapters.doobie.postgres
 
 
+import types.{NonEmptyString, Uuid}
+
 import doobie.Meta
 import doobie.postgres.implicits.{
   UuidType,
   unliftedStringArrayType,
   unliftedUUIDArrayType,
 }
-import types.Uuid
-
 import io.circe.Json
 import io.circe.parser.parse
 import org.postgresql.util.PGobject
@@ -23,6 +23,9 @@ object Metas:
   given urlMeta: Meta[URL] = Meta[String].imap(URI.create(_).toURL)(_.toString)
   given urlsMeta: Meta[Array[URL]] = Meta[Array[String]]
     .imap(_.map(URI.create(_).toURL))(_.map(_.toString))
+
+  given nonEmptyStringMeta: Meta[NonEmptyString] =
+    Meta[String].imap(NonEmptyString.unsafe)(identity)
 
   given jsonbMeta: Meta[Json] = Meta.Advanced
     .other[PGobject]("jsonb")
