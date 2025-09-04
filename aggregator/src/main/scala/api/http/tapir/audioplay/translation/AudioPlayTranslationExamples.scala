@@ -29,10 +29,12 @@ object AudioPlayTranslationExamples:
 
   val requestExample: CreateAudioPlayTranslationRequest =
     CreateAudioPlayTranslationRequest(
+      originalId = AudioPlayExamples.responseExample.id,
       title = titleExample,
       translationType = translationTypeExample,
       language = languageExample,
-      links = linksExample)
+      links = linksExample,
+    )
 
   val responseExample: AudioPlayTranslationResource =
     AudioPlayTranslationResource(
