@@ -179,9 +179,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def search(query: NonEmptyString, limit: Int): F[List[AudioPlay]] =
     val select = (selectBase ++ fr0"""
-      |WHERE TO_TSVECTOR(ap.title) @@ WEBSEARCH_TO_TSQUERY($query)
+      |WHERE TO_TSVECTOR(ap.title) @@ PLAINTO_TSQUERY($query)
       |ORDER BY TS_RANK(TO_TSVECTOR(ap.title),
-      |                 WEBSEARCH_TO_TSQUERY($query)) DESC
+      |                 PLAINTO_TSQUERY($query)) DESC
       |LIMIT $limit
       |""".stripMargin)
       .query[SelectResult]

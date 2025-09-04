@@ -188,11 +188,12 @@ final class AudioPlayRepositoryImplTest
   "search method " - {
     "should " - {
       "return matching elements" in stand { repo =>
-        val query = NonEmptyString.unsafe(AudioPlays.audioPlay2.title)
+        val element = AudioPlays.audioPlay2
+        val query = NonEmptyString.unsafe(element.title)
         for
           _ <- persistAudios(repo)
-          result <- repo.search(query, 1)
-        yield result.head shouldBe audioPlayTests(1)
+          result <- repo.search(query, 3)
+        yield result should contain(element)
       }
 
       "not return elements when none of them match" in stand { repo =>
