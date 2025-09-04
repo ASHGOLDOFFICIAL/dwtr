@@ -5,7 +5,11 @@ package adapters.jdbc.postgres
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import application.repositories.AudioPlayTranslationRepository
 import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
-import domain.model.audioplay.{AudioPlay, AudioPlayTranslation, AudioPlayTranslationType}
+import domain.model.audioplay.{
+  AudioPlay,
+  AudioPlayTranslation,
+  AudioPlayTranslationType,
+}
 import domain.shared.{Language, TranslatedTitle}
 
 import cats.MonadThrow
@@ -21,7 +25,10 @@ import io.circe.parser.decode
 import io.circe.syntax.given
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
 import org.aulune.commons.types.Uuid
 
 import java.net.URI

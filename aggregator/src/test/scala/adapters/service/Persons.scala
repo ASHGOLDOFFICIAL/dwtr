@@ -1,6 +1,7 @@
 package org.aulune.aggregator
 package adapters.service
 
+
 import adapters.service.mappers.PersonMapper
 import application.PersonService
 import application.dto.person.{CreatePersonRequest, PersonResource}

@@ -6,7 +6,7 @@ import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
-  ListAudioPlaysResponse
+  ListAudioPlaysResponse,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
