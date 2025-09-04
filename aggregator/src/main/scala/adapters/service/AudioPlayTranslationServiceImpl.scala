@@ -125,8 +125,9 @@ private final class AudioPlayTranslationServiceImpl[F[
       val originalId = Uuid[AudioPlay](request.originalId)
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")
-        original <- EitherT(audioPlayService.findById(originalId)).leftMap(
-          handleAudioPlayNotFound)
+        original <- EitherT(audioPlayService.findById(originalId))
+          .leftMap(handleAudioPlayNotFound)
+          .leftSemiflatTap(_ => warn"Original was not found: $request")
         id <- EitherT.liftF(uuid)
         translation <- EitherT
           .fromEither(makeAudioPlayTranslation(request, id))
