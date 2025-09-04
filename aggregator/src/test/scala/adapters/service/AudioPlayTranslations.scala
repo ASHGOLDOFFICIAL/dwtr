@@ -1,6 +1,5 @@
 package org.aulune.aggregator
-package testing
-
+package adapters.service
 
 import domain.model.audioplay.AudioPlayTranslation
 import domain.model.audioplay.AudioPlayTranslationType.{

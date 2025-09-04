@@ -11,13 +11,18 @@ import application.dto.audioplay.translation.{
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
+import application.errors.AudioPlayServiceError.AudioPlayNotFound
 import application.repositories.AudioPlayTranslationRepository
 import application.repositories.AudioPlayTranslationRepository.{
   AudioPlayTranslationCursor,
   given,
 }
-import application.{AggregatorPermission, AudioPlayTranslationService}
-import domain.model.audioplay.AudioPlayTranslation
+import application.{
+  AggregatorPermission,
+  AudioPlayService,
+  AudioPlayTranslationService,
+}
+import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 
 import cats.MonadThrow
 import cats.data.EitherT
@@ -41,6 +46,8 @@ object AudioPlayTranslationServiceImpl:
   /** Builds a service.
    *  @param pagination pagination config.
    *  @param repo translation repository.
+   *  @param audioPlayService [[AudioPlayService]] implementation to check
+   *    original existence.
    *  @param permissionService [[PermissionClientService]] implementation to
    *    perform permission checks.
    *  @tparam F effect type.
@@ -49,6 +56,7 @@ object AudioPlayTranslationServiceImpl:
   def build[F[_]: MonadThrow: UUIDGen: LoggerFactory](
       pagination: AggregatorConfig.Pagination,
       repo: AudioPlayTranslationRepository[F],
+      audioPlayService: AudioPlayService[F],
       permissionService: PermissionClientService[F],
   ): F[AudioPlayTranslationService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
@@ -64,6 +72,7 @@ object AudioPlayTranslationServiceImpl:
     yield new AudioPlayTranslationServiceImpl[F](
       parser,
       repo,
+      audioPlayService,
       permissionService)
 
 end AudioPlayTranslationServiceImpl
@@ -74,6 +83,7 @@ private final class AudioPlayTranslationServiceImpl[F[
 ]: MonadThrow: UUIDGen: LoggerFactory](
     paginationParser: PaginationParamsParser[AudioPlayTranslationCursor],
     repo: AudioPlayTranslationRepository[F],
+    audioPlayService: AudioPlayService[F],
     permissionService: PermissionClientService[F],
 ) extends AudioPlayTranslationService[F]:
 
@@ -112,8 +122,11 @@ private final class AudioPlayTranslationServiceImpl[F[
   ): F[Either[ErrorResponse, AudioPlayTranslationResource]] =
     requirePermissionOrDeny(Modify, user) {
       val uuid = UUIDGen.randomUUID[F].map(Uuid[AudioPlayTranslation])
+      val originalId = Uuid[AudioPlay](request.originalId)
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")
+        original <- EitherT(audioPlayService.findById(originalId)).leftMap(
+          handleAudioPlayNotFound)
         id <- EitherT.liftF(uuid)
         translation <- EitherT
           .fromEither(makeAudioPlayTranslation(request, id))
@@ -128,6 +141,16 @@ private final class AudioPlayTranslationServiceImpl[F[
       val uuid = Uuid[AudioPlayTranslation](id)
       info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
     }.handleErrorWith(handleInternal)
+
+  /** Converts [[AudioPlayNotFound]] response to original not found. Other
+   *  responses are left as is.
+   *  @param err error response.
+   */
+  private def handleAudioPlayNotFound(err: ErrorResponse) =
+    err.details.info match
+      case Some(info) if info.reason == AudioPlayNotFound =>
+        ErrorResponses.originalNotFound
+      case _ => err
 
   /** Makes translation from given creation request and assigned ID.
    *  @param request creation request.

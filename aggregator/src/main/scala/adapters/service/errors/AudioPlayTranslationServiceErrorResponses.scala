@@ -5,6 +5,7 @@ package adapters.service.errors
 import application.errors.TranslationServiceError.{
   InvalidTranslation,
   TranslationNotFound,
+  OriginalNotFound
 }
 import domain.errors.TranslationValidationError
 
@@ -24,6 +25,18 @@ import org.aulune.commons.errors.ErrorStatus.{
  */
 object AudioPlayTranslationServiceErrorResponses
     extends BaseAggregatorErrorResponses:
+  
+  val originalNotFound: ErrorResponse = ErrorResponse(
+    status = FailedPrecondition,
+    message = "Original audio play is not found.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = OriginalNotFound,
+        domain = domain,
+      ).some,
+    ),
+  )
+   
   val translationNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Audio play translation is not found.",

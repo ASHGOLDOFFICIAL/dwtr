@@ -6,11 +6,11 @@ import application.repositories.AudioPlayTranslationRepository
 import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import domain.shared.TranslatedTitle
-import testing.AudioPlayTranslations
 
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import org.aulune.aggregator.adapters.service.AudioPlayTranslations
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,

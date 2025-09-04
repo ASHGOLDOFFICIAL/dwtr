@@ -3,10 +3,10 @@ package adapters.jdbc.postgres
 
 
 import domain.model.person.{FullName, Person}
-import testing.Persons
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import org.aulune.aggregator.adapters.service.Persons
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,

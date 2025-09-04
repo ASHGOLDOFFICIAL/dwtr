@@ -17,13 +17,13 @@ import application.dto.audioplay.translation.{
 }
 import application.errors.TranslationServiceError.{
   InvalidTranslation,
+  OriginalNotFound,
   TranslationNotFound,
 }
 import application.repositories.AudioPlayTranslationRepository
 import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.AudioPlayTranslation
 import domain.shared.TranslatedTitle
-import testing.AudioPlayTranslations
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
@@ -63,6 +63,7 @@ final class AudioPlayTranslationServiceImplTest
   private given LoggerFactory[IO] = Slf4jFactory.create
 
   private val mockRepo = mock[AudioPlayTranslationRepository[IO]]
+  private val mockAudio = AudioPlays.service[IO]
   private val mockPermissions = mock[PermissionClientService[IO]]
 
   private val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
@@ -81,7 +82,11 @@ final class AudioPlayTranslationServiceImplTest
       .returning(().asRight.pure)
       .anyNumberOfTimes()
     AudioPlayTranslationServiceImpl
-      .build(AggregatorConfig.Pagination(2, 1), mockRepo, mockPermissions)
+      .build(
+        AggregatorConfig.Pagination(2, 1),
+        mockRepo,
+        mockAudio,
+        mockPermissions)
       .flatMap(testCase)
   end stand
 
@@ -190,6 +195,14 @@ final class AudioPlayTranslationServiceImplTest
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val find = service.create(user, emptyNameRequest)
           assertDomainError(find)(InvalidTranslation)
+      }
+
+      "result in OriginalNotFound when original audio play doesn't exist" in stand {
+        service =>
+          val invalidRequest = createRequest.copy(originalId = uuid)
+          val _ = mockHasPermission(Modify, true.asRight.pure)
+          val find = service.create(user, invalidRequest)
+          assertDomainError(find)(OriginalNotFound)
       }
 
       "result in PermissionDenied for unauthorized users" in stand { service =>

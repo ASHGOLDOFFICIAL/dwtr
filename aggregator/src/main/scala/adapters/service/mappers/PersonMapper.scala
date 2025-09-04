@@ -12,8 +12,11 @@ import cats.syntax.all.given
 import org.aulune.commons.types.Uuid
 
 
-/** Mapper between person DTOs and domain [[Person]]. */
-object PersonMapper:
+/** Mapper between person DTOs and domain [[Person]].
+ *  @note Should not be used outside `service` package to not expose domain
+ *    type.
+ */
+private[service] object PersonMapper:
   /** Converts request to domain object and verifies it.
    *  @param request person creation request.
    *  @param id ID assigned to this person.

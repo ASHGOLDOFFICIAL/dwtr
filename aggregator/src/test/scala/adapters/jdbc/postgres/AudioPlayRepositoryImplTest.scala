@@ -15,11 +15,11 @@ import domain.model.audioplay.{
 }
 import domain.shared.ExternalResourceType.Purchase
 import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
-import testing.AudioPlays
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.aggregator.adapters.service.AudioPlays
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,

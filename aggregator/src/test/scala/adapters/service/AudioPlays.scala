@@ -1,7 +1,16 @@
 package org.aulune.aggregator
-package testing
+package adapters.service
 
 
+import adapters.service.errors.AudioPlayServiceErrorResponses
+import adapters.service.mappers.AudioPlayMapper
+import application.AudioPlayService
+import application.dto.audioplay.{
+  AudioPlayResource,
+  CreateAudioPlayRequest,
+  ListAudioPlaysRequest,
+  ListAudioPlaysResponse,
+}
 import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
@@ -21,11 +30,15 @@ import domain.shared.ExternalResourceType.{
 }
 import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
 
+import cats.Applicative
 import cats.syntax.all.given
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
 
 import java.net.URI
 import java.time.LocalDate
+import java.util.UUID
 
 
 /** [[AudioPlay]] objects to use in tests. */
@@ -107,3 +120,37 @@ private[aggregator] object AudioPlays:
     externalResources =
       List(ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
   )
+
+  /** Stub [[AudioPlayService]] implementation that supports only `findById`
+   *  operation.
+   *
+   *  Contains only persons given in [[AudioPlays]] object.
+   *
+   *  @tparam F effect type.
+   */
+  def service[F[_]: Applicative]: AudioPlayService[F] = new AudioPlayService[F]:
+    private val audioById: Map[Uuid[AudioPlay], AudioPlay] = Map.from(
+      List(audioPlay1, audioPlay2, audioPlay3).map(p => (p.id, p)),
+    )
+
+    override def findById(
+        id: UUID,
+    ): F[Either[ErrorResponse, AudioPlayResource]] = audioById
+      .get(Uuid[AudioPlay](id))
+      .map(AudioPlayMapper.toResponse)
+      .toRight(AudioPlayServiceErrorResponses.audioPlayNotFound)
+      .pure[F]
+
+    override def listAll(
+        request: ListAudioPlaysRequest,
+    ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
+      throw new UnsupportedOperationException()
+
+    override def create(
+        user: User,
+        ac: CreateAudioPlayRequest,
+    ): F[Either[ErrorResponse, AudioPlayResource]] =
+      throw new UnsupportedOperationException()
+
+    override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
+      throw new UnsupportedOperationException()

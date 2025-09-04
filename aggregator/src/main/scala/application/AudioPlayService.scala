@@ -3,13 +3,18 @@ package application
 
 
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
-  ListAudioPlaysResponse,
+  ListAudioPlaysResponse
+}
+import application.errors.AudioPlayServiceError.{
+  AudioPlayNotFound,
+  AudioPlaySeriesNotFound,
+  InvalidAudioPlay,
 }
 
-import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 
 import java.util.UUID
@@ -20,8 +25,11 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait AudioPlayService[F[_]]:
-  /** Find audio play by given identity. If none exists, returns
-   *  `Left(NotFound)`.
+  /** Find audio play by given identity.
+   *
+   *  Domain error [[AudioPlayNotFound]] will be returned if audio play is not
+   *  found.
+   *
    *  @param id audio play identity.
    *  @return requested audio play if found.
    */
@@ -36,6 +44,12 @@ trait AudioPlayService[F[_]]:
   ): F[Either[ErrorResponse, ListAudioPlaysResponse]]
 
   /** Create new audio play.
+   *
+   *  Domain errors:
+   *    - [[InvalidAudioPlay]] will be returned when trying to create invalid
+   *      audio play.
+   *    - [[AudioPlaySeriesNotFound]] will be returned when trying to create
+   *      audio play with ID of non-existent series.
    *
    *  @param user user who performs this action.
    *  @param ac audio play request.

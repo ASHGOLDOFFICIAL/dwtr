@@ -21,7 +21,6 @@ import application.errors.AudioPlayServiceError.{
 import application.repositories.AudioPlayRepository
 import application.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
-import testing.{AudioPlays, Persons}
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
