@@ -52,7 +52,7 @@ object PermissionServiceImpl:
     val adminPermissionO =
       makeAdminPermission(adminPermissionNamespace, adminPermissionName)
     for
-      _ <- info"Building permission service."
+      _ <- info"Building service."
       permission <- MonadThrow[F]
         .fromOption(adminPermissionO, new IllegalArgumentException())
         .onError(_ => error"Admin permission was invalid")
@@ -112,11 +112,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
       }
     result <- EitherT.liftF(repo.upsert(permission))
     response = PermissionMapper.toResponse(result)
-  yield response).value
-    .handleErrorWith { e =>
-      for _ <- Logger[F].error(e)("Uncaught exception.")
-      yield ErrorResponses.internal.asLeft
-    }
+  yield response).value.handleErrorWith(handleInternal)
 
   override def checkPermission(
       request: CheckPermissionRequest,
@@ -135,11 +131,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
       adminCheck <- EitherT(hasPermission(id, adminPermissionIdentity))
       response = PermissionMapper
         .toCheckResponse(request, permCheck || adminCheck)
-    yield response).value
-      .handleErrorWith { e =>
-        for _ <- Logger[F].error(e)("Uncaught exception.")
-        yield ErrorResponses.internal.asLeft
-      }
+    yield response).value.handleErrorWith(handleInternal)
 
   /** Checks if user has a permission.
    *  @param id user's ID.
@@ -155,3 +147,8 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
       for _ <- warn"Checking for unregistered permission: $permission"
       yield ErrorResponses.unregisteredPermission.asLeft
     }
+
+  /** Logs any error and returns internal error response. */
+  private def handleInternal[A](e: Throwable) =
+    for _ <- Logger[F].error(e)("Uncaught exception.")
+    yield ErrorResponses.internal.asLeft[A]
