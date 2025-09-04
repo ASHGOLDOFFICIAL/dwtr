@@ -5,7 +5,7 @@ package adapters.service
 import adapters.service.mappers.{
   AudioPlayTranslationMapper,
   AudioPlayTranslationTypeMapper,
-  LanguageMapper
+  LanguageMapper,
 }
 import application.AggregatorPermission.Modify
 import application.AudioPlayTranslationService
