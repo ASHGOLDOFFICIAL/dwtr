@@ -46,7 +46,9 @@ object PersonServiceImpl:
     yield new PersonServiceImpl[F](repo, permissionService)
 
 
-private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
+private final class PersonServiceImpl[
+    F[_]: MonadThrow: UUIDGen: LoggerFactory,
+] private (
     repo: PersonRepository[F],
     permissionService: PermissionClientService[F],
 ) extends PersonService[F]:

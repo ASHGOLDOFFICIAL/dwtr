@@ -4,9 +4,8 @@ package application
 
 import application.dto.person.{CreatePersonRequest, PersonResource}
 
-import org.aulune.commons.errors.{ErrorStatus, ErrorResponse}
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
-import org.aulune.commons.types.Uuid
 
 import java.util.UUID
 
@@ -29,8 +28,8 @@ trait PersonService[F[_]]:
    *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
-              user: User,
-              pr: CreatePersonRequest,
+      user: User,
+      pr: CreatePersonRequest,
   ): F[Either[ErrorResponse, PersonResource]]
 
   /** Deletes existing person.
