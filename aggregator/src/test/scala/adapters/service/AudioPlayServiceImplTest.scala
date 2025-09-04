@@ -250,7 +250,7 @@ final class AudioPlayServiceImplTest
 
   "delete method " - {
     "should " - {
-      "allow users with permissions to delete existing persons" in stand {
+      "allow users with permissions to delete existing audio plays" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockDelete(().pure)
