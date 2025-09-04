@@ -6,7 +6,7 @@ import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
   ListAudioPlaysResponse,
-  SearchAudioPlaysResponse
+  SearchAudioPlaysResponse,
 }
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{

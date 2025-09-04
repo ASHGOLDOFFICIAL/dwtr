@@ -1,7 +1,6 @@
 package org.aulune.commons
 package types
 
-
 /** Non-empty string. */
 opaque type NonEmptyString <: String = String
 

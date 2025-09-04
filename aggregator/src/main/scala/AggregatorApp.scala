@@ -4,7 +4,7 @@ package org.aulune.aggregator
 import adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   AudioPlayTranslationRepositoryImpl,
-  PersonRepositoryImpl
+  PersonRepositoryImpl,
 }
 import adapters.service.{
   AudioPlayServiceImpl,

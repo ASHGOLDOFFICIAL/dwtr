@@ -3,9 +3,21 @@ package api.http.circe
 
 
 import api.http.circe.SharedCodecs.given
-import application.dto.audioplay.{AudioPlayResource, AudioPlaySeriesResource, CastMemberDto, CreateAudioPlayRequest, ListAudioPlaysRequest, ListAudioPlaysResponse, SearchAudioPlaysRequest, SearchAudioPlaysResponse}
+import application.dto.audioplay.{
+  AudioPlayResource,
+  AudioPlaySeriesResource,
+  CastMemberDto,
+  CreateAudioPlayRequest,
+  ListAudioPlaysRequest,
+  ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
+}
 
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.generic.extras.semiauto.{
+  deriveConfiguredDecoder,
+  deriveConfiguredEncoder,
+}
 import io.circe.{Decoder, Encoder}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 

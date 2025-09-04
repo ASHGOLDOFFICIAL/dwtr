@@ -15,7 +15,7 @@ import org.testcontainers.utility.DockerImageName
 
 trait PostgresTestContainer extends AsyncFreeSpec with TestContainerForEach:
   override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def(
-    dockerImageName = DockerImageName.parse("postgres:17-alpine")
+    dockerImageName = DockerImageName.parse("postgres:17-alpine"),
   )
 
   private type Init[A] = Transactor[IO] => IO[A]
