@@ -54,9 +54,10 @@ private[aggregator] object AudioPlays:
       .unsafe(Uuid.unsafe(uuid), AudioPlaySeriesName.unsafe(name))
       .some
 
+  /** ''Magic Mountain'' audio play. */
   val audioPlay1: AudioPlay = AudioPlay.unsafe(
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea66"),
-    title = AudioPlayTitle.unsafe("Title"),
+    title = AudioPlayTitle.unsafe("Magic Mountain"),
     synopsis = Synopsis.unsafe("Synopsis"),
     writers = List(Persons.person1.id, Persons.person2.id),
     cast = List(
@@ -85,9 +86,10 @@ private[aggregator] object AudioPlays:
     ),
   )
 
+  /** ''Test of Thing'' audio play. */
   val audioPlay2: AudioPlay = AudioPlay.unsafe(
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea67"),
-    title = AudioPlayTitle.unsafe("Audio Play 1"),
+    title = AudioPlayTitle.unsafe("Test of Thing"),
     synopsis = Synopsis.unsafe("Synopsis 1"),
     releaseDate = makeReleaseDate(1999, 10, 3),
     writers = Nil,
@@ -100,9 +102,10 @@ private[aggregator] object AudioPlays:
       List(ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
   )
 
+  /** ''The Testing Things'' audio play. */
   val audioPlay3: AudioPlay = AudioPlay.unsafe(
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea68"),
-    title = AudioPlayTitle.unsafe("Audio Play 2"),
+    title = AudioPlayTitle.unsafe("The Testing Things"),
     synopsis = Synopsis.unsafe("Synopsis 2"),
     releaseDate = makeReleaseDate(2024, 3, 15),
     writers = Nil,
