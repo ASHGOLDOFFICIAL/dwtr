@@ -48,11 +48,17 @@ jobs:
       - name: Coursier cache
         uses: coursier/cache-action@v6
 
-      - name: Compile
-        run: sbt "project core" clean compile "project integration" clean compile
+      - name: commons module
+        run: sbt "project commons" compile test
 
-      - name: Test
-        run: sbt "project core" test
+      - name: auth module
+        run: sbt "project auth" compile test
 
-      - name: Integration tests
-        run: sbt "project integration" test
+      - name: permissions module
+        run: sbt "project permissions" compile test
+
+      - name: aggregator module
+        run: sbt "project aggregator" compile test
+
+      - name: app module
+        run: sbt "project app" compile test
