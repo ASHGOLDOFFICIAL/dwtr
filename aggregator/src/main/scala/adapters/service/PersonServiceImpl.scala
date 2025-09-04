@@ -20,6 +20,9 @@ import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import org.aulune.commons.types.Uuid
+import org.typelevel.log4cats.Logger.eitherTLogger
+import org.typelevel.log4cats.syntax.LoggerInterpolator
+import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import java.util.UUID
 
@@ -32,54 +35,70 @@ object PersonServiceImpl:
    *    perform permission checks.
    *  @tparam F effect type.
    */
-  def build[F[_]: MonadThrow: UUIDGen](
+  def build[F[_]: MonadThrow: UUIDGen: LoggerFactory](
       repo: PersonRepository[F],
       permissionService: PermissionClientService[F],
   ): F[PersonService[F]] =
-    for _ <- permissionService.registerPermission(Modify)
+    given Logger[F] = LoggerFactory[F].getLogger
+    for
+      _ <- info"Building service."
+      _ <- permissionService.registerPermission(Modify)
     yield new PersonServiceImpl[F](repo, permissionService)
 
 
-private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen](
+private final class PersonServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
     repo: PersonRepository[F],
     permissionService: PermissionClientService[F],
 ) extends PersonService[F]:
-  given PermissionClientService[F] = permissionService
+
+  private given Logger[F] = LoggerFactory[F].getLogger
+  private given PermissionClientService[F] = permissionService
 
   override def findById(id: UUID): F[Either[ErrorResponse, PersonResource]] =
     val uuid = Uuid[Person](id)
-    val getResult = repo.get(uuid).attempt
     (for
-      elemOpt <- EitherT(getResult).leftMap(_ => ErrorResponses.internal)
-      elem <- EitherT.fromOption(elemOpt, ErrorResponses.personNotFound)
+      _ <- eitherTLogger.info(s"Find request: $id.")
+      elem <- EitherT
+        .fromOptionF(repo.get(uuid), ErrorResponses.personNotFound)
+        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
       response = PersonMapper.toResponse(elem)
-    yield response).value
+    yield response).value.handleErrorWith(handleInternal)
 
   override def create(
-                       user: User,
-                       request: CreatePersonRequest,
+      user: User,
+      request: CreatePersonRequest,
   ): F[Either[ErrorResponse, PersonResource]] =
     requirePermissionOrDeny(Modify, user) {
+      val uuid = UUIDGen.randomUUID[F].map(Uuid[Person])
       (for
-        id <- EitherT.liftF(UUIDGen.randomUUID[F].map(Uuid[Person]))
-        person <- EitherT.fromEither(
-          PersonMapper
-            .fromCreateRequest(request, id)
-            .leftMap(ErrorResponses.invalidPerson)
-            .toEither)
-        persisted <- repo
-          .persist(person)
-          .attemptT
-          .leftMap(_ => ErrorResponses.internal)
+        _ <- eitherTLogger.info(s"Create request $request from $user.")
+        id <- EitherT.liftF(uuid)
+        person <- EitherT
+          .fromEither(makePerson(request, id))
+          .leftSemiflatTap(_ => warn"Request to create bad element: $request.")
+        persisted <- EitherT.liftF(repo.persist(person))
         response = PersonMapper.toResponse(persisted)
       yield response).value
-    }
+    }.handleErrorWith(handleInternal)
 
-  override def delete(
-      user: User,
-      id: UUID,
-  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
-    val uuid = Uuid[Person](id)
-    for result <- repo.delete(uuid).attempt
-    yield result.leftMap(_ => ErrorResponses.internal)
-  }
+  override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
+    requirePermissionOrDeny(Modify, user) {
+      val uuid = Uuid[Person](id)
+      info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
+    }.handleErrorWith(handleInternal)
+
+  /** Makes person from given creation request and assigned ID.
+   *  @param request creation request.
+   *  @param id ID assigned to this person.
+   *  @note It's only purpose is to improve readability of [[create]] method.
+   */
+  private def makePerson(request: CreatePersonRequest, id: Uuid[Person]) =
+    PersonMapper
+      .fromCreateRequest(request, id)
+      .leftMap(ErrorResponses.invalidPerson)
+      .toEither
+
+  /** Logs any error and returns internal error response. */
+  private def handleInternal[A](e: Throwable) =
+    for _ <- Logger[F].error(e)("Uncaught exception.")
+    yield ErrorResponses.internal.asLeft[A]

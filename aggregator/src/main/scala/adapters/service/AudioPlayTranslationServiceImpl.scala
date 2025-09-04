@@ -123,13 +123,11 @@ private final class AudioPlayTranslationServiceImpl[F[
       yield response).value
     }.handleErrorWith(handleInternal)
 
-  override def delete(
-      user: User,
-      id: UUID,
-  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
-    val uuid = Uuid[AudioPlayTranslation](id)
-    info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
-  }.handleErrorWith(handleInternal)
+  override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
+    requirePermissionOrDeny(Modify, user) {
+      val uuid = Uuid[AudioPlayTranslation](id)
+      info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
+    }.handleErrorWith(handleInternal)
 
   /** Makes translation from given creation request and assigned ID.
    *  @param request creation request.

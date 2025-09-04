@@ -175,7 +175,7 @@ private final class AudioPlayServiceImpl[F[
 
   /** Makes audio play from given creation request, assigned ID and series.
    *  @param request creation request.
-   *  @param id ID assigned to this translation.
+   *  @param id ID assigned to this audio play.
    *  @note It's only purpose is to improve readability of [[create]] method.
    */
   private def makeAudioPlay(
