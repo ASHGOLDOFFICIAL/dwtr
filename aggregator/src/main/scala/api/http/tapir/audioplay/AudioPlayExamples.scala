@@ -2,16 +2,18 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
+import application.dto.audioplay.translation.ExternalResourceDto
+import application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDto,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceDto
 
 import java.net.URI
 import java.time.LocalDate
@@ -138,3 +140,13 @@ object AudioPlayExamples:
     audioPlays = List(responseExample),
     nextPageToken = nextPageTokenExample,
   )
+
+  val searchRequestExample: SearchAudioPlaysRequest = SearchAudioPlaysRequest(
+    query = "scoundrels",
+    limit = Some(1),
+  )
+
+  val searchResponseExample: SearchAudioPlaysResponse =
+    SearchAudioPlaysResponse(
+      audioPlays = List(responseExample),
+    )

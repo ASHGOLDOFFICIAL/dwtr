@@ -3,19 +3,9 @@ package api.http.circe
 
 
 import api.http.circe.SharedCodecs.given
-import application.dto.audioplay.{
-  CreateAudioPlayRequest,
-  AudioPlayResource,
-  AudioPlaySeriesResource,
-  CastMemberDto,
-  ListAudioPlaysRequest,
-  ListAudioPlaysResponse,
-}
+import application.dto.audioplay.{AudioPlayResource, AudioPlaySeriesResource, CastMemberDto, CreateAudioPlayRequest, ListAudioPlaysRequest, ListAudioPlaysResponse, SearchAudioPlaysRequest, SearchAudioPlaysResponse}
 
-import io.circe.generic.extras.semiauto.{
-  deriveConfiguredDecoder,
-  deriveConfiguredEncoder,
-}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
@@ -39,3 +29,9 @@ private[api] object AudioPlayCodecs:
 
   given Encoder[CastMemberDto] = deriveConfiguredEncoder
   given Decoder[CastMemberDto] = deriveConfiguredDecoder
+
+  given Encoder[SearchAudioPlaysRequest] = deriveConfiguredEncoder
+  given Decoder[SearchAudioPlaysRequest] = deriveConfiguredDecoder
+
+  given Encoder[SearchAudioPlaysResponse] = deriveConfiguredEncoder
+  given Decoder[SearchAudioPlaysResponse] = deriveConfiguredDecoder
