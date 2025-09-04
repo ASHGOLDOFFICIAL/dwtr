@@ -4,6 +4,7 @@ package domain.model.person
 
 import domain.errors.PersonValidationError
 import domain.errors.PersonValidationError.*
+import domain.model.person.Person.ValidationResult
 
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.*
@@ -17,7 +18,12 @@ import org.aulune.commons.types.Uuid
 final case class Person private (
     id: Uuid[Person],
     name: FullName,
-)
+):
+  /** Copies with validation. */
+  def update(
+      id: Uuid[Person] = id,
+      name: FullName = name,
+  ): ValidationResult[Person] = Person(id = id, name = name)
 
 
 object Person:

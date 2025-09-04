@@ -3,6 +3,7 @@ package adapters.jdbc.postgres
 
 
 import domain.model.person.{FullName, Person}
+import testing.Persons
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -11,7 +12,6 @@ import org.aulune.commons.repositories.RepositoryError.{
   FailedPrecondition,
 }
 import org.aulune.commons.testing.PostgresTestContainer
-import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -25,15 +25,12 @@ final class PersonRepositoryImplTest
 
   private def stand = makeStand(PersonRepositoryImpl.build[IO])
 
-  private val personTest = Person.unsafe(
-    id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea66"),
-    name = FullName.unsafe("John Smith"),
-  )
-
-  private val updatedPersonTest = Person.unsafe(
-    id = personTest.id,
-    name = FullName.unsafe("John Brown"),
-  )
+  private val personTest = Persons.person1
+  private val updatedPersonTest = personTest
+    .update(
+      name = FullName.unsafe("John Brown"),
+    )
+    .getOrElse(throw new IllegalStateException())
 
   "contains method " - {
     "should " - {
