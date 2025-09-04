@@ -17,14 +17,14 @@ import application.repositories.AudioPlayTranslationRepository.{
   given,
 }
 import application.{AggregatorPermission, AudioPlayTranslationService}
-import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import domain.model.audioplay.AudioPlayTranslation
 
 import cats.MonadThrow
-import cats.data.{EitherT, Validated}
+import cats.data.EitherT
 import cats.effect.std.UUIDGen
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.pagination.{PaginationParams, PaginationParamsParser}
+import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
@@ -65,6 +65,8 @@ object AudioPlayTranslationServiceImpl:
       parser,
       repo,
       permissionService)
+
+end AudioPlayTranslationServiceImpl
 
 
 private final class AudioPlayTranslationServiceImpl[F[
@@ -132,7 +134,7 @@ private final class AudioPlayTranslationServiceImpl[F[
   /** Makes translation from given creation request and assigned ID.
    *  @param request creation request.
    *  @param id ID assigned to this translation.
-   *  @note It's only purpose is to improve redability of [[create]] method.
+   *  @note It's only purpose is to improve readability of [[create]] method.
    */
   private def makeAudioPlayTranslation(
       request: CreateAudioPlayTranslationRequest,
