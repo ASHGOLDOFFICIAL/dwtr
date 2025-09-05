@@ -9,7 +9,10 @@ import domain.repositories.PersonRepository
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.aulune.commons.repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import org.aulune.commons.repositories.RepositoryError.{
+  AlreadyExists,
+  FailedPrecondition,
+}
 import org.aulune.commons.testing.PostgresTestContainer
 import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
@@ -134,18 +137,18 @@ final class PersonRepositoryImplTest
       }
 
       "skip missing elements" in stand { repo =>
-        val missingId = Uuid.unsafe[Person]("1dbcb7ed-8c13-40c6-b4be-d4b323535d2b")
+        val missingId =
+          Uuid.unsafe[Person]("1dbcb7ed-8c13-40c6-b4be-d4b323535d2b")
         val ids = NonEmptyList.of(Persons.person1.id, missingId)
         for
           _ <- persistPersons(repo, personTests)
           result <- repo.batchGet(ids)
         yield result shouldBe List(Persons.person1)
       }
-      
+
       "return empty list when none is found" in stand { repo =>
         val ids = NonEmptyList.of(Persons.person1.id)
-        for
-          result <- repo.batchGet(ids)
+        for result <- repo.batchGet(ids)
         yield result shouldBe Nil
       }
     }

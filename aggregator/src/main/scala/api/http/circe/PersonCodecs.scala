@@ -6,7 +6,7 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
-  PersonResource
+  PersonResource,
 }
 
 import io.circe.generic.extras.semiauto.{

@@ -5,7 +5,7 @@ package adapters.service.mappers
 import application.dto.person.{
   BatchGetPersonsResponse,
   CreatePersonRequest,
-  PersonResource
+  PersonResource,
 }
 import domain.errors.PersonValidationError
 import domain.errors.PersonValidationError.InvalidArguments

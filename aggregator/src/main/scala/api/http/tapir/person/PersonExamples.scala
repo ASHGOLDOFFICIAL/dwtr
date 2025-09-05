@@ -6,7 +6,7 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
-  PersonResource
+  PersonResource,
 }
 
 import java.util.UUID
@@ -21,7 +21,7 @@ object PersonExamples:
   private val SamuelBarnettId = UUID
     .fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b")
   private val SamuelBarnettName = "Samuel Barnett"
-  
+
   val DavidLlewellynResource: PersonResource = PersonResource(
     id = DavidLlewellynId,
     name = DavidLlewellynName,
@@ -30,13 +30,13 @@ object PersonExamples:
     SamuelBarnettId,
     SamuelBarnettName,
   )
-  
+
   val Resource: PersonResource = DavidLlewellynResource
 
   val CreateRequest: CreatePersonRequest = CreatePersonRequest(
     name = DavidLlewellynName,
   )
-  
+
   val BatchGetRequest: BatchGetPersonsRequest = BatchGetPersonsRequest(
     names = List(
       DavidLlewellynId,
