@@ -50,7 +50,7 @@ private[service] object AudioPlayMapper:
     synopsis <- Synopsis(request.synopsis)
     releaseDate <- ReleaseDate(request.releaseDate)
     writers = request.writers.map(Uuid[Person])
-    cast <- request.cast.traverse(CastMemberMapper.toDomain)
+    cast <- request.cast.traverse(CastMemberMapper.fromDTO)
     season <- request.seriesSeason.map(AudioPlaySeason.apply)
     number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
     resources = request.externalResources.map(ExternalResourceMapper.toDomain)
@@ -82,7 +82,7 @@ private[service] object AudioPlayMapper:
     synopsis = domain.synopsis,
     releaseDate = domain.releaseDate,
     writers = domain.writers.map(personMap),
-    cast = domain.cast.map(CastMemberMapper.fromDomain),
+    cast = domain.cast.map(p => CastMemberMapper.toResource(p, personMap(p.actor))),
     series = domain.series.map(AudioPlaySeriesMapper.toResponse),
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,

@@ -11,7 +11,8 @@ import application.dto.audioplay.translation.{
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
-  CastMemberDto,
+  CastMemberDTO,
+  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
@@ -37,7 +38,8 @@ object AudioPlaySchemas:
   given Schema[SearchAudioPlaysResponse] = Schema.derived
 
   private given Schema[URI] = Schema.string[URI]
-  private given Schema[CastMemberDto] = Schema.derived
+  private given Schema[CastMemberDTO] = Schema.derived
+  private given Schema[CastMemberResource] = Schema.derived
   private given Schema[ExternalResourceDto] = Schema.derived
   private given Schema[ExternalResourceTypeDto] = Schema.string
     .validate(

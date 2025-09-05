@@ -2,7 +2,8 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import application.dto.audioplay.CastMemberDto
+import application.dto.audioplay.{CastMemberDTO, CastMemberResource}
+import application.dto.person.PersonResource
 import domain.model.audioplay.{ActorRole, CastMember}
 import domain.model.person.Person
 
@@ -10,7 +11,8 @@ import cats.syntax.all.given
 import org.aulune.commons.types.Uuid
 
 
-/** Mapper between external [[CastMemberDto]] and domain's [[CastMember]].
+/** Mapper between external [[CastMemberResource]] and domain's [[CastMember]].
+ *
  *  @note Should not be used outside `service` package to not expose domain
  *    type.
  */
@@ -19,7 +21,7 @@ private[service] object CastMemberMapper:
    *  @param dto cast member DTO.
    *  @return created domain object if valid.
    */
-  def toDomain(dto: CastMemberDto): Option[CastMember] =
+  def fromDTO(dto: CastMemberDTO): Option[CastMember] =
     for
       roles <- dto.roles.traverse(ActorRole.apply)
       cast <- CastMember(
@@ -31,8 +33,11 @@ private[service] object CastMemberMapper:
   /** Converts domain object to response object.
    *  @param domain entity to use as a base.
    */
-  def fromDomain(domain: CastMember): CastMemberDto = CastMemberDto(
-    actor = domain.actor,
+  def toResource(
+      domain: CastMember,
+      person: PersonResource,
+  ): CastMemberResource = CastMemberResource(
+    actor = person,
     roles = domain.roles,
     main = domain.main,
   )

@@ -8,7 +8,8 @@ import application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
-  CastMemberDto,
+  CastMemberDTO,
+  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
@@ -49,33 +50,33 @@ object AudioPlayExamples:
 
   private val writersExample = List(PersonExamples.DavidLlewellynResource)
   private val castExample = List(
-    CastMemberDto(
-      actor = PersonExamples.SamuelBarnettResource.id,
+    CastMemberResource(
+      actor = PersonExamples.SamuelBarnettResource,
       roles = List("Marcus Tullius Cicero"),
       main = true,
     ),
-    CastMemberDto(
-      actor = UUID.fromString("53ba8b70-d43a-4cd1-8fbe-2a80da712b5b"),
+    CastMemberResource(
+      actor = PersonExamples.GeorgeNaylorResource,
       roles = List("Quintus Tullius Cicero"),
       main = true,
     ),
-    CastMemberDto(
-      actor = UUID.fromString("72e35882-418d-4d4f-8d2f-b849df207610"),
+    CastMemberResource(
+      actor = PersonExamples.StephenCritchlowResource,
       roles = List("Etrucius"),
       main = false,
     ),
-    CastMemberDto(
-      actor = UUID.fromString("b20ac671-597a-478b-95b5-f538022d0901"),
+    CastMemberResource(
+      actor = PersonExamples.YoussefKerkourResource,
       roles = List("Titus Capito"),
       main = false,
     ),
-    CastMemberDto(
-      actor = UUID.fromString("fe85b1c6-7401-4e3e-a9e4-bc182025b983"),
+    CastMemberResource(
+      actor = PersonExamples.SimonLuddersResource,
       roles = List("Sextus Roscius"),
       main = false,
     ),
-    CastMemberDto(
-      actor = UUID.fromString("d5a8db22-8e61-4429-a2f0-ccec006db2b8"),
+    CastMemberResource(
+      actor = PersonExamples.ElizabethMortonResource,
       roles = List("Caecilia Metella"),
       main = false,
     ),
@@ -102,19 +103,7 @@ object AudioPlayExamples:
   private val nextPageTokenExample =
     Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 
-  val requestExample: CreateAudioPlayRequest = CreateAudioPlayRequest(
-    title = titleExample,
-    synopsis = synopsisExample,
-    releaseDate = releaseDateExample,
-    writers = writersExample.map(_.id),
-    cast = castExample,
-    seriesId = Some(seriesIdExample),
-    seriesSeason = seriesSeasonExample,
-    seriesNumber = seriesNumberExample,
-    externalResources = externalResourcesExample,
-  )
-
-  val responseExample: AudioPlayResource = AudioPlayResource(
+  val Resource: AudioPlayResource = AudioPlayResource(
     id = UUID.fromString("bab591f2-e256-4969-9b79-7652d6d8430e"),
     title = titleExample,
     synopsis = synopsisExample,
@@ -128,22 +117,38 @@ object AudioPlayExamples:
     externalResources = externalResourcesExample,
   )
 
-  val listRequestExample: ListAudioPlaysRequest = ListAudioPlaysRequest(
+  val CreateRequest: CreateAudioPlayRequest = CreateAudioPlayRequest(
+    title = titleExample,
+    synopsis = synopsisExample,
+    releaseDate = releaseDateExample,
+    writers = writersExample.map(_.id),
+    cast = castExample.map(r =>
+      CastMemberDTO(
+        actor = r.actor.id,
+        roles = r.roles,
+        main = r.main,
+      )),
+    seriesId = Some(seriesIdExample),
+    seriesSeason = seriesSeasonExample,
+    seriesNumber = seriesNumberExample,
+    externalResources = externalResourcesExample,
+  )
+
+  val ListRequest: ListAudioPlaysRequest = ListAudioPlaysRequest(
     pageSize = Some(2),
     pageToken = nextPageTokenExample,
   )
 
-  val listResponseExample: ListAudioPlaysResponse = ListAudioPlaysResponse(
-    audioPlays = List(responseExample),
+  val ListResponse: ListAudioPlaysResponse = ListAudioPlaysResponse(
+    audioPlays = List(Resource),
     nextPageToken = nextPageTokenExample,
   )
 
-  val searchRequestExample: SearchAudioPlaysRequest = SearchAudioPlaysRequest(
+  val SearchRequest: SearchAudioPlaysRequest = SearchAudioPlaysRequest(
     query = "scoundrels",
     limit = Some(1),
   )
 
-  val searchResponseExample: SearchAudioPlaysResponse =
-    SearchAudioPlaysResponse(
-      audioPlays = List(responseExample),
-    )
+  val SearchResponse: SearchAudioPlaysResponse = SearchAudioPlaysResponse(
+    audioPlays = List(Resource),
+  )
