@@ -21,7 +21,7 @@ import application.dto.audioplay.translation.{
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
-  CastMemberDto,
+  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysResponse,
 }

@@ -8,6 +8,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysResponse,
 }
+import application.dto.person.PersonResource
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{
   AudioPlay,
@@ -49,7 +50,7 @@ private[service] object AudioPlayMapper:
     synopsis <- Synopsis(request.synopsis)
     releaseDate <- ReleaseDate(request.releaseDate)
     writers = request.writers.map(Uuid[Person])
-    cast <- request.cast.traverse(CastMemberMapper.toDomain)
+    cast <- request.cast.traverse(CastMemberMapper.fromDTO)
     season <- request.seriesSeason.map(AudioPlaySeason.apply)
     number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
     resources = request.externalResources.map(ExternalResourceMapper.toDomain)
@@ -69,14 +70,20 @@ private[service] object AudioPlayMapper:
 
   /** Converts domain object to response object.
    *  @param domain entity to use as a base.
+   *  @param personMap map between ID and persons to populate writers and cast.
+   *  @note Can throw if function doesn't yield result for some required IDs.
    */
-  def toResponse(domain: AudioPlay): AudioPlayResource = AudioPlayResource(
+  def toResponse(
+      domain: AudioPlay,
+      personMap: UUID => PersonResource,
+  ): AudioPlayResource = AudioPlayResource(
     id = domain.id,
     title = domain.title,
     synopsis = domain.synopsis,
     releaseDate = domain.releaseDate,
-    writers = domain.writers,
-    cast = domain.cast.map(CastMemberMapper.fromDomain),
+    writers = domain.writers.map(personMap),
+    cast =
+      domain.cast.map(p => CastMemberMapper.toResource(p, personMap(p.actor))),
     series = domain.series.map(AudioPlaySeriesMapper.toResponse),
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,
@@ -87,18 +94,26 @@ private[service] object AudioPlayMapper:
 
   /** Converts list of domain objects to one list response.
    *  @param audios list of domain objects.
+   *  @param personMap map between ID and persons to populate writers and cast.
+   *  @note Can throw if function doesn't yield result for some required IDs.
    */
-  def toListResponse(audios: List[AudioPlay]): ListAudioPlaysResponse =
+  def toListResponse(
+      audios: List[AudioPlay],
+      personMap: UUID => PersonResource,
+  ): ListAudioPlaysResponse =
     val nextPageToken = audios.lastOption.map { elem =>
       val cursor = AudioPlayCursor(elem.id)
       CursorEncoder[AudioPlayCursor].encode(cursor)
     }
-    ListAudioPlaysResponse(audios.map(toResponse), nextPageToken)
+    ListAudioPlaysResponse(audios.map(toResponse(_, personMap)), nextPageToken)
 
   /** Converts list of domain objects to one search response.
    *  @param audios list of domain objects.
+   *  @param personMap map between ID and persons to populate writers and cast.
+   *  @note Can throw if function doesn't yield result for some required IDs.
    */
-  def toSearchResponse(audios: List[AudioPlay]): SearchAudioPlaysResponse =
-    SearchAudioPlaysResponse(
-      audioPlays = audios.map(toResponse),
-    )
+  def toSearchResponse(
+      audios: List[AudioPlay],
+      personMap: UUID => PersonResource,
+  ): SearchAudioPlaysResponse =
+    SearchAudioPlaysResponse(audios.map(toResponse(_, personMap)))

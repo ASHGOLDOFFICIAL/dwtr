@@ -29,7 +29,7 @@ object AudioPlayTranslationExamples:
 
   val requestExample: CreateAudioPlayTranslationRequest =
     CreateAudioPlayTranslationRequest(
-      originalId = AudioPlayExamples.responseExample.id,
+      originalId = AudioPlayExamples.Resource.id,
       title = titleExample,
       translationType = translationTypeExample,
       language = languageExample,
@@ -38,7 +38,7 @@ object AudioPlayTranslationExamples:
 
   val responseExample: AudioPlayTranslationResource =
     AudioPlayTranslationResource(
-      originalId = AudioPlayExamples.responseExample.id,
+      originalId = AudioPlayExamples.Resource.id,
       id = UUID.fromString("8f7c586f-7043-4e47-9021-45e41a9e6f9c"),
       title = titleExample,
       translationType = translationTypeExample,

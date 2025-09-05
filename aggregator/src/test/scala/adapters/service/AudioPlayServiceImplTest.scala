@@ -8,7 +8,8 @@ import application.AudioPlayService
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
-  CastMemberDto,
+  CastMemberDTO,
+  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
@@ -98,10 +99,10 @@ final class AudioPlayServiceImplTest
     title = audioPlay.title,
     synopsis = audioPlay.synopsis,
     releaseDate = audioPlay.releaseDate,
-    writers = audioPlay.writers,
+    writers = audioPlay.writers.map(Persons.resourceById),
     cast = audioPlay.cast.map(m =>
-      CastMemberDto(
-        actor = m.actor,
+      CastMemberResource(
+        actor = Persons.resourceById(m.actor),
         roles = m.roles,
         main = m.main,
       )),
@@ -121,7 +122,7 @@ final class AudioPlayServiceImplTest
     releaseDate = audioPlay.releaseDate,
     writers = audioPlay.writers,
     cast = audioPlay.cast.map(m =>
-      CastMemberDto(
+      CastMemberDTO(
         actor = m.actor,
         roles = m.roles,
         main = m.main,
@@ -187,7 +188,9 @@ final class AudioPlayServiceImplTest
         val _ = (mockRepo.list _)
           .expects(cursor, 1)
           .returning(List(AudioPlays.audioPlay2).pure)
-        val response = AudioPlayMapper.toResponse(AudioPlays.audioPlay2)
+        val response = AudioPlayMapper.toResponse(
+          AudioPlays.audioPlay2,
+          Persons.resourceById)
         for result <- service.listAll(request)
         yield result match
           case Left(_)     => fail("Error was not expected")
@@ -215,8 +218,8 @@ final class AudioPlayServiceImplTest
         for result <- service.search(request)
         yield result match
           case Left(_)     => fail("Error was not expected")
-          case Right(list) =>
-            list.audioPlays shouldBe elements.map(AudioPlayMapper.toResponse)
+          case Right(list) => list.audioPlays shouldBe elements.map(
+              AudioPlayMapper.toResponse(_, Persons.resourceById))
       }
     }
   }

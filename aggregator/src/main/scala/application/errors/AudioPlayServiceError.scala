@@ -15,6 +15,9 @@ enum AudioPlayServiceError(val reason: String) extends ErrorReason(reason):
   case AudioPlaySeriesNotFound
       extends AudioPlayServiceError("AUDIO_PLAY_SERIES_NOT_FOUND")
 
+  /** Writer, or cast member, or etc. wasn't found */
+  case PersonNotFound extends AudioPlayServiceError("PERSON_NOT_FOUND")
+
   /** No audio play with given ID is found. */
   case AudioPlayNotFound extends AudioPlayServiceError("AUDIO_PLAY_NOT_FOUND")
 

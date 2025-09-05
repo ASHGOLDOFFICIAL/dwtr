@@ -2,7 +2,8 @@ package org.aulune.aggregator
 package application.dto.audioplay
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceDto
+import application.dto.audioplay.translation.ExternalResourceDto
+
 import java.time.LocalDate
 import java.util.UUID
 
@@ -23,7 +24,7 @@ final case class CreateAudioPlayRequest(
     synopsis: String,
     releaseDate: LocalDate,
     writers: List[UUID],
-    cast: List[CastMemberDto],
+    cast: List[CastMemberDTO],
     seriesId: Option[UUID],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],

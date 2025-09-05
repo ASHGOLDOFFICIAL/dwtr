@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.service
 
 
+import adapters.service.errors.PersonServiceErrorResponses
 import adapters.service.mappers.PersonMapper
 import application.PersonService
 import application.dto.person.{
@@ -38,6 +39,10 @@ private[aggregator] object Persons:
     name = FullName.unsafe("Peter Jones"),
   )
 
+  val resourceById: Map[UUID, PersonResource] =
+    val persons = List(person1, person2, person3)
+    persons.map(p => p.id -> PersonMapper.toResponse(p)).toMap
+
   /** Stub [[PersonService]] implementation that supports only `findById` and
    *  `batchGet` operation.
    *
@@ -46,23 +51,17 @@ private[aggregator] object Persons:
    *  @tparam F effect type.
    */
   def service[F[_]: Applicative]: PersonService[F] = new PersonService[F]:
-    private val personById: Map[UUID, Person] = Map.from(
-      List(person1, person2, person3).map(p => (p.id, p)),
-    )
-
     override def findById(id: UUID): F[Either[ErrorResponse, PersonResource]] =
-      personById
-        .get(Uuid[Person](id))
-        .map(PersonMapper.toResponse)
-        .toRight(
-          adapters.service.errors.PersonServiceErrorResponses.personNotFound)
+      resourceById
+        .get(id)
+        .toRight(PersonServiceErrorResponses.personNotFound)
         .pure[F]
 
     override def batchGet(
         request: BatchGetPersonsRequest,
     ): F[Either[ErrorResponse, BatchGetPersonsResponse]] =
-      val persons = request.names.mapFilter(personById.get)
-      PersonMapper.toBatchResponse(persons).asRight.pure[F]
+      val persons = request.names.mapFilter(resourceById.get)
+      BatchGetPersonsResponse(persons).asRight.pure[F]
 
     override def create(
         user: User,

@@ -4,12 +4,12 @@ package api.http
 
 import api.http.circe.AudioPlayCodecs.given
 import api.http.tapir.audioplay.AudioPlayExamples.{
-  listRequestExample,
-  listResponseExample,
-  requestExample,
-  responseExample,
-  searchRequestExample,
-  searchResponseExample,
+  ListRequest,
+  ListResponse,
+  CreateRequest,
+  Resource,
+  SearchRequest,
+  SearchResponse,
 }
 import api.http.tapir.audioplay.AudioPlaySchemas.given
 import application.AudioPlayService
@@ -63,7 +63,7 @@ final class AudioPlaysController[F[_]: Applicative](
     .in(elementPath)
     .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResource]
       .description("Requested audio play if found.")
-      .example(responseExample)))
+      .example(Resource)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetAudioPlay")
@@ -78,10 +78,10 @@ final class AudioPlaysController[F[_]: Applicative](
     .in(collectionPath)
     .in(jsonBody[ListAudioPlaysRequest]
       .description("Request to list audio plays.")
-      .example(listRequestExample))
+      .example(ListRequest))
     .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
-      .example(listResponseExample)))
+      .example(ListResponse)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("ListAudioPlays")
@@ -96,10 +96,10 @@ final class AudioPlaysController[F[_]: Applicative](
     .in(collectionPath + ":search")
     .in(jsonBody[SearchAudioPlaysRequest]
       .description("Request to search audio plays.")
-      .example(searchRequestExample))
+      .example(SearchRequest))
     .out(statusCode(StatusCode.Ok).and(jsonBody[SearchAudioPlaysResponse]
       .description("List of matched audio plays.")
-      .example(searchResponseExample)))
+      .example(SearchResponse)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("SearchAudioPlays")
@@ -114,10 +114,10 @@ final class AudioPlaysController[F[_]: Applicative](
     .in(collectionPath)
     .in(jsonBody[CreateAudioPlayRequest]
       .description("Audio play to create.")
-      .example(requestExample))
+      .example(CreateRequest))
     .out(statusCode(StatusCode.Created).and(jsonBody[AudioPlayResource]
       .description("Created audio play.")
-      .example(responseExample)))
+      .example(Resource)))
     .name("CreateAudioPlay")
     .summary("Creates a new audio play and returns the created resource.")
     .tag(tag)

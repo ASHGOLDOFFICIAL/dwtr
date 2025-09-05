@@ -33,7 +33,7 @@ object AudioPlayTranslationSchemas:
         .description(idDescription)
     }
     .modify(_.originalId) {
-      _.encodedExample(AudioPlayExamples.responseExample.id.asJson.toString)
+      _.encodedExample(AudioPlayExamples.Resource.id.asJson.toString)
         .description(originalIdDescription)
     }
     .modify(_.title) {

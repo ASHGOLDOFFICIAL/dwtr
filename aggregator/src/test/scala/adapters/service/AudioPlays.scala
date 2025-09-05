@@ -113,7 +113,7 @@ private[aggregator] object AudioPlays:
     writers = Nil,
     cast = List(
       CastMember.unsafe(
-        actor = Uuid.unsafe("2eb87946-4c6c-40a8-ae80-a05f0df355f8"),
+        actor = Persons.person3.id,
         roles = List(ActorRole.unsafe("Whatever")),
         main = false,
       ),
@@ -142,7 +142,7 @@ private[aggregator] object AudioPlays:
         id: UUID,
     ): F[Either[ErrorResponse, AudioPlayResource]] = audioById
       .get(Uuid[AudioPlay](id))
-      .map(AudioPlayMapper.toResponse)
+      .map(AudioPlayMapper.toResponse(_, Persons.resourceById))
       .toRight(AudioPlayServiceErrorResponses.audioPlayNotFound)
       .pure[F]
 
@@ -158,7 +158,7 @@ private[aggregator] object AudioPlays:
         .filter(a => a.title == request.query)
         .toList
       AudioPlayMapper
-        .toSearchResponse(elements)
+        .toSearchResponse(elements, Persons.resourceById)
         .asRight
         .pure[F]
 
