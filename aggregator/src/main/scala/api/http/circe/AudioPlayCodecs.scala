@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package api.http.circe
 
 
+import api.http.circe.PersonCodecs.given
 import api.http.circe.SharedCodecs.given
 import application.dto.audioplay.{
   AudioPlayResource,

@@ -27,7 +27,7 @@ final case class AudioPlayResource(
     title: String,
     synopsis: String,
     releaseDate: LocalDate,
-    writers: List[UUID],
+    writers: List[PersonResource],
     cast: List[CastMemberDto],
     series: Option[AudioPlaySeriesResource],
     seriesSeason: Option[Int],

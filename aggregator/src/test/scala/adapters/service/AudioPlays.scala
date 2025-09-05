@@ -142,7 +142,7 @@ private[aggregator] object AudioPlays:
         id: UUID,
     ): F[Either[ErrorResponse, AudioPlayResource]] = audioById
       .get(Uuid[AudioPlay](id))
-      .map(AudioPlayMapper.toResponse)
+      .map(AudioPlayMapper.toResponse(_, Persons.resourceById))
       .toRight(AudioPlayServiceErrorResponses.audioPlayNotFound)
       .pure[F]
 
@@ -158,7 +158,7 @@ private[aggregator] object AudioPlays:
         .filter(a => a.title == request.query)
         .toList
       AudioPlayMapper
-        .toSearchResponse(elements)
+        .toSearchResponse(elements, Persons.resourceById)
         .asRight
         .pure[F]
 

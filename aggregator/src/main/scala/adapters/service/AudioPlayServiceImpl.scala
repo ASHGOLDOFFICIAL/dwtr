@@ -14,7 +14,8 @@ import application.dto.audioplay.{
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
-import application.dto.person.PersonResource
+import application.dto.person.{BatchGetPersonsRequest, PersonResource}
+import application.errors.PersonServiceError
 import application.{AggregatorPermission, AudioPlayService, PersonService}
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
@@ -24,7 +25,7 @@ import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
-import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
@@ -105,7 +106,9 @@ private final class AudioPlayServiceImpl[F[
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
-      response = AudioPlayMapper.toResponse(elem)
+      allPersonIds = (elem.writers ++ elem.cast.map(_.actor)).distinct
+      persons <- EitherT(getPersonResources(allPersonIds))
+      response = AudioPlayMapper.toResponse(elem, persons)
     yield response).value.handleErrorWith(handleInternal)
 
   override def listAll(
@@ -119,7 +122,8 @@ private final class AudioPlayServiceImpl[F[
         .leftSemiflatTap(_ => warn"Invalid pagination params are given.")
       listResult = repo.list(params.cursor, params.pageSize)
       elems <- EitherT.liftF(listResult)
-      response = AudioPlayMapper.toListResponse(elems)
+      persons <- EitherT(batchGetPersonResources(elems))
+      response = AudioPlayMapper.toListResponse(elems, persons)
     yield response).value.handleErrorWith(handleInternal)
 
   override def search(
@@ -133,7 +137,8 @@ private final class AudioPlayServiceImpl[F[
         .leftSemiflatTap(_ => warn"Invalid search params are given.")
       searchResult = repo.search(params.query, params.limit)
       elems <- EitherT.liftF(searchResult)
-      response = AudioPlayMapper.toSearchResponse(elems)
+      persons <- EitherT(batchGetPersonResources(elems))
+      response = AudioPlayMapper.toSearchResponse(elems, persons)
     yield response).value.handleErrorWith(handleInternal)
 
   override def create(
@@ -146,14 +151,14 @@ private final class AudioPlayServiceImpl[F[
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")
         series <- getSeries(seriesId)
-        _ <- EitherT(getWriters(request.writers))
-        _ <- EitherT(getCastPersons(request.cast))
+        allPersonIds = (request.writers ++ request.cast.map(_.actor)).distinct
+        persons <- EitherT(getPersonResources(allPersonIds))
         id <- EitherT.liftF(uuid)
         audio <- EitherT
           .fromEither(makeAudioPlay(request, id, series))
           .leftSemiflatTap(_ => warn"Request to create bad element: $request.")
         persisted <- EitherT.liftF(repo.persist(audio))
-        response = AudioPlayMapper.toResponse(persisted)
+        response = AudioPlayMapper.toResponse(persisted, persons)
       yield response).value
     }.handleErrorWith(handleInternal)
 
@@ -163,23 +168,29 @@ private final class AudioPlayServiceImpl[F[
       info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
     }.handleErrorWith(handleInternal)
 
-  /** Fetches cast member persons by their respective IDs.
-   *  @param uuids persons UUIDs.
-   */
-  private def getWriters(
-      uuids: List[UUID],
-  ): F[Either[ErrorResponse, List[PersonResource]]] = uuids
-    .traverse(personService.findById)
-    .map(_.sequence)
+  /** Retrieves person resources for a list of audio plays. */
+  private def batchGetPersonResources(
+      xs: List[AudioPlay],
+  ): F[Either[ErrorResponse, Map[UUID, PersonResource]]] =
+    val uuids = xs.flatMap(e => (e.writers ++ e.cast.map(_.actor)).distinct)
+    getPersonResources(uuids)
 
-  /** Fetches cast member persons by their respective IDs.
-   *  @param uuids cast UUIDs.
-   */
-  private def getCastPersons(
-      uuids: List[CastMemberDto],
-  ): F[Either[ErrorResponse, List[PersonResource]]] = uuids
-    .traverse(castMember => personService.findById(castMember.actor))
-    .map(_.sequence)
+  /** Retrieves person resources for given IDs. */
+  private def getPersonResources(
+      ids: List[UUID],
+  ): F[Either[ErrorResponse, Map[UUID, PersonResource]]] = ids match
+    case Nil => Map.empty.asRight.pure[F]
+    case _   => personService
+        .batchGet(BatchGetPersonsRequest(ids))
+        .map {
+          case Right(response) =>
+            response.persons.map(p => p.id -> p).toMap.asRight
+          case Left(err) => err.details.info match
+              case Some(err)
+                   if err.reason == PersonServiceError.PersonNotFound =>
+                ErrorResponses.personNotFound.asLeft
+              case _ => err.asLeft
+        }
 
   /** Returns [[AudioPlaySeries]] if [[seriesId]] is not `None` and there exists
    *  audio play series with it. If [[seriesId]] is not `None` but there's no

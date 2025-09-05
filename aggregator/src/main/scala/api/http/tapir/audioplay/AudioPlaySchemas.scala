@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
+import api.http.tapir.person.PersonSchemas.given
 import api.mappers.ExternalResourceTypeMapper
 import application.dto.audioplay.translation.{
   ExternalResourceDto,

@@ -2,12 +2,13 @@ package org.aulune.aggregator
 package adapters.service.errors
 
 
-import domain.errors.AudioPlayValidationError
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
+  PersonNotFound
 }
+import domain.errors.AudioPlayValidationError
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
@@ -24,23 +25,34 @@ import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
  *  [[org.aulune.aggregator.adapters.service.AudioPlayServiceImpl]].
  */
 object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
-  val audioPlayNotFound: ErrorResponse = ErrorResponse(
-    status = NotFound,
-    message = "Audio play is not found.",
-    details = ErrorDetails(
-      info = ErrorInfo(
-        reason = AudioPlayNotFound,
-        domain = domain,
-      ).some,
-    ),
-  )
-
   val audioPlaySeriesNotFound: ErrorResponse = ErrorResponse(
     status = FailedPrecondition,
     message = "Audio play series with given ID was not found",
     details = ErrorDetails(
       info = ErrorInfo(
         reason = AudioPlaySeriesNotFound,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  val personNotFound: ErrorResponse = ErrorResponse(
+    status = FailedPrecondition,
+    message = "Writer/cast member/other person wasn't found",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = PersonNotFound,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  val audioPlayNotFound: ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = "Audio play is not found.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = AudioPlayNotFound,
         domain = domain,
       ).some,
     ),

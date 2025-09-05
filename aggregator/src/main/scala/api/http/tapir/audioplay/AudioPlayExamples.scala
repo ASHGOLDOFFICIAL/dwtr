@@ -47,7 +47,7 @@ object AudioPlayExamples:
     "enemies indeed..."
   private val releaseDateExample = LocalDate.of(2017, 2, 28)
 
-  private val writersExample = List(PersonExamples.DavidLlewellynResource.id)
+  private val writersExample = List(PersonExamples.DavidLlewellynResource)
   private val castExample = List(
     CastMemberDto(
       actor = PersonExamples.SamuelBarnettResource.id,
@@ -106,7 +106,7 @@ object AudioPlayExamples:
     title = titleExample,
     synopsis = synopsisExample,
     releaseDate = releaseDateExample,
-    writers = writersExample,
+    writers = writersExample.map(_.id),
     cast = castExample,
     seriesId = Some(seriesIdExample),
     seriesSeason = seriesSeasonExample,
