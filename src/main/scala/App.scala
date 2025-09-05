@@ -46,7 +46,7 @@ object App extends IOApp.Simple:
         authApp.clientAuthentication,
         permissionApp.clientService,
         transactor)
-      endpoints = authApp.endpoints ++ aggregatorApp.endpoints
+      endpoints = aggregatorApp.endpoints ++ authApp.endpoints
       _ <- makeServer[IO](endpoints).use(_ => IO.never)
     yield ()
 

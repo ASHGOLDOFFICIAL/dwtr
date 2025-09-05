@@ -2,16 +2,19 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
+import adapters.service.Persons
 import domain.model.person.{FullName, Person}
+import domain.repositories.PersonRepository
 
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.aulune.aggregator.adapters.service.Persons
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
 }
 import org.aulune.commons.testing.PostgresTestContainer
+import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -31,6 +34,11 @@ final class PersonRepositoryImplTest
       name = FullName.unsafe("John Brown"),
     )
     .getOrElse(throw new IllegalStateException())
+  private val personTests = List(
+    Persons.person1,
+    Persons.person2,
+    Persons.person3,
+  )
 
   "contains method " - {
     "should " - {
@@ -117,5 +125,38 @@ final class PersonRepositoryImplTest
       }
     }
   }
+
+  "batchGet method " - {
+    "should " - {
+      "get elements in batches" in stand { repo =>
+        val ids = NonEmptyList.of(Persons.person1.id, Persons.person2.id)
+        for
+          _ <- persistPersons(repo, personTests)
+          result <- repo.batchGet(ids)
+        yield result shouldBe List(Persons.person1, Persons.person2)
+      }
+
+      "skip missing elements" in stand { repo =>
+        val missingId =
+          Uuid.unsafe[Person]("1dbcb7ed-8c13-40c6-b4be-d4b323535d2b")
+        val ids = NonEmptyList.of(Persons.person1.id, missingId)
+        for
+          _ <- persistPersons(repo, personTests)
+          result <- repo.batchGet(ids)
+        yield result shouldBe List(Persons.person1)
+      }
+
+      "return empty list when none is found" in stand { repo =>
+        val ids = NonEmptyList.of(Persons.person1.id)
+        for result <- repo.batchGet(ids)
+        yield result shouldBe Nil
+      }
+    }
+  }
+
+  private def persistPersons(
+      repo: PersonRepository[IO],
+      xs: List[Person],
+  ): IO[Unit] = xs.foldLeft(IO.unit)((io, cur) => io >> repo.persist(cur).void)
 
 end PersonRepositoryImplTest

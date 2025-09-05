@@ -3,7 +3,12 @@ package application
 
 
 import application.AggregatorPermission.Modify
-import application.dto.person.{CreatePersonRequest, PersonResource}
+import application.dto.person.{
+  BatchGetPersonsRequest,
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource,
+}
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
 
 import org.aulune.commons.errors.ErrorResponse
@@ -24,6 +29,20 @@ trait PersonService[F[_]]:
    *  @return requested person if found.
    */
   def findById(id: UUID): F[Either[ErrorResponse, PersonResource]]
+
+  /** Gets persons by their identities in batches.
+   *
+   *  Persons are returned in the same order as in request.
+   *
+   *  Domain error [[PersonNotFound]] will be returned if any of the persons are
+   *  not found.
+   *
+   *  @param request request with IDs.
+   *  @return
+   */
+  def batchGet(
+      request: BatchGetPersonsRequest,
+  ): F[Either[ErrorResponse, BatchGetPersonsResponse]]
 
   /** Create new audio play.
    *
