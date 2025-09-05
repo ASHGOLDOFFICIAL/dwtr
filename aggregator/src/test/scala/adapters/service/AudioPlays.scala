@@ -138,7 +138,7 @@ private[aggregator] object AudioPlays:
       List(audioPlay1, audioPlay2, audioPlay3).map(p => (p.id, p)),
     )
 
-    override def findById(
+    override def get(
         id: UUID,
     ): F[Either[ErrorResponse, AudioPlayResource]] = audioById
       .get(Uuid[AudioPlay](id))
@@ -146,7 +146,7 @@ private[aggregator] object AudioPlays:
       .toRight(AudioPlayServiceErrorResponses.audioPlayNotFound)
       .pure[F]
 
-    override def listAll(
+    override def list(
         request: ListAudioPlaysRequest,
     ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
       throw new UnsupportedOperationException()

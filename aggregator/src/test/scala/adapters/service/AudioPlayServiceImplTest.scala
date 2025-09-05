@@ -145,20 +145,20 @@ final class AudioPlayServiceImplTest
     "should " - {
       "find audio plays if they're present in repository" in stand { service =>
         val _ = mockGet(audioPlay.some.pure)
-        for result <- service.findById(audioPlay.id)
+        for result <- service.get(audioPlay.id)
         yield result shouldBe audioPlayResponse.asRight
       }
 
       "result in AudioPlayNotFound if audio play doesn't exist" in stand {
         service =>
           val _ = mockGet(None.pure)
-          val find = service.findById(audioPlay.id)
+          val find = service.get(audioPlay.id)
           assertDomainError(find)(AudioPlayNotFound)
       }
 
       "handle errors from repository gracefully" in stand { service =>
         val _ = mockGet(IO.raiseError(new Throwable()))
-        val find = service.findById(audioPlay.id)
+        val find = service.get(audioPlay.id)
         assertInternalError(find)
       }
     }
@@ -173,7 +173,7 @@ final class AudioPlayServiceImplTest
         )
         val _ =
           (mockRepo.list _).expects(None, 1).returning(List(audioPlay).pure)
-        for result <- service.listAll(request)
+        for result <- service.list(request)
         yield result match
           case Left(_)     => fail("Error was not expected")
           case Right(list) => list.audioPlays shouldBe List(audioPlayResponse)
@@ -191,7 +191,7 @@ final class AudioPlayServiceImplTest
         val response = AudioPlayMapper.toResponse(
           AudioPlays.audioPlay2,
           Persons.resourceById)
-        for result <- service.listAll(request)
+        for result <- service.list(request)
         yield result match
           case Left(_)     => fail("Error was not expected")
           case Right(list) => list.audioPlays shouldBe List(response)

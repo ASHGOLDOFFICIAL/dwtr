@@ -25,7 +25,7 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait AudioPlayTranslationService[F[_]]:
-  /** Find translation by given ID.
+  /** Get translation by given ID.
    *
    *  Domain error [[TranslationNotFound]] will be returned if translation is
    *  not found.
@@ -33,13 +33,13 @@ trait AudioPlayTranslationService[F[_]]:
    *  @param id translation ID.
    *  @return requested translation if found.
    */
-  def findById(id: UUID): F[Either[ErrorResponse, AudioPlayTranslationResource]]
+  def get(id: UUID): F[Either[ErrorResponse, AudioPlayTranslationResource]]
 
-  /** Lists all translations in pages.
+  /** Get a portion of translations.
    *  @param request request to list audio play translations.
    *  @return list of found translations if success, otherwise error.
    */
-  def listAll(
+  def list(
       request: ListAudioPlayTranslationsRequest,
   ): F[Either[ErrorResponse, ListAudioPlayTranslationsResponse]]
 

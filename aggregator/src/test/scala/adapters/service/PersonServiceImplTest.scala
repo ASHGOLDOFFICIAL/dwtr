@@ -106,19 +106,19 @@ final class PersonServiceImplTest
     "should " - {
       "find persons if they're present in repository" in stand { service =>
         val _ = mockGet(person.some.pure)
-        for result <- service.findById(person.id)
+        for result <- service.get(person.id)
         yield result shouldBe personResponse.asRight
       }
 
       "result in PersonNotFound if person doesn't exist" in stand { service =>
         val _ = mockGet(None.pure)
-        val find = service.findById(person.id)
+        val find = service.get(person.id)
         assertDomainError(find)(PersonNotFound)
       }
 
       "handle errors from repository gracefully" in stand { service =>
         val _ = mockGet(IO.raiseError(new Throwable()))
-        val find = service.findById(person.id)
+        val find = service.get(person.id)
         assertInternalError(find)
       }
     }

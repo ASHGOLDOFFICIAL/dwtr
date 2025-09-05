@@ -58,7 +58,7 @@ final class PersonsController[F[_]: Applicative](
     .summary("Returns a person with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.findById(id)
+      for result <- service.get(id)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 

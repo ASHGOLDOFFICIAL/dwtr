@@ -70,7 +70,7 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.findById(id)
+      for result <- service.get(id)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -88,7 +88,7 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Returns the list of audio play resources.")
     .tag(tag)
     .serverLogic { request =>
-      for result <- service.listAll(request)
+      for result <- service.list(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 

@@ -21,14 +21,14 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait PersonService[F[_]]:
-  /** Find person by given identity.
+  /** Get person by given ID.
    *
    *  Domain error [[PersonNotFound]] will be returned if person is not found.
    *
    *  @param id person identity.
    *  @return requested person if found.
    */
-  def findById(id: UUID): F[Either[ErrorResponse, PersonResource]]
+  def get(id: UUID): F[Either[ErrorResponse, PersonResource]]
 
   /** Gets persons by their identities in batches.
    *
