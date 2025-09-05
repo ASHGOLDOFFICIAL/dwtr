@@ -20,7 +20,7 @@ import application.dto.audioplay.{
 
 import sttp.tapir.{Schema, Validator}
 
-import java.net.URL
+import java.net.URI
 
 
 /** Tapir [[Schema]]s for audio play objects. */
@@ -35,7 +35,7 @@ object AudioPlaySchemas:
   given Schema[SearchAudioPlaysRequest] = Schema.derived
   given Schema[SearchAudioPlaysResponse] = Schema.derived
 
-  private given Schema[URL] = Schema.string[URL]
+  private given Schema[URI] = Schema.string[URI]
   private given Schema[CastMemberDto] = Schema.derived
   private given Schema[ExternalResourceDto] = Schema.derived
   private given Schema[ExternalResourceTypeDto] = Schema.string

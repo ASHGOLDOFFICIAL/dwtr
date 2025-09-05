@@ -80,7 +80,7 @@ private[service] object AudioPlayMapper:
     series = domain.series.map(AudioPlaySeriesMapper.toResponse),
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,
-    coverUrl = domain.coverUrl,
+    coverUri = domain.coverUri,
     externalResources = domain.externalResources
       .map(ExternalResourceMapper.fromDomain),
   )

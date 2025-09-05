@@ -16,7 +16,7 @@ import domain.model.audioplay.{
 import domain.model.person.Person
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
@@ -100,7 +100,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |  ${elem.id}, ${elem.title}, ${elem.synopsis}, ${elem.releaseDate},
       |  ${elem.writers}, ${elem.cast},
       |  ${elem.series.map(_.id)}, ${elem.seriesSeason}, ${elem.seriesNumber},
-      |  ${elem.coverUrl}, ${elem.externalResources}
+      |  ${elem.coverUri}, ${elem.externalResources}
       |)""".stripMargin.update.run
 
     val transaction =
@@ -133,7 +133,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |    series_id     = ${elem.series.map(_.id)},
       |    series_season = ${elem.seriesSeason},
       |    series_number = ${elem.seriesNumber},
-      |    cover_url     = ${elem.coverUrl},
+      |    cover_url     = ${elem.coverUri},
       |    resources     = ${elem.externalResources}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
@@ -215,7 +215,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       Option[AudioPlaySeriesName],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
-      Option[ImageUrl],
+      Option[ImageUri],
       List[ExternalResource],
   )
 
@@ -257,7 +257,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       seriesName: Option[AudioPlaySeriesName],
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
-      coverUrl: Option[ImageUrl],
+      coverUrl: Option[ImageUri],
       resources: List[ExternalResource],
   ): AudioPlay =
     val series = seriesId.zip(seriesName).map(AudioPlaySeries.unsafe)

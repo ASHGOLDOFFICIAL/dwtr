@@ -85,21 +85,19 @@ object AudioPlayExamples:
   private val seriesSeasonExample = Some(1)
   private val seriesNumberExample = Some(1)
 
-  private val coverUrlExample = Some(
-    URI.create("https://www.bigfinish.com/image/release/1605/large.jpg").toURL)
+  private val coverUriExample =
+    Some(URI.create("https://www.bigfinish.com/image/release/1605/large.jpg"))
 
   private val externalResourcesExample = List(
     ExternalResourceDto(
       Purchase,
       URI
-        .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605")
-        .toURL,
+        .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605"),
     ),
     ExternalResourceDto(
       Purchase,
       URI
-        .create("https://www.bigfinish.com/releases/v/cicero-series-01-1777")
-        .toURL,
+        .create("https://www.bigfinish.com/releases/v/cicero-series-01-1777"),
     ),
   )
   private val nextPageTokenExample =
@@ -127,7 +125,7 @@ object AudioPlayExamples:
     series = seriesExample,
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
-    coverUrl = coverUrlExample,
+    coverUri = coverUriExample,
     externalResources = externalResourcesExample,
   )
 

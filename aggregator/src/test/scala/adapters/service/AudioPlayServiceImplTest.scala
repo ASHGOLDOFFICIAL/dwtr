@@ -112,7 +112,7 @@ final class AudioPlayServiceImplTest
       )),
     seriesSeason = audioPlay.seriesSeason,
     seriesNumber = audioPlay.seriesNumber,
-    coverUrl = audioPlay.coverUrl,
+    coverUri = audioPlay.coverUri,
     externalResources = Nil,
   )
   private val createRequest = CreateAudioPlayRequest(
@@ -137,7 +137,7 @@ final class AudioPlayServiceImplTest
     .getOrElse(throw new IllegalStateException())
   private val newAudioPlayResponse = audioPlayResponse.copy(
     id = newUuid,
-    coverUrl = None,
+    coverUri = None,
   )
 
   "findById method " - {

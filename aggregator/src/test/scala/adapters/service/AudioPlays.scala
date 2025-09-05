@@ -30,7 +30,7 @@ import domain.shared.ExternalResourceType.{
   Purchase,
   Streaming,
 }
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -45,8 +45,8 @@ import java.util.UUID
 
 /** [[AudioPlay]] objects to use in tests. */
 private[aggregator] object AudioPlays:
-  private def makeCoverUrl(url: String): Option[ImageUrl] =
-    ImageUrl.unsafe(URI.create(url).toURL).some
+  private def makeCoverUri(url: String): Option[ImageUri] =
+    ImageUri.unsafe(URI.create(url)).some
 
   private def makeReleaseDate(year: Int, month: Int, day: Int): ReleaseDate =
     ReleaseDate.unsafe(LocalDate.of(year, month, day))
@@ -78,13 +78,13 @@ private[aggregator] object AudioPlays:
     series = makeSeries("1e0a7f74-8143-4477-ae0f-33547de9c53f", "Series"),
     seriesSeason = AudioPlaySeason.unsafe(1).some,
     seriesNumber = AudioPlaySeriesNumber.unsafe(1).some,
-    coverUrl = makeCoverUrl("https://imagahost.org/123"),
+    coverUrl = makeCoverUri("https://imagahost.org/123"),
     externalResources = List(
-      ExternalResource(Purchase, URI.create("https://test.org/1").toURL),
-      ExternalResource(Download, URI.create("https://test.org/2").toURL),
-      ExternalResource(Streaming, URI.create("https://test.org/1").toURL),
-      ExternalResource(Other, URI.create("https://test.org/2").toURL),
-      ExternalResource(Private, URI.create("https://test.org/3").toURL),
+      ExternalResource(Purchase, URI.create("https://test.org/1")),
+      ExternalResource(Download, URI.create("https://test.org/2")),
+      ExternalResource(Streaming, URI.create("https://test.org/1")),
+      ExternalResource(Other, URI.create("https://test.org/2")),
+      ExternalResource(Private, URI.create("https://test.org/3")),
     ),
   )
 
@@ -99,9 +99,9 @@ private[aggregator] object AudioPlays:
     series = makeSeries("e810039b-c44c-405f-a360-e44fadc43ead", "Series"),
     seriesSeason = None,
     seriesNumber = AudioPlaySeriesNumber.unsafe(2).some,
-    coverUrl = makeCoverUrl("https://cdn.test.org/23"),
+    coverUrl = makeCoverUri("https://cdn.test.org/23"),
     externalResources =
-      List(ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
+      List(ExternalResource(Download, URI.create("https://audio.com/1"))),
   )
 
   /** ''The Testing Things'' audio play. */
@@ -123,7 +123,7 @@ private[aggregator] object AudioPlays:
     seriesNumber = None,
     coverUrl = None,
     externalResources =
-      List(ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
+      List(ExternalResource(Streaming, URI.create("https://audio.com/2"))),
   )
 
   /** Stub [[AudioPlayService]] implementation that supports only `findById` and

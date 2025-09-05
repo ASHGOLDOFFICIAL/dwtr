@@ -2,10 +2,10 @@ package org.aulune.aggregator
 package application.dto.audioplay
 
 
+import application.dto.audioplay.translation.ExternalResourceDto
 import application.dto.person.PersonResource
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceDto
 
-import java.net.URL
+import java.net.URI
 import java.time.LocalDate
 import java.util.UUID
 
@@ -19,7 +19,7 @@ import java.util.UUID
  *  @param series audio play series.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play number in series.
- *  @param coverUrl link to cover image.
+ *  @param coverUri link to cover image.
  *  @param externalResources links to external resources.
  */
 final case class AudioPlayResource(
@@ -32,6 +32,6 @@ final case class AudioPlayResource(
     series: Option[AudioPlaySeriesResource],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
-    coverUrl: Option[URL],
+    coverUri: Option[URI],
     externalResources: List[ExternalResourceDto],
 )

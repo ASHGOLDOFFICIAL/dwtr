@@ -15,7 +15,7 @@ import domain.model.audioplay.{
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.shared.ExternalResourceType.Purchase
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -51,7 +51,7 @@ final class AudioPlayRepositoryImplTest
       title = AudioPlayTitle.unsafe("Updated"),
       writers = List(Uuid.unsafe("c5c1f3b9-175c-4fa2-800d-c9c20cb44539")),
       externalResources =
-        List(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
+        List(ExternalResource(Purchase, URI.create("https://test.org/1"))),
     )
     .getOrElse(throw new IllegalStateException())
 
