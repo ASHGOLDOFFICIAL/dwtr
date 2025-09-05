@@ -51,7 +51,7 @@ private[aggregator] object Persons:
    *  @tparam F effect type.
    */
   def service[F[_]: Applicative]: PersonService[F] = new PersonService[F]:
-    override def findById(id: UUID): F[Either[ErrorResponse, PersonResource]] =
+    override def get(id: UUID): F[Either[ErrorResponse, PersonResource]] =
       resourceById
         .get(id)
         .toRight(PersonServiceErrorResponses.personNotFound)

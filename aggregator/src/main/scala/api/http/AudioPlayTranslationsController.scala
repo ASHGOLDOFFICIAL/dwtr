@@ -66,7 +66,7 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.findById(id)
+      for result <- service.get(id)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -85,7 +85,7 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
     .serverLogic { request =>
-      for result <- service.listAll(request)
+      for result <- service.list(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 

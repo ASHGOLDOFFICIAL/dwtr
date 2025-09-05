@@ -26,7 +26,7 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 trait AudioPlayService[F[_]]:
-  /** Find audio play by given ID.
+  /** Get audio play by given ID.
    *
    *  Domain error [[AudioPlayNotFound]] will be returned if audio play is not
    *  found.
@@ -34,13 +34,13 @@ trait AudioPlayService[F[_]]:
    *  @param id audio play ID.
    *  @return requested audio play if found.
    */
-  def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResource]]
+  def get(id: UUID): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Get a portion of audio plays.
    *  @param request request to list audio plays.
    *  @return list of audio plays if success, otherwise error.
    */
-  def listAll(
+  def list(
       request: ListAudioPlaysRequest,
   ): F[Either[ErrorResponse, ListAudioPlaysResponse]]
 

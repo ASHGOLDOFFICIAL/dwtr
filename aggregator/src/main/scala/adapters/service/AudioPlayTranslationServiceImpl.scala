@@ -90,7 +90,7 @@ private final class AudioPlayTranslationServiceImpl[F[
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
-  override def findById(
+  override def get(
       id: UUID,
   ): F[Either[ErrorResponse, AudioPlayTranslationResource]] =
     val uuid = Uuid[AudioPlayTranslation](id)
@@ -102,7 +102,7 @@ private final class AudioPlayTranslationServiceImpl[F[
       response = AudioPlayTranslationMapper.toResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
 
-  override def listAll(
+  override def list(
       request: ListAudioPlayTranslationsRequest,
   ): F[Either[ErrorResponse, ListAudioPlayTranslationsResponse]] =
     val paramsV = paginationParser.parse(request.pageSize, request.pageToken)
@@ -125,7 +125,7 @@ private final class AudioPlayTranslationServiceImpl[F[
       val originalId = Uuid[AudioPlay](request.originalId)
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")
-        original <- EitherT(audioPlayService.findById(originalId))
+        original <- EitherT(audioPlayService.get(originalId))
           .leftMap(handleAudioPlayNotFound)
           .leftSemiflatTap(_ => warn"Original was not found: $request")
         id <- EitherT.liftF(uuid)

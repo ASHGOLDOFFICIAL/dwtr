@@ -69,7 +69,7 @@ private final class PersonServiceImpl[
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
-  override def findById(id: UUID): F[Either[ErrorResponse, PersonResource]] =
+  override def get(id: UUID): F[Either[ErrorResponse, PersonResource]] =
     val uuid = Uuid[Person](id)
     (for
       _ <- eitherTLogger.info(s"Find request: $id.")

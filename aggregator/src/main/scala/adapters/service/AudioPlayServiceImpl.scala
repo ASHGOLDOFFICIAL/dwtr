@@ -99,7 +99,7 @@ private final class AudioPlayServiceImpl[F[
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
-  override def findById(id: UUID): F[Either[ErrorResponse, AudioPlayResource]] =
+  override def get(id: UUID): F[Either[ErrorResponse, AudioPlayResource]] =
     val uuid = Uuid[AudioPlay](id)
     (for
       _ <- eitherTLogger.info(s"Find request: $id.")
@@ -111,7 +111,7 @@ private final class AudioPlayServiceImpl[F[
       response = AudioPlayMapper.toResponse(elem, persons)
     yield response).value.handleErrorWith(handleInternal)
 
-  override def listAll(
+  override def list(
       request: ListAudioPlaysRequest,
   ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
     val paramsV = paginationParser.parse(request.pageSize, request.pageToken)
