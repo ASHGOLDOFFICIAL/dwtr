@@ -6,7 +6,7 @@ import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
   ListAudioPlaysResponse,
-  SearchAudioPlaysResponse
+  SearchAudioPlaysResponse,
 }
 import application.dto.person.PersonResource
 import domain.errors.AudioPlayValidationError
@@ -82,7 +82,8 @@ private[service] object AudioPlayMapper:
     synopsis = domain.synopsis,
     releaseDate = domain.releaseDate,
     writers = domain.writers.map(personMap),
-    cast = domain.cast.map(p => CastMemberMapper.toResource(p, personMap(p.actor))),
+    cast =
+      domain.cast.map(p => CastMemberMapper.toResource(p, personMap(p.actor))),
     series = domain.series.map(AudioPlaySeriesMapper.toResponse),
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,

@@ -5,8 +5,21 @@ package adapters.service
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.Modify
 import application.AudioPlayService
-import application.dto.audioplay.{AudioPlayResource, AudioPlaySeriesResource, CastMemberDTO, CastMemberResource, CreateAudioPlayRequest, ListAudioPlaysRequest, ListAudioPlaysResponse, SearchAudioPlaysRequest}
-import application.errors.AudioPlayServiceError.{AudioPlayNotFound, AudioPlaySeriesNotFound, InvalidAudioPlay}
+import application.dto.audioplay.{
+  AudioPlayResource,
+  AudioPlaySeriesResource,
+  CastMemberDTO,
+  CastMemberResource,
+  CreateAudioPlayRequest,
+  ListAudioPlaysRequest,
+  ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+}
+import application.errors.AudioPlayServiceError.{
+  AudioPlayNotFound,
+  AudioPlaySeriesNotFound,
+  InvalidAudioPlay,
+}
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
@@ -17,8 +30,15 @@ import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
-import org.aulune.commons.service.permission.{Permission, PermissionClientService}
-import org.aulune.commons.testing.ErrorAssertions.{assertDomainError, assertErrorStatus, assertInternalError}
+import org.aulune.commons.service.permission.{
+  Permission,
+  PermissionClientService,
+}
+import org.aulune.commons.testing.ErrorAssertions.{
+  assertDomainError,
+  assertErrorStatus,
+  assertInternalError,
+}
 import org.aulune.commons.testing.instances.UUIDGenInstances.makeFixedUuidGen
 import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.{NonEmptyString, Uuid}

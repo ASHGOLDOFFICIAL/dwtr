@@ -6,7 +6,7 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
-  PersonResource
+  PersonResource,
 }
 
 import java.util.UUID
@@ -24,23 +24,23 @@ object PersonExamples:
   )
   private[tapir] val GeorgeNaylorResource: PersonResource = PersonResource(
     id = UUID.fromString("f9e57f2c-fc55-4736-92bb-8a7fdb52e95b"),
-    name = "George Naylor"
+    name = "George Naylor",
   )
   private[tapir] val StephenCritchlowResource: PersonResource = PersonResource(
     id = UUID.fromString("c8263a31-dbb2-40a0-84a9-11fd56c3a923"),
-    name = "Stephen Critchlow"
+    name = "Stephen Critchlow",
   )
   private[tapir] val YoussefKerkourResource: PersonResource = PersonResource(
     id = UUID.fromString("3daf3bdb-1b9e-4232-a5d2-08a21e3386ba"),
-    name = "Youssef Kerkour"
+    name = "Youssef Kerkour",
   )
   private[tapir] val SimonLuddersResource: PersonResource = PersonResource(
     id = UUID.fromString("5f92d280-9ca4-4dde-abff-800cdbff4f96"),
-    name = "Simon Ludders"
+    name = "Simon Ludders",
   )
   private[tapir] val ElizabethMortonResource: PersonResource = PersonResource(
     id = UUID.fromString("eaf44859-38ca-41b4-9abb-c1affd90ec98"),
-    name = "Elizabeth Morton"
+    name = "Elizabeth Morton",
   )
 
   val Resource: PersonResource = DavidLlewellynResource

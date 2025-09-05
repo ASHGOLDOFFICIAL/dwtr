@@ -6,7 +6,7 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
-  PersonNotFound
+  PersonNotFound,
 }
 import domain.errors.AudioPlayValidationError
 

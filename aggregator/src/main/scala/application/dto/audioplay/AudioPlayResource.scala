@@ -23,15 +23,15 @@ import java.util.UUID
  *  @param externalResources links to external resources.
  */
 final case class AudioPlayResource(
-                                    id: UUID,
-                                    title: String,
-                                    synopsis: String,
-                                    releaseDate: LocalDate,
-                                    writers: List[PersonResource],
-                                    cast: List[CastMemberResource],
-                                    series: Option[AudioPlaySeriesResource],
-                                    seriesSeason: Option[Int],
-                                    seriesNumber: Option[Int],
-                                    coverUri: Option[URI],
-                                    externalResources: List[ExternalResourceDto],
+    id: UUID,
+    title: String,
+    synopsis: String,
+    releaseDate: LocalDate,
+    writers: List[PersonResource],
+    cast: List[CastMemberResource],
+    series: Option[AudioPlaySeriesResource],
+    seriesSeason: Option[Int],
+    seriesNumber: Option[Int],
+    coverUri: Option[URI],
+    externalResources: List[ExternalResourceDto],
 )
