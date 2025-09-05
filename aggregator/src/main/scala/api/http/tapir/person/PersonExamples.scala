@@ -2,25 +2,51 @@ package org.aulune.aggregator
 package api.http.tapir.person
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto.{
-  Private,
-  Purchase,
+import application.dto.person.{
+  BatchGetPersonsRequest,
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource
 }
-import application.dto.person.{CreatePersonRequest, PersonResource}
 
 import java.util.UUID
 
 
 /** Example DTO objects for persons. */
 object PersonExamples:
-  private val idExample =
-    UUID.fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b")
-  private val nameExample = "David Llewellyn"
+  private val DavidLlewellynId = UUID
+    .fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b")
+  private val DavidLlewellynName = "David Llewellyn"
 
-  val personRequestExample: CreatePersonRequest = CreatePersonRequest(
-    name = nameExample,
+  private val SamuelBarnettId = UUID
+    .fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b")
+  private val SamuelBarnettName = "Samuel Barnett"
+  
+  val DavidLlewellynResource: PersonResource = PersonResource(
+    id = DavidLlewellynId,
+    name = DavidLlewellynName,
   )
-  val personResponseExample: PersonResource = PersonResource(
-    id = idExample,
-    name = nameExample,
+  val SamuelBarnettResource: PersonResource = PersonResource(
+    SamuelBarnettId,
+    SamuelBarnettName,
+  )
+  
+  val Resource: PersonResource = DavidLlewellynResource
+
+  val CreateRequest: CreatePersonRequest = CreatePersonRequest(
+    name = DavidLlewellynName,
+  )
+  
+  val BatchGetRequest: BatchGetPersonsRequest = BatchGetPersonsRequest(
+    names = List(
+      DavidLlewellynId,
+      SamuelBarnettId,
+    ),
+  )
+
+  val BatchGetResponse: BatchGetPersonsResponse = BatchGetPersonsResponse(
+    persons = List(
+      DavidLlewellynResource,
+      SamuelBarnettResource,
+    ),
   )

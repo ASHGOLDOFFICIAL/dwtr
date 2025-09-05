@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
+import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.translation.ExternalResourceDto
 import application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
 import application.dto.audioplay.{
@@ -46,12 +47,10 @@ object AudioPlayExamples:
     "enemies indeed..."
   private val releaseDateExample = LocalDate.of(2017, 2, 28)
 
-  private val writersExample = List(
-    UUID.fromString("cdd644a5-9dc9-4d06-9282-39883dd16d6b"),
-  )
+  private val writersExample = List(PersonExamples.DavidLlewellynResource.id)
   private val castExample = List(
     CastMemberDto(
-      actor = UUID.fromString("1fe33b46-de43-4cb7-8546-a29f8d975e6b"),
+      actor = PersonExamples.SamuelBarnettResource.id,
       roles = List("Marcus Tullius Cicero"),
       main = true,
     ),

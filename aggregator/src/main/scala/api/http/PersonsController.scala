@@ -3,22 +3,24 @@ package api.http
 
 
 import api.http.circe.PersonCodecs.given
-import api.http.tapir.person.PersonExamples.{
-  personRequestExample,
-  personResponseExample,
-}
+import api.http.tapir.person.PersonExamples
 import api.http.tapir.person.PersonSchemas.given
 import application.PersonService
-import application.dto.person.{CreatePersonRequest, PersonResource}
+import application.dto.person.{
+  BatchGetPersonsRequest,
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource,
+}
 
 import cats.Applicative
 import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
-import org.aulune.commons.errors.ErrorResponse
-import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
 import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
@@ -49,7 +51,7 @@ final class PersonsController[F[_]: Applicative](
     .in(elementPath)
     .out(statusCode(StatusCode.Ok).and(jsonBody[PersonResource]
       .description("Requested person's information if found.")
-      .example(personResponseExample)))
+      .example(PersonExamples.Resource)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetPerson")
@@ -60,14 +62,32 @@ final class PersonsController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
+  private val batchGetEndpoint = endpoint.get
+    .in(collectionPath + ":batchGet")
+    .in(jsonBody[BatchGetPersonsRequest]
+      .description("Request with IDs of persons to find")
+      .example(PersonExamples.BatchGetRequest))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[BatchGetPersonsResponse]
+      .description("List of requested persons")
+      .example(PersonExamples.BatchGetResponse)))
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
+    .name("BatchGetPersons")
+    .summary("Returns persons for given IDs.")
+    .tag(tag)
+    .serverLogic { request =>
+      for result <- service.batchGet(request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
   private val postEndpoint = securedEndpoint.post
     .in(collectionPath)
     .in(jsonBody[CreatePersonRequest]
       .description("Person to create")
-      .example(personRequestExample))
+      .example(PersonExamples.CreateRequest))
     .out(statusCode(StatusCode.Created).and(jsonBody[PersonResource]
       .description("Created person.")
-      .example(personResponseExample)))
+      .example(PersonExamples.Resource)))
     .name("CreatePerson")
     .summary("Creates a new person and returns it.")
     .tag(tag)
@@ -90,6 +110,7 @@ final class PersonsController[F[_]: Applicative](
   /** Returns Tapir endpoints for persons. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
+    batchGetEndpoint,
     postEndpoint,
     deleteEndpoint,
   )
