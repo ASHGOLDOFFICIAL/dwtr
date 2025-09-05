@@ -32,7 +32,7 @@ private[service] object ExternalResourceMapper:
    */
   def toDomain(dto: ExternalResourceDto): ExternalResource = ExternalResource(
     resourceType = mapToDomain(dto.resourceType),
-    url = dto.link)
+    uri = dto.link)
 
   /** Convert [[ExternalResource]] to [[ExternalResourceDto]].
    *
@@ -42,4 +42,4 @@ private[service] object ExternalResourceMapper:
   def fromDomain(domain: ExternalResource): ExternalResourceDto =
     ExternalResourceDto(
       resourceType = mapFromDomain(domain.resourceType),
-      link = domain.url)
+      link = domain.uri)

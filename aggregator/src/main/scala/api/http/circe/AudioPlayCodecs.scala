@@ -4,12 +4,14 @@ package api.http.circe
 
 import api.http.circe.SharedCodecs.given
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDto,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
 
 import io.circe.generic.extras.semiauto.{
@@ -39,3 +41,9 @@ private[api] object AudioPlayCodecs:
 
   given Encoder[CastMemberDto] = deriveConfiguredEncoder
   given Decoder[CastMemberDto] = deriveConfiguredDecoder
+
+  given Encoder[SearchAudioPlaysRequest] = deriveConfiguredEncoder
+  given Decoder[SearchAudioPlaysRequest] = deriveConfiguredDecoder
+
+  given Encoder[SearchAudioPlaysResponse] = deriveConfiguredEncoder
+  given Decoder[SearchAudioPlaysResponse] = deriveConfiguredDecoder

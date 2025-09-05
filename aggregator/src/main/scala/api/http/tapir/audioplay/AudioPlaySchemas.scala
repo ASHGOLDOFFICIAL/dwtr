@@ -3,24 +3,27 @@ package api.http.tapir.audioplay
 
 
 import api.mappers.ExternalResourceTypeMapper
+import application.dto.audioplay.translation.{
+  ExternalResourceDto,
+  ExternalResourceTypeDto,
+}
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDto,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
-}
-import org.aulune.aggregator.application.dto.audioplay.translation.{
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
 
 import sttp.tapir.{Schema, Validator}
 
-import java.net.URL
+import java.net.URI
 
 
+/** Tapir [[Schema]]s for audio play objects. */
 object AudioPlaySchemas:
   given Schema[CreateAudioPlayRequest] = Schema.derived
   given Schema[AudioPlayResource] = Schema.derived
@@ -29,7 +32,10 @@ object AudioPlaySchemas:
   given Schema[ListAudioPlaysRequest] = Schema.derived
   given Schema[ListAudioPlaysResponse] = Schema.derived
 
-  private given Schema[URL] = Schema.string[URL]
+  given Schema[SearchAudioPlaysRequest] = Schema.derived
+  given Schema[SearchAudioPlaysResponse] = Schema.derived
+
+  private given Schema[URI] = Schema.string[URI]
   private given Schema[CastMemberDto] = Schema.derived
   private given Schema[ExternalResourceDto] = Schema.derived
   private given Schema[ExternalResourceTypeDto] = Schema.string

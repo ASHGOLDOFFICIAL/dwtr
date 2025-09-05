@@ -1,10 +1,10 @@
 package org.aulune.aggregator
 package domain.shared
 
-import java.net.{URI, URL}
+import java.net.URI
 
 /** Link to an external resource.
  *  @param resourceType type of external resource.
- *  @param url link to it.
+ *  @param uri link to it.
  */
-final case class ExternalResource(resourceType: ExternalResourceType, url: URL)
+final case class ExternalResource(resourceType: ExternalResourceType, uri: URI)

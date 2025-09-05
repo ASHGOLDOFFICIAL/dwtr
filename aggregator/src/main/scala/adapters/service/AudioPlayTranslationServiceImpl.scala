@@ -12,8 +12,7 @@ import application.dto.audioplay.translation.{
   ListAudioPlayTranslationsResponse,
 }
 import application.errors.AudioPlayServiceError.AudioPlayNotFound
-import application.repositories.AudioPlayTranslationRepository
-import application.repositories.AudioPlayTranslationRepository.{
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.{
   AudioPlayTranslationCursor,
   given,
 }
@@ -27,6 +26,7 @@ import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User
@@ -54,7 +54,7 @@ object AudioPlayTranslationServiceImpl:
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
   def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
-      pagination: AggregatorConfig.Pagination,
+      pagination: AggregatorConfig.PaginationParams,
       repo: AudioPlayTranslationRepository[F],
       audioPlayService: AudioPlayService[F],
       permissionService: PermissionClientService[F],

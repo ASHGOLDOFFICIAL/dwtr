@@ -8,15 +8,19 @@ import api.http.tapir.audioplay.AudioPlayExamples.{
   listResponseExample,
   requestExample,
   responseExample,
+  searchRequestExample,
+  searchResponseExample,
 }
 import api.http.tapir.audioplay.AudioPlaySchemas.given
+import application.AudioPlayService
 import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
-import application.{AudioPlayService, AudioPlayTranslationService}
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -42,7 +46,7 @@ import java.util.UUID
  *  @tparam F effect type.
  */
 final class AudioPlaysController[F[_]: Applicative](
-    pagination: AggregatorConfig.Pagination,
+    pagination: AggregatorConfig.PaginationParams,
     service: AudioPlayService[F],
     authService: AuthenticationClientService[F],
 ):
@@ -88,6 +92,24 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
+  private val searchEndpoint = endpoint.get
+    .in(collectionPath + ":search")
+    .in(jsonBody[SearchAudioPlaysRequest]
+      .description("Request to search audio plays.")
+      .example(searchRequestExample))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[SearchAudioPlaysResponse]
+      .description("List of matched audio plays.")
+      .example(searchResponseExample)))
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
+    .name("SearchAudioPlays")
+    .summary("Searches audio plays by given query.")
+    .tag(tag)
+    .serverLogic { request =>
+      for result <- service.search(request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
   private val postEndpoint = securedEndpoint.post
     .in(collectionPath)
     .in(jsonBody[CreateAudioPlayRequest]
@@ -115,10 +137,11 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
-  /** Returns Tapir endpoints for audio plays and their translations. */
+  /** Returns Tapir endpoints for audio plays. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     listEndpoint,
+    searchEndpoint,
     postEndpoint,
     deleteEndpoint,
   )

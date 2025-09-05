@@ -1,12 +1,16 @@
 package org.aulune.aggregator
-package application.repositories
+package domain.repositories
 
 
-import application.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
 import org.aulune.commons.pagination.{CursorDecoder, CursorEncoder}
-import org.aulune.commons.repositories.{GenericRepository, PaginatedList}
+import org.aulune.commons.repositories.{
+  GenericRepository,
+  PaginatedList,
+  TextSearch,
+}
 import org.aulune.commons.types.Uuid
 
 import java.nio.charset.StandardCharsets
@@ -20,7 +24,8 @@ import scala.util.Try
  */
 trait AudioPlayRepository[F[_]]
     extends GenericRepository[F, AudioPlay, Uuid[AudioPlay]]
-    with PaginatedList[F, AudioPlay, AudioPlayCursor]:
+    with PaginatedList[F, AudioPlay, AudioPlayCursor]
+    with TextSearch[F, AudioPlay]:
 
   /** Returns audio play series with given ID if found.
    *  @param id audio play series ID.

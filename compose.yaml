@@ -34,7 +34,7 @@ services:
     networks:
       - postgres
     ports:
-      - ${POSTGRES_PORT}
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
     restart: always
     secrets:
       - postgres_db

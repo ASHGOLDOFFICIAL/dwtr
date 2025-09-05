@@ -3,17 +3,17 @@ package api.http.circe
 
 
 import api.mappers.{ExternalResourceTypeMapper, LanguageMapper}
+import application.dto.audioplay.translation.{
+  ExternalResourceDto,
+  ExternalResourceTypeDto,
+  LanguageDto,
+}
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.aggregator.application.dto.audioplay.translation.{
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-  LanguageDto,
-}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 import java.net.{URI, URL}
@@ -22,9 +22,8 @@ import scala.util.Try
 
 /** [[Encoder]] and [[Decoder]] instances for Java objects and shared DTOs. */
 private[api] object SharedCodecs:
-  given Encoder[URL] = Encoder.encodeString.contramap(_.toString)
-  given Decoder[URL] =
-    Decoder.decodeString.emapTry(str => Try(URI.create(str).toURL))
+  given Encoder[URI] = Encoder.encodeString.contramap(_.toString)
+  given Decoder[URI] = Decoder.decodeString.emapTry(str => Try(URI.create(str)))
 
   given Encoder[LanguageDto] =
     Encoder.encodeString.contramap(LanguageMapper.toString)

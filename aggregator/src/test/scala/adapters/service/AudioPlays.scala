@@ -10,6 +10,8 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
 import domain.model.audioplay.{
   ActorRole,
@@ -28,7 +30,7 @@ import domain.shared.ExternalResourceType.{
   Purchase,
   Streaming,
 }
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -43,8 +45,8 @@ import java.util.UUID
 
 /** [[AudioPlay]] objects to use in tests. */
 private[aggregator] object AudioPlays:
-  private def makeCoverUrl(url: String): Option[ImageUrl] =
-    ImageUrl.unsafe(URI.create(url).toURL).some
+  private def makeCoverUri(url: String): Option[ImageUri] =
+    ImageUri.unsafe(URI.create(url)).some
 
   private def makeReleaseDate(year: Int, month: Int, day: Int): ReleaseDate =
     ReleaseDate.unsafe(LocalDate.of(year, month, day))
@@ -54,9 +56,10 @@ private[aggregator] object AudioPlays:
       .unsafe(Uuid.unsafe(uuid), AudioPlaySeriesName.unsafe(name))
       .some
 
+  /** ''Magic Mountain'' audio play. */
   val audioPlay1: AudioPlay = AudioPlay.unsafe(
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea66"),
-    title = AudioPlayTitle.unsafe("Title"),
+    title = AudioPlayTitle.unsafe("Magic Mountain"),
     synopsis = Synopsis.unsafe("Synopsis"),
     writers = List(Persons.person1.id, Persons.person2.id),
     cast = List(
@@ -75,19 +78,20 @@ private[aggregator] object AudioPlays:
     series = makeSeries("1e0a7f74-8143-4477-ae0f-33547de9c53f", "Series"),
     seriesSeason = AudioPlaySeason.unsafe(1).some,
     seriesNumber = AudioPlaySeriesNumber.unsafe(1).some,
-    coverUrl = makeCoverUrl("https://imagahost.org/123"),
+    coverUrl = makeCoverUri("https://imagahost.org/123"),
     externalResources = List(
-      ExternalResource(Purchase, URI.create("https://test.org/1").toURL),
-      ExternalResource(Download, URI.create("https://test.org/2").toURL),
-      ExternalResource(Streaming, URI.create("https://test.org/1").toURL),
-      ExternalResource(Other, URI.create("https://test.org/2").toURL),
-      ExternalResource(Private, URI.create("https://test.org/3").toURL),
+      ExternalResource(Purchase, URI.create("https://test.org/1")),
+      ExternalResource(Download, URI.create("https://test.org/2")),
+      ExternalResource(Streaming, URI.create("https://test.org/1")),
+      ExternalResource(Other, URI.create("https://test.org/2")),
+      ExternalResource(Private, URI.create("https://test.org/3")),
     ),
   )
 
+  /** ''Test of Thing'' audio play. */
   val audioPlay2: AudioPlay = AudioPlay.unsafe(
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea67"),
-    title = AudioPlayTitle.unsafe("Audio Play 1"),
+    title = AudioPlayTitle.unsafe("Test of Thing"),
     synopsis = Synopsis.unsafe("Synopsis 1"),
     releaseDate = makeReleaseDate(1999, 10, 3),
     writers = Nil,
@@ -95,14 +99,15 @@ private[aggregator] object AudioPlays:
     series = makeSeries("e810039b-c44c-405f-a360-e44fadc43ead", "Series"),
     seriesSeason = None,
     seriesNumber = AudioPlaySeriesNumber.unsafe(2).some,
-    coverUrl = makeCoverUrl("https://cdn.test.org/23"),
+    coverUrl = makeCoverUri("https://cdn.test.org/23"),
     externalResources =
-      List(ExternalResource(Download, URI.create("https://audio.com/1").toURL)),
+      List(ExternalResource(Download, URI.create("https://audio.com/1"))),
   )
 
+  /** ''The Testing Things'' audio play. */
   val audioPlay3: AudioPlay = AudioPlay.unsafe(
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea68"),
-    title = AudioPlayTitle.unsafe("Audio Play 2"),
+    title = AudioPlayTitle.unsafe("The Testing Things"),
     synopsis = Synopsis.unsafe("Synopsis 2"),
     releaseDate = makeReleaseDate(2024, 3, 15),
     writers = Nil,
@@ -118,11 +123,11 @@ private[aggregator] object AudioPlays:
     seriesNumber = None,
     coverUrl = None,
     externalResources =
-      List(ExternalResource(Streaming, URI.create("https://audio.com/2").toURL)),
+      List(ExternalResource(Streaming, URI.create("https://audio.com/2"))),
   )
 
-  /** Stub [[AudioPlayService]] implementation that supports only `findById`
-   *  operation.
+  /** Stub [[AudioPlayService]] implementation that supports only `findById` and
+   *  `search` operations.
    *
    *  Contains only persons given in [[AudioPlays]] object.
    *
@@ -145,6 +150,17 @@ private[aggregator] object AudioPlays:
         request: ListAudioPlaysRequest,
     ): F[Either[ErrorResponse, ListAudioPlaysResponse]] =
       throw new UnsupportedOperationException()
+
+    override def search(
+        request: SearchAudioPlaysRequest,
+    ): F[Either[ErrorResponse, SearchAudioPlaysResponse]] =
+      val elements = audioById.values
+        .filter(a => a.title == request.query)
+        .toList
+      AudioPlayMapper
+        .toSearchResponse(elements)
+        .asRight
+        .pure[F]
 
     override def create(
         user: User,

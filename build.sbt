@@ -15,7 +15,24 @@ inThisBuild {
       "-Wnonunit-statement",
       "-Xmax-inlines:64",
     ),
+    assembly / assemblyMergeStrategy := mergeStrategy,
   )
+}
+
+
+def mergeStrategy: String => MergeStrategy = {
+  case PathList("META-INF", "services", _*) => MergeStrategy.concat
+  case PathList(
+         "META-INF",
+         "maven",
+         "org.webjars",
+         "swagger-ui",
+         "pom.properties") => MergeStrategy.singleOrError
+  case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
+    MergeStrategy.singleOrError
+  case PathList("META-INF", _*) => MergeStrategy.discard
+  case "module-info.class"      => MergeStrategy.discard
+  case x                        => MergeStrategy.defaultMergeStrategy(x)
 }
 
 
@@ -25,21 +42,6 @@ lazy val app = (project in file("."))
   .settings(
     name := "app",
     idePackagePrefix := Some("org.aulune"),
-    assembly / assemblyMergeStrategy := {
-      case PathList("META-INF", "services", _*) => MergeStrategy.concat
-      case PathList(
-             "META-INF",
-             "maven",
-             "org.webjars",
-             "swagger-ui",
-             "pom.properties") => MergeStrategy.singleOrError
-      case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
-        MergeStrategy.singleOrError
-      case PathList("META-INF", _*) => MergeStrategy.discard
-
-      case "module-info.class" => MergeStrategy.discard
-      case x => (assembly / assemblyMergeStrategy).value.apply(x)
-    },
     assembly / mainClass := Some("org.aulune.App"),
     libraryDependencies ++= http4sDeps ++ tapirDeps ++ doobieDeps ++ Seq(
       "ch.qos.logback"         % "logback-classic" % logbackVersion,

@@ -6,7 +6,6 @@ import adapters.service.errors.PersonServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.PersonMapper
 import application.AggregatorPermission.Modify
 import application.dto.person.{CreatePersonRequest, PersonResource}
-import application.repositories.PersonRepository
 import application.{AggregatorPermission, PersonService}
 import domain.errors.PersonValidationError
 import domain.model.person.Person
@@ -14,6 +13,7 @@ import domain.model.person.Person
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.repositories.PersonRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService

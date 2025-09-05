@@ -11,24 +11,27 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
 import application.dto.person.PersonResource
-import application.repositories.AudioPlayRepository
-import application.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 import application.{AggregatorPermission, AudioPlayService, PersonService}
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import domain.repositories.AudioPlayRepository
+import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
+import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import org.aulune.commons.typeclasses.SortableUUIDGen
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
 import org.typelevel.log4cats.{Logger, LoggerFactory}
@@ -49,24 +52,31 @@ object AudioPlayServiceImpl:
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
   def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
-      pagination: AggregatorConfig.Pagination,
+      pagination: AggregatorConfig.PaginationParams,
+      search: AggregatorConfig.SearchParams,
       repo: AudioPlayRepository[F],
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
   ): F[AudioPlayService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
-    val parserO = PaginationParamsParser
+    val paginationParserO = PaginationParamsParser
       .build[AudioPlayCursor](pagination.default, pagination.max)
+    val searchParserO = SearchParamsParser
+      .build(search.default, search.max)
 
     for
       _ <- info"Building service."
-      parser <- MonadThrow[F]
-        .fromOption(parserO, new IllegalArgumentException())
-        .onError(_ => error"Invalid parser parameters are given.")
+      paginationParser <- MonadThrow[F]
+        .fromOption(paginationParserO, new IllegalArgumentException())
+        .onError(_ => error"Invalid pagination parser parameters are given.")
+      searchParser <- MonadThrow[F]
+        .fromOption(searchParserO, new IllegalArgumentException())
+        .onError(_ => error"Invalid search parser parameters are given.")
       _ <- permissionService.registerPermission(Modify)
       _ <- permissionService.registerPermission(DownloadAudioPlays)
     yield new AudioPlayServiceImpl[F](
-      parser,
+      paginationParser,
+      searchParser,
       repo,
       personService,
       permissionService,
@@ -79,6 +89,7 @@ private final class AudioPlayServiceImpl[F[
     _,
 ]: MonadThrow: SortableUUIDGen: LoggerFactory](
     paginationParser: PaginationParamsParser[AudioPlayCursor],
+    searchParser: SearchParamsParser,
     repo: AudioPlayRepository[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
@@ -109,6 +120,20 @@ private final class AudioPlayServiceImpl[F[
       listResult = repo.list(params.cursor, params.pageSize)
       elems <- EitherT.liftF(listResult)
       response = AudioPlayMapper.toListResponse(elems)
+    yield response).value.handleErrorWith(handleInternal)
+
+  override def search(
+      request: SearchAudioPlaysRequest,
+  ): F[Either[ErrorResponse, SearchAudioPlaysResponse]] =
+    val paramsV = searchParser.parse(request.query, request.limit)
+    (for
+      _ <- eitherTLogger.info(s"Search request: $request.")
+      params <- EitherT
+        .fromOption(paramsV.toOption, ErrorResponses.invalidSearchParams)
+        .leftSemiflatTap(_ => warn"Invalid search params are given.")
+      searchResult = repo.search(params.query, params.limit)
+      elems <- EitherT.liftF(searchResult)
+      response = AudioPlayMapper.toSearchResponse(elems)
     yield response).value.handleErrorWith(handleInternal)
 
   override def create(

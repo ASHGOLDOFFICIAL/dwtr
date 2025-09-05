@@ -6,13 +6,13 @@ import application.AggregatorPermission.Modify
 import application.PersonService
 import application.dto.person.{CreatePersonRequest, PersonResource}
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
-import application.repositories.PersonRepository
 import domain.model.person.{FullName, Person}
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.repositories.PersonRepository
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.errors.{ErrorResponse, ErrorStatus}
 import org.aulune.commons.service.auth.User

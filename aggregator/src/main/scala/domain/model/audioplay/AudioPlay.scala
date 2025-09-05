@@ -6,7 +6,7 @@ import domain.errors.AudioPlayValidationError
 import domain.errors.AudioPlayValidationError.*
 import domain.model.audioplay.AudioPlay.ValidationResult
 import domain.model.person.Person
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.data.{NonEmptyChain, Validated, ValidatedNec}
 import org.aulune.commons.types.Uuid
@@ -22,7 +22,7 @@ import org.aulune.commons.types.Uuid
  *  @param series audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
- *  @param coverUrl URL to audio play cover.
+ *  @param coverUri URL to audio play cover.
  *  @param externalResources links to different resources.
  */
 final case class AudioPlay private (
@@ -35,7 +35,7 @@ final case class AudioPlay private (
     series: Option[AudioPlaySeries],
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
-    coverUrl: Option[ImageUrl],
+    coverUri: Option[ImageUri],
     externalResources: List[ExternalResource],
 ):
   /** Copies with validation.
@@ -51,7 +51,7 @@ final case class AudioPlay private (
       series: Option[AudioPlaySeries] = series,
       seriesSeason: Option[AudioPlaySeason] = seriesSeason,
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
-      coverUrl: Option[ImageUrl] = coverUrl,
+      coverUrl: Option[ImageUri] = coverUri,
       externalResources: List[ExternalResource] = externalResources,
   ): ValidationResult[AudioPlay] = AudioPlay(
     id = id,
@@ -87,7 +87,7 @@ object AudioPlay:
       series: Option[AudioPlaySeries],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
-      coverUrl: Option[ImageUrl],
+      coverUrl: Option[ImageUri],
       externalResources: List[ExternalResource],
   ): ValidationResult[AudioPlay] = validateState(
     new AudioPlay(
@@ -100,7 +100,7 @@ object AudioPlay:
       series = series,
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
-      coverUrl = coverUrl,
+      coverUri = coverUrl,
       externalResources = externalResources,
     ))
 
@@ -117,7 +117,7 @@ object AudioPlay:
       series: Option[AudioPlaySeries],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
-      coverUrl: Option[ImageUrl],
+      coverUrl: Option[ImageUri],
       externalResources: List[ExternalResource],
   ): AudioPlay = AudioPlay(
     id = id,

@@ -10,13 +10,16 @@ import doobie.hikari.HikariTransactor
 import doobie.util.transactor.Transactor
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
+import org.testcontainers.utility.DockerImageName
 
 
 trait PostgresTestContainer extends AsyncFreeSpec with TestContainerForEach:
-  override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def()
+  override val containerDef: PostgreSQLContainer.Def = PostgreSQLContainer.Def(
+    dockerImageName = DockerImageName.parse("postgres:17-alpine"),
+  )
 
-  type Init[A] = Transactor[IO] => IO[A]
-  type TestCase[A] = A => IO[Assertion]
+  private type Init[A] = Transactor[IO] => IO[A]
+  private type TestCase[A] = A => IO[Assertion]
 
   /** @param init function that returns a service given [[Transactor]].
    *  @tparam A service type.

@@ -2,8 +2,7 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
-import application.repositories.AudioPlayRepository
-import application.repositories.AudioPlayRepository.AudioPlayCursor
+import adapters.service.AudioPlays
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -13,19 +12,22 @@ import domain.model.audioplay.{
   AudioPlayTitle,
   CastMember,
 }
+import domain.repositories.AudioPlayRepository
+import domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.shared.ExternalResourceType.Purchase
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.aggregator.adapters.service.AudioPlays
+import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
+  InvalidArgument,
 }
 import org.aulune.commons.testing.PostgresTestContainer
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -49,7 +51,7 @@ final class AudioPlayRepositoryImplTest
       title = AudioPlayTitle.unsafe("Updated"),
       writers = List(Uuid.unsafe("c5c1f3b9-175c-4fa2-800d-c9c20cb44539")),
       externalResources =
-        List(ExternalResource(Purchase, URI.create("https://test.org/1").toURL)),
+        List(ExternalResource(Purchase, URI.create("https://test.org/1"))),
     )
     .getOrElse(throw new IllegalStateException())
 
@@ -179,6 +181,38 @@ final class AudioPlayRepositoryImplTest
           cursor = AudioPlayCursor(first.id)
           rest <- repo.list(Some(cursor), 1)
         yield rest.head shouldBe audioPlayTests(1)
+      }
+    }
+  }
+
+  "search method " - {
+    "should " - {
+      "return matching elements" in stand { repo =>
+        val element = AudioPlays.audioPlay2
+        val query = NonEmptyString.unsafe(element.title)
+        for
+          _ <- persistAudios(repo)
+          result <- repo.search(query, 3)
+        yield result should contain(element)
+      }
+
+      "not return elements when none of them match" in stand { repo =>
+        for
+          _ <- persistAudios(repo)
+          result <- repo.search(NonEmptyString.unsafe("nothing"), 1)
+        yield result shouldBe Nil
+      }
+
+      "return elements in order of likeness" in stand { repo =>
+        for
+          _ <- persistAudios(repo)
+          result <- repo.search(NonEmptyString.unsafe("test thing"), 3)
+        yield result shouldBe List(AudioPlays.audioPlay3, AudioPlays.audioPlay2)
+      }
+
+      "throw InvalidArgument when given non-positive limit" in stand { repo =>
+        for result <- repo.search(NonEmptyString.unsafe("something"), 0).attempt
+        yield result shouldBe InvalidArgument.asLeft
       }
     }
   }

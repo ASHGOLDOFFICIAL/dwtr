@@ -79,8 +79,6 @@ private[postgres] object AudioPlayMetas:
     Decoder.decodeInt.map(resourceTypeFromInt)
   private given Encoder[ExternalResourceType] =
     Encoder.encodeInt.contramap(resourceTypeToInt)
-  private given Decoder[URL] = Decoder.decodeURI.map(_.toURL)
-  private given Encoder[URL] = Encoder.encodeURI.contramap(_.toURI)
   private given Decoder[CastMember] = deriveConfiguredDecoder
   private given Encoder[CastMember] = deriveConfiguredEncoder
   private given Decoder[ExternalResource] = deriveConfiguredDecoder

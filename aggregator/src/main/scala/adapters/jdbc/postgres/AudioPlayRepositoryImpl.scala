@@ -4,8 +4,6 @@ package adapters.jdbc.postgres
 
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
-import application.repositories.AudioPlayRepository
-import application.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -16,7 +14,9 @@ import domain.model.audioplay.{
   CastMember,
 }
 import domain.model.person.Person
-import domain.shared.{ExternalResource, ImageUrl, ReleaseDate, Synopsis}
+import domain.repositories.AudioPlayRepository
+import domain.repositories.AudioPlayRepository.AudioPlayCursor
+import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
@@ -24,13 +24,17 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
+import org.aulune.commons.adapters.doobie.postgres.Metas.{
+  nonEmptyStringMeta,
+  uuidMeta,
+}
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
+  InvalidArgument,
 }
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 
 import java.sql.SQLException
 
@@ -96,7 +100,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |  ${elem.id}, ${elem.title}, ${elem.synopsis}, ${elem.releaseDate},
       |  ${elem.writers}, ${elem.cast},
       |  ${elem.series.map(_.id)}, ${elem.seriesSeason}, ${elem.seriesNumber},
-      |  ${elem.coverUrl}, ${elem.externalResources}
+      |  ${elem.coverUri}, ${elem.externalResources}
       |)""".stripMargin.update.run
 
     val transaction =
@@ -129,7 +133,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |    series_id     = ${elem.series.map(_.id)},
       |    series_season = ${elem.seriesSeason},
       |    series_number = ${elem.seriesNumber},
-      |    cover_url     = ${elem.coverUrl},
+      |    cover_url     = ${elem.coverUri},
       |    resources     = ${elem.externalResources}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
@@ -162,13 +166,33 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       case Some(t) => selectBase ++ fr"WHERE ap.id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
-    full.stripMargin
+    val query = full.stripMargin
       .query[SelectResult]
       .map(toAudioPlay)
       .to[List]
-      .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+
+    (for
+      _ <- MonadThrow[F].raiseWhen(count <= 0)(InvalidArgument)
+      result <- query.transact(transactor)
+    yield result).handleErrorWith(toRepositoryError)
   end list
+
+  override def search(query: NonEmptyString, limit: Int): F[List[AudioPlay]] =
+    val select = (selectBase ++ fr0"""
+      |WHERE TO_TSVECTOR(ap.title) @@ PLAINTO_TSQUERY($query)
+      |ORDER BY TS_RANK(TO_TSVECTOR(ap.title),
+      |                 PLAINTO_TSQUERY($query)) DESC
+      |LIMIT $limit
+      |""".stripMargin)
+      .query[SelectResult]
+      .map(toAudioPlay)
+      .to[List]
+
+    (for
+      _ <- MonadThrow[F].raiseWhen(limit <= 0)(InvalidArgument)
+      result <- select.transact(transactor)
+    yield result).handleErrorWith(toRepositoryError)
+  end search
 
   override def getSeries(
       id: Uuid[AudioPlaySeries],
@@ -191,7 +215,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       Option[AudioPlaySeriesName],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
-      Option[ImageUrl],
+      Option[ImageUri],
       List[ExternalResource],
   )
 
@@ -210,7 +234,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |    ap.resources
     |FROM audio_plays ap
     |LEFT JOIN audio_play_series s ON ap.series_id = s.id
-    |"""
+    |""".stripMargin
 
   private def insertSeriesIfMissing(series: Option[AudioPlaySeries]) =
     series match
@@ -233,7 +257,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       seriesName: Option[AudioPlaySeriesName],
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
-      coverUrl: Option[ImageUrl],
+      coverUrl: Option[ImageUri],
       resources: List[ExternalResource],
   ): AudioPlay =
     val series = seriesId.zip(seriesName).map(AudioPlaySeries.unsafe)

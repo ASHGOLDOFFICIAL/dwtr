@@ -20,8 +20,7 @@ import application.errors.TranslationServiceError.{
   OriginalNotFound,
   TranslationNotFound,
 }
-import application.repositories.AudioPlayTranslationRepository
-import application.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.AudioPlayTranslation
 import domain.shared.TranslatedTitle
 
@@ -29,6 +28,7 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
@@ -84,7 +84,7 @@ final class AudioPlayTranslationServiceImplTest
       .anyNumberOfTimes()
     AudioPlayTranslationServiceImpl
       .build(
-        AggregatorConfig.Pagination(2, 1),
+        AggregatorConfig.PaginationParams(2, 1),
         mockRepo,
         mockAudio,
         mockPermissions)

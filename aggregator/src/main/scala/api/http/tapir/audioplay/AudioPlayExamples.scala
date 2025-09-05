@@ -2,16 +2,18 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
+import application.dto.audioplay.translation.ExternalResourceDto
+import application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
 import application.dto.audioplay.{
-  CreateAudioPlayRequest,
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDto,
+  CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
+  SearchAudioPlaysRequest,
+  SearchAudioPlaysResponse,
 }
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceDto
 
 import java.net.URI
 import java.time.LocalDate
@@ -83,21 +85,19 @@ object AudioPlayExamples:
   private val seriesSeasonExample = Some(1)
   private val seriesNumberExample = Some(1)
 
-  private val coverUrlExample = Some(
-    URI.create("https://www.bigfinish.com/image/release/1605/large.jpg").toURL)
+  private val coverUriExample =
+    Some(URI.create("https://www.bigfinish.com/image/release/1605/large.jpg"))
 
   private val externalResourcesExample = List(
     ExternalResourceDto(
       Purchase,
       URI
-        .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605")
-        .toURL,
+        .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605"),
     ),
     ExternalResourceDto(
       Purchase,
       URI
-        .create("https://www.bigfinish.com/releases/v/cicero-series-01-1777")
-        .toURL,
+        .create("https://www.bigfinish.com/releases/v/cicero-series-01-1777"),
     ),
   )
   private val nextPageTokenExample =
@@ -125,7 +125,7 @@ object AudioPlayExamples:
     series = seriesExample,
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
-    coverUrl = coverUrlExample,
+    coverUri = coverUriExample,
     externalResources = externalResourcesExample,
   )
 
@@ -138,3 +138,13 @@ object AudioPlayExamples:
     audioPlays = List(responseExample),
     nextPageToken = nextPageTokenExample,
   )
+
+  val searchRequestExample: SearchAudioPlaysRequest = SearchAudioPlaysRequest(
+    query = "scoundrels",
+    limit = Some(1),
+  )
+
+  val searchResponseExample: SearchAudioPlaysResponse =
+    SearchAudioPlaysResponse(
+      audioPlays = List(responseExample),
+    )
