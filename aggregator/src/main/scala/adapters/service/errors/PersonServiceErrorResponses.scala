@@ -5,19 +5,50 @@ package adapters.service.errors
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
 import domain.errors.PersonValidationError
 
-import cats.data.NonEmptyChain
+import cats.data.{NonEmptyChain, NonEmptyList}
 import cats.syntax.all.given
-import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 import org.aulune.commons.errors.ErrorStatus.{InvalidArgument, NotFound}
+import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
+
+import java.util.UUID
 
 
 /** Error responses for
  *  [[org.aulune.aggregator.adapters.service.PersonServiceImpl]].
  */
 object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
+  val emptyBatchGet: ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = "Empty batch get request is given",
+    details = ErrorDetails(),
+  )
+
+  /** Maximum allowed elements for batch get request is exceeded.
+   *  @param max maximum allowed.
+   */
+  def maxExceededBatchGet(max: Int): ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = s"Too many elements, max allowed: $max",
+    details = ErrorDetails(),
+  )
+
   val personNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Person is not found.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = PersonNotFound,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  /** Some persons are not found.
+   *  @param uuids UUIDs of missing persons.
+   */
+  def personsNotFound(uuids: NonEmptyList[UUID]): ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = uuids.mkString_("Some persons are not found: ", ", ", "."),
     details = ErrorDetails(
       info = ErrorInfo(
         reason = PersonNotFound,

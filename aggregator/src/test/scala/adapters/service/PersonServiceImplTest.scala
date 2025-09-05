@@ -4,15 +4,20 @@ package adapters.service
 
 import application.AggregatorPermission.Modify
 import application.PersonService
-import application.dto.person.{CreatePersonRequest, PersonResource}
+import application.dto.person.{
+  BatchGetPersonsRequest,
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource,
+}
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
 import domain.model.person.{FullName, Person}
+import domain.repositories.PersonRepository
 
+import cats.data.NonEmptyList
 import cats.effect.IO
-import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.repositories.PersonRepository
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.errors.{ErrorResponse, ErrorStatus}
 import org.aulune.commons.service.auth.User
@@ -65,7 +70,7 @@ final class PersonServiceImplTest
       .expects(*)
       .returning(().asRight.pure)
     PersonServiceImpl
-      .build(mockRepo, mockPermissions)
+      .build(2, mockRepo, mockPermissions)
       .flatMap(testCase)
   end stand
 
@@ -115,6 +120,39 @@ final class PersonServiceImplTest
         val _ = mockGet(IO.raiseError(new Throwable()))
         val find = service.findById(person.id)
         assertInternalError(find)
+      }
+    }
+  }
+
+  "batchGet method " - {
+    "should " - {
+      "return batch of elements when all are found" in stand { service =>
+        val elements = NonEmptyList.of(Persons.person1, Persons.person2)
+        val ids = elements.map(_.id)
+        val request = BatchGetPersonsRequest(names = ids.toList)
+
+        val _ = (mockRepo.batchGet _)
+          .expects(ids)
+          .returning(elements.toList.pure)
+
+        for result <- service.batchGet(request)
+        yield result match
+          case Left(_)         => fail("Error was not expected.")
+          case Right(response) => response.persons.map(_.id) shouldBe ids.toList
+      }
+
+      "return PersonNotFound if at least one person is not found" in stand {
+        service =>
+          val elements = NonEmptyList.of(Persons.person1, Persons.person2)
+          val ids = elements.map(_.id)
+          val request = BatchGetPersonsRequest(names = ids.toList)
+
+          val _ = (mockRepo.batchGet _)
+            .expects(ids)
+            .returning(List(Persons.person1).pure)
+
+          val batchGet = service.batchGet(request)
+          assertDomainError(batchGet)(PersonNotFound)
       }
     }
   }

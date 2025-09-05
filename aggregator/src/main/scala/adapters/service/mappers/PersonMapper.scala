@@ -2,7 +2,11 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import application.dto.person.{CreatePersonRequest, PersonResource}
+import application.dto.person.{
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource
+}
 import domain.errors.PersonValidationError
 import domain.errors.PersonValidationError.InvalidArguments
 import domain.model.person.{FullName, Person}
@@ -33,3 +37,7 @@ private[service] object PersonMapper:
   /** Converts domain object to response object. */
   def toResponse(domain: Person): PersonResource =
     PersonResource(id = domain.id, name = domain.name)
+
+  /** Converts list of domain objects to batch response. */
+  def toBatchResponse(domains: List[Person]): BatchGetPersonsResponse =
+    BatchGetPersonsResponse(persons = domains.map(toResponse))

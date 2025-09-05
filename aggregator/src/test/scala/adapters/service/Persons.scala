@@ -4,7 +4,12 @@ package adapters.service
 
 import adapters.service.mappers.PersonMapper
 import application.PersonService
-import application.dto.person.{CreatePersonRequest, PersonResource}
+import application.dto.person.{
+  BatchGetPersonsRequest,
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource,
+}
 import domain.model.person.{FullName, Person}
 
 import cats.Applicative
@@ -33,15 +38,15 @@ private[aggregator] object Persons:
     name = FullName.unsafe("Peter Jones"),
   )
 
-  /** Stub [[PersonService]] implementation that supports only `findById`
-   *  operation.
+  /** Stub [[PersonService]] implementation that supports only `findById` and
+   *  `batchGet` operation.
    *
    *  Contains only persons given in [[Persons]] object.
    *
    *  @tparam F effect type.
    */
   def service[F[_]: Applicative]: PersonService[F] = new PersonService[F]:
-    private val personById: Map[Uuid[Person], Person] = Map.from(
+    private val personById: Map[UUID, Person] = Map.from(
       List(person1, person2, person3).map(p => (p.id, p)),
     )
 
@@ -52,6 +57,12 @@ private[aggregator] object Persons:
         .toRight(
           adapters.service.errors.PersonServiceErrorResponses.personNotFound)
         .pure[F]
+
+    override def batchGet(
+        request: BatchGetPersonsRequest,
+    ): F[Either[ErrorResponse, BatchGetPersonsResponse]] =
+      val persons = request.names.mapFilter(personById.get)
+      PersonMapper.toBatchResponse(persons).asRight.pure[F]
 
     override def create(
         user: User,

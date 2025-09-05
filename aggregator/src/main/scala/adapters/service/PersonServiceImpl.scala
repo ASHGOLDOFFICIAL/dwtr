@@ -5,15 +5,20 @@ package adapters.service
 import adapters.service.errors.PersonServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.PersonMapper
 import application.AggregatorPermission.Modify
-import application.dto.person.{CreatePersonRequest, PersonResource}
+import application.dto.person.{
+  BatchGetPersonsRequest,
+  BatchGetPersonsResponse,
+  CreatePersonRequest,
+  PersonResource,
+}
 import application.{AggregatorPermission, PersonService}
 import domain.errors.PersonValidationError
 import domain.model.person.Person
+import domain.repositories.PersonRepository
 
 import cats.MonadThrow
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.repositories.PersonRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
@@ -30,25 +35,33 @@ import java.util.UUID
 /** [[PersonService]] implementation. */
 object PersonServiceImpl:
   /** Builds a service.
+   *  @param maxBatchGet maximum allowed elements for batch get request.
    *  @param repo person repository.
    *  @param permissionService [[PermissionClientService]] implementation to
    *    perform permission checks.
    *  @tparam F effect type.
+   *  @throws IllegalArgumentException when [[maxBatchGet]] is non-positive.
    */
   def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
+      maxBatchGet: Int,
       repo: PersonRepository[F],
       permissionService: PermissionClientService[F],
   ): F[PersonService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
     for
       _ <- info"Building service."
+      _ <- MonadThrow[F]
+        .raiseWhen(maxBatchGet <= 0)(new IllegalArgumentException())
+        .onError(_ =>
+          error"Non-positive maximum allowed number of get batch request elements.")
       _ <- permissionService.registerPermission(Modify)
-    yield new PersonServiceImpl[F](repo, permissionService)
+    yield new PersonServiceImpl[F](maxBatchGet, repo, permissionService)
 
 
 private final class PersonServiceImpl[
     F[_]: MonadThrow: SortableUUIDGen: LoggerFactory,
 ] private (
+    maxBatchGet: Int,
     repo: PersonRepository[F],
     permissionService: PermissionClientService[F],
 ) extends PersonService[F]:
@@ -65,6 +78,15 @@ private final class PersonServiceImpl[
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
       response = PersonMapper.toResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
+
+  override def batchGet(
+      request: BatchGetPersonsRequest,
+  ): F[Either[ErrorResponse, BatchGetPersonsResponse]] = (for
+    _ <- eitherTLogger.info(s"Batch get request: $request.")
+    ids <- EitherT.fromEither(parseIdList(request.names))
+    elems <- EitherT.liftF(repo.batchGet(ids))
+    response <- EitherT.fromEither(checkNoneIsMissing(ids, elems))
+  yield response).value.handleErrorWith(handleInternal)
 
   override def create(
       user: User,
@@ -88,6 +110,38 @@ private final class PersonServiceImpl[
       val uuid = Uuid[Person](id)
       info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
     }.handleErrorWith(handleInternal)
+
+  /** Transforms list of UUIDs to NEL of typed UUIDs if possible. Or returns the
+   *  appropiate error response.
+   *  @param ids list of persons IDs.
+   */
+  private def parseIdList(
+      ids: List[UUID],
+  ): Either[ErrorResponse, NonEmptyList[Uuid[Person]]] =
+    for
+      _ <- Either.raiseWhen(ids.size > maxBatchGet)(
+        ErrorResponses.maxExceededBatchGet(maxBatchGet))
+      idsO = NonEmptyList.fromList(ids.map(Uuid[Person]))
+      parsed <- Either.fromOption(idsO, ErrorResponses.emptyBatchGet)
+    yield parsed
+
+  /** Checks that for ID a person is given.
+   *  @param ids IDs of persons.
+   *  @param persons given persons.
+   */
+  private def checkNoneIsMissing(
+      ids: NonEmptyList[Uuid[Person]],
+      persons: List[Person],
+  ): Either[ErrorResponse, BatchGetPersonsResponse] =
+    val set = persons.map(_.id).toSet
+    val missing = ids.filterNot(set.contains)
+    for
+      _ <- NonEmptyList
+        .fromList(missing)
+        .toLeft(())
+        .leftMap(ErrorResponses.personsNotFound)
+      response = PersonMapper.toBatchResponse(persons)
+    yield response
 
   /** Makes person from given creation request and assigned ID.
    *  @param request creation request.

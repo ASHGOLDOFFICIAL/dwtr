@@ -3,17 +3,18 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.PersonMetas.given
-import adapters.jdbc.postgres.metas.SharedMetas.given
 import domain.model.person.{FullName, Person}
+import domain.repositories.PersonRepository
 
 import cats.MonadThrow
+import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
-import cats.syntax.all.*
-import doobie.implicits.*
+import cats.syntax.all.given
+import doobie.implicits.toSqlInterpolator
 import doobie.postgres.sqlstate
+import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.aggregator.domain.repositories.PersonRepository
-import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
+import org.aulune.commons.adapters.doobie.postgres.Metas.{uuidMeta, uuidsMeta}
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
@@ -64,7 +65,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
   override def get(id: Uuid[Person]): F[Option[Person]] =
     val query = selectBase ++ sql"WHERE id = $id"
     query.stripMargin
-      .query[(Uuid[Person], FullName)]
+      .query[SelectType]
       .map(toPerson)
       .option
       .transact(transactor)
@@ -92,6 +93,21 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .transact(transactor)
       .void
       .handleErrorWith(toRepositoryError)
+
+  override def batchGet(ids: NonEmptyList[Uuid[Person]]): F[List[Person]] =
+    sql"""
+    |SELECT p.id, p.name
+    |FROM UNNEST(${ids.toList.toArray}) WITH ORDINALITY AS t(id, ord)
+    |JOIN persons p ON p.id = t.id
+    |ORDER BY t.ord
+    """.stripMargin
+      .query[SelectType]
+      .map(toPerson)
+      .to[List]
+      .transact(transactor)
+      .handleErrorWith(toRepositoryError)
+
+  private type SelectType = (Uuid[Person], FullName)
 
   private val selectBase = fr"SELECT id, name FROM persons"
 
