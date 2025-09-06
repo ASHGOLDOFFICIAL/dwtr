@@ -6,7 +6,11 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  ListPersonsRequest,
+  ListPersonsResponse,
   PersonResource,
+  SearchPersonsRequest,
+  SearchPersonsResponse,
 }
 
 import io.circe.generic.extras.semiauto.{
@@ -30,3 +34,15 @@ private[api] object PersonCodecs:
 
   given Encoder[BatchGetPersonsRequest] = deriveConfiguredEncoder
   given Decoder[BatchGetPersonsRequest] = deriveConfiguredDecoder
+
+  given Encoder[ListPersonsResponse] = deriveConfiguredEncoder
+  given Decoder[ListPersonsResponse] = deriveConfiguredDecoder
+
+  given Encoder[ListPersonsRequest] = deriveConfiguredEncoder
+  given Decoder[ListPersonsRequest] = deriveConfiguredDecoder
+
+  given Encoder[SearchPersonsResponse] = deriveConfiguredEncoder
+  given Decoder[SearchPersonsResponse] = deriveConfiguredDecoder
+
+  given Encoder[SearchPersonsRequest] = deriveConfiguredEncoder
+  given Decoder[SearchPersonsRequest] = deriveConfiguredDecoder
