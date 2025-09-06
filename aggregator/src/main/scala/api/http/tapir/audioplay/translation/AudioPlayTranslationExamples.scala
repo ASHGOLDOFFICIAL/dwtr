@@ -3,8 +3,8 @@ package api.http.tapir.audioplay.translation
 
 
 import api.http.tapir.audioplay.AudioPlayExamples
-import application.dto.audioplay.translation.AudioPlayTranslationTypeDto.Subtitles
-import application.dto.audioplay.translation.LanguageDto.Russian
+import application.dto.audioplay.translation.AudioPlayTranslationTypeDTO.Subtitles
+import org.aulune.aggregator.application.dto.shared.LanguageDTO.Russian
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,

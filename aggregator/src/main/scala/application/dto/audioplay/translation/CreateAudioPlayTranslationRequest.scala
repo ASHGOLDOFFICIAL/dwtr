@@ -2,6 +2,8 @@ package org.aulune.aggregator
 package application.dto.audioplay.translation
 
 
+import application.dto.shared.LanguageDTO
+
 import java.net.URI
 import java.util.UUID
 
@@ -15,7 +17,7 @@ import java.util.UUID
 final case class CreateAudioPlayTranslationRequest(
     originalId: UUID,
     title: String,
-    translationType: AudioPlayTranslationTypeDto,
-    language: LanguageDto,
+    translationType: AudioPlayTranslationTypeDTO,
+    language: LanguageDTO,
     links: List[URI],
 )

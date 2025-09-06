@@ -4,10 +4,6 @@ package api.http.tapir.audioplay
 
 import api.http.tapir.person.PersonSchemas.given
 import api.mappers.ExternalResourceTypeMapper
-import application.dto.audioplay.translation.{
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-}
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
@@ -18,6 +14,10 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+}
+import org.aulune.aggregator.application.dto.shared.{
+  ExternalResourceDTO,
+  ExternalResourceTypeDTO,
 }
 
 import sttp.tapir.{Schema, Validator}
@@ -40,9 +40,9 @@ object AudioPlaySchemas:
   private given Schema[URI] = Schema.string[URI]
   private given Schema[CastMemberDTO] = Schema.derived
   private given Schema[CastMemberResource] = Schema.derived
-  private given Schema[ExternalResourceDto] = Schema.derived
-  private given Schema[ExternalResourceTypeDto] = Schema.string
+  private given Schema[ExternalResourceDTO] = Schema.derived
+  private given Schema[ExternalResourceTypeDTO] = Schema.string
     .validate(
       Validator
-        .enumeration(ExternalResourceTypeDto.values.toList)
+        .enumeration(ExternalResourceTypeDTO.values.toList)
         .encode(ExternalResourceTypeMapper.toString))

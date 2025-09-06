@@ -1,33 +1,33 @@
 package org.aulune.aggregator
 package api.mappers
 
-import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto
+import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDTO
 
 
-/** Mapper between application layer's [[AudioPlayTranslationTypeDto]] and its
+/** Mapper between application layer's [[AudioPlayTranslationTypeDTO]] and its
  *  API representation as strings.
  */
 private[api] object AudioPlayTranslationTypeMapper:
   private val fromStringMapper = Map(
-    "transcript" -> AudioPlayTranslationTypeDto.Transcript,
-    "subtitles" -> AudioPlayTranslationTypeDto.Subtitles,
-    "voiceover" -> AudioPlayTranslationTypeDto.VoiceOver,
+    "transcript" -> AudioPlayTranslationTypeDTO.Transcript,
+    "subtitles" -> AudioPlayTranslationTypeDTO.Subtitles,
+    "voiceover" -> AudioPlayTranslationTypeDTO.VoiceOver,
   )
   private val fromDtoMapper = fromStringMapper.map(_.swap)
 
   val stringValues: List[String] = fromStringMapper.keys.toList
 
-  /** Returns string representation of [[AudioPlayTranslationTypeDto]].
+  /** Returns string representation of [[AudioPlayTranslationTypeDTO]].
    *
    *  @param dto DTO to represent.
    */
-  def toString(dto: AudioPlayTranslationTypeDto): String = fromDtoMapper(dto)
+  def toString(dto: AudioPlayTranslationTypeDTO): String = fromDtoMapper(dto)
 
-  /** Returns [[AudioPlayTranslationTypeDto]] for given string if valid.
+  /** Returns [[AudioPlayTranslationTypeDTO]] for given string if valid.
    *
    *  @param str string.
-   *  @return [[AudioPlayTranslationTypeDto]] or `None` if given string is not
+   *  @return [[AudioPlayTranslationTypeDTO]] or `None` if given string is not
    *    mapped to any DTO object.
    */
-  def fromString(str: String): Option[AudioPlayTranslationTypeDto] =
+  def fromString(str: String): Option[AudioPlayTranslationTypeDTO] =
     fromStringMapper.get(str)

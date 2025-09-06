@@ -3,13 +3,13 @@ package adapters.service.mappers
 
 
 import domain.shared.{ExternalResource, ExternalResourceType}
-import org.aulune.aggregator.application.dto.audioplay.translation.{
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
+import org.aulune.aggregator.application.dto.shared.{
+  ExternalResourceDTO,
+  ExternalResourceTypeDTO,
 }
 
 
-/** Mapper between external [[ExternalResourceDto]] and domain's
+/** Mapper between external [[ExternalResourceDTO]] and domain's
  *  [[ExternalResource]].
  *
  *  @note Should not be used outside `service` package to not expose domain
@@ -17,29 +17,29 @@ import org.aulune.aggregator.application.dto.audioplay.translation.{
  */
 private[service] object ExternalResourceMapper:
   private val mapToDomain = Map(
-    ExternalResourceTypeDto.Purchase -> ExternalResourceType.Purchase,
-    ExternalResourceTypeDto.Download -> ExternalResourceType.Download,
-    ExternalResourceTypeDto.Streaming -> ExternalResourceType.Streaming,
-    ExternalResourceTypeDto.Other -> ExternalResourceType.Other,
-    ExternalResourceTypeDto.Private -> ExternalResourceType.Private,
+    ExternalResourceTypeDTO.Purchase -> ExternalResourceType.Purchase,
+    ExternalResourceTypeDTO.Download -> ExternalResourceType.Download,
+    ExternalResourceTypeDTO.Streaming -> ExternalResourceType.Streaming,
+    ExternalResourceTypeDTO.Other -> ExternalResourceType.Other,
+    ExternalResourceTypeDTO.Private -> ExternalResourceType.Private,
   )
   private val mapFromDomain = mapToDomain.map(_.swap)
 
-  /** Convert [[ExternalResourceDto]] to [[ExternalResource]].
+  /** Convert [[ExternalResourceDTO]] to [[ExternalResource]].
    *
    *  @param dto external layer object.
    *  @return mapped domain object.
    */
-  def toDomain(dto: ExternalResourceDto): ExternalResource = ExternalResource(
+  def toDomain(dto: ExternalResourceDTO): ExternalResource = ExternalResource(
     resourceType = mapToDomain(dto.resourceType),
     uri = dto.link)
 
-  /** Convert [[ExternalResource]] to [[ExternalResourceDto]].
+  /** Convert [[ExternalResource]] to [[ExternalResourceDTO]].
    *
    *  @param domain inner domain object.
    *  @return mapped external object.
    */
-  def fromDomain(domain: ExternalResource): ExternalResourceDto =
-    ExternalResourceDto(
+  def fromDomain(domain: ExternalResource): ExternalResourceDTO =
+    ExternalResourceDTO(
       resourceType = mapFromDomain(domain.resourceType),
       link = domain.uri)

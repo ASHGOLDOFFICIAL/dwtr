@@ -10,11 +10,8 @@ import api.mappers.{
 }
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
-  AudioPlayTranslationTypeDto,
+  AudioPlayTranslationTypeDTO,
   CreateAudioPlayTranslationRequest,
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-  LanguageDto,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
@@ -31,6 +28,11 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
+import org.aulune.aggregator.application.dto.shared.{
+  ExternalResourceDTO,
+  ExternalResourceTypeDTO,
+  LanguageDTO,
+}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 import java.net.{URI, URL}
@@ -51,11 +53,11 @@ private[api] object AudioPlayTranslationCodecs:
   given Decoder[ListAudioPlayTranslationsResponse] = deriveConfiguredDecoder
   given Encoder[ListAudioPlayTranslationsResponse] = deriveConfiguredEncoder
 
-  private given Decoder[AudioPlayTranslationTypeDto] = Decoder.decodeString
+  private given Decoder[AudioPlayTranslationTypeDTO] = Decoder.decodeString
     .emap { str =>
       AudioPlayTranslationTypeMapper
         .fromString(str)
         .toRight(s"Invalid TranslationType: $str")
     }
-  private given Encoder[AudioPlayTranslationTypeDto] =
+  private given Encoder[AudioPlayTranslationTypeDTO] =
     Encoder.encodeString.contramap(AudioPlayTranslationTypeMapper.toString)

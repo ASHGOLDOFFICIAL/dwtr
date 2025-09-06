@@ -2,8 +2,8 @@ package org.aulune.aggregator
 package application.dto.audioplay
 
 
-import application.dto.audioplay.translation.ExternalResourceDto
 import application.dto.person.PersonResource
+import org.aulune.aggregator.application.dto.shared.ExternalResourceDTO
 
 import java.net.URI
 import java.time.LocalDate
@@ -33,5 +33,5 @@ final case class AudioPlayResource(
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
     coverUri: Option[URI],
-    externalResources: List[ExternalResourceDto],
+    externalResources: List[ExternalResourceDTO],
 )

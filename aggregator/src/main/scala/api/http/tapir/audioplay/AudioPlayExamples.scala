@@ -3,8 +3,7 @@ package api.http.tapir.audioplay
 
 
 import api.http.tapir.person.PersonExamples
-import application.dto.audioplay.translation.ExternalResourceDto
-import application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
+import org.aulune.aggregator.application.dto.shared.ExternalResourceTypeDTO.Purchase
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
@@ -16,6 +15,7 @@ import application.dto.audioplay.{
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
+import org.aulune.aggregator.application.dto.shared.ExternalResourceDTO
 
 import java.net.URI
 import java.time.LocalDate
@@ -89,12 +89,12 @@ object AudioPlayExamples:
     Some(URI.create("https://www.bigfinish.com/image/release/1605/large.jpg"))
 
   private val externalResourcesExample = List(
-    ExternalResourceDto(
+    ExternalResourceDTO(
       Purchase,
       URI
         .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605"),
     ),
-    ExternalResourceDto(
+    ExternalResourceDTO(
       Purchase,
       URI
         .create("https://www.bigfinish.com/releases/v/cicero-series-01-1777"),

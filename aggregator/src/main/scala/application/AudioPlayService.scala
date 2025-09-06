@@ -10,7 +10,7 @@ import application.dto.audioplay.{
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
-  SearchAudioPlaysResponse
+  SearchAudioPlaysResponse,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,

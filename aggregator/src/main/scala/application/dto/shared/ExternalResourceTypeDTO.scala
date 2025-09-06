@@ -1,9 +1,9 @@
 package org.aulune.aggregator
-package application.dto.audioplay.translation
+package application.dto.shared
 
 
 /** Type of links for resource. */
-enum ExternalResourceTypeDto:
+enum ExternalResourceTypeDTO:
   /** Resource where this content can be bought. */
   case Purchase
 

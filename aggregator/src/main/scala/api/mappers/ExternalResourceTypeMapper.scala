@@ -1,34 +1,36 @@
 package org.aulune.aggregator
 package api.mappers
 
-import org.aulune.aggregator.application.dto.audioplay.translation.ExternalResourceTypeDto
+import org.aulune.aggregator.application.dto.shared.ExternalResourceTypeDTO
 
 
-/** Mapper between application layer's [[ExternalResourceTypeDto]] and its API
+/** Mapper between application layer's [[ExternalResourceTypeDTO]] and its API
  *  representation as strings.
  */
 private[api] object ExternalResourceTypeMapper:
-  private val fromDtoMapper = ExternalResourceTypeDto.values.map {
-    case t @ ExternalResourceTypeDto.Purchase  => t -> "purchase"
-    case t @ ExternalResourceTypeDto.Streaming => t -> "streaming"
-    case t @ ExternalResourceTypeDto.Download  => t -> "download"
-    case t @ ExternalResourceTypeDto.Other     => t -> "other"
-    case t @ ExternalResourceTypeDto.Private   => t -> "private"
+  private val fromDtoMapper = ExternalResourceTypeDTO.values.map {
+    case t @ ExternalResourceTypeDTO.Purchase  => t -> "purchase"
+    case t @ ExternalResourceTypeDTO.Streaming => t -> "streaming"
+    case t @ ExternalResourceTypeDTO.Download  => t -> "download"
+    case t @ ExternalResourceTypeDTO.Other     => t -> "other"
+    case t @ ExternalResourceTypeDTO.Private   => t -> "private"
   }.toMap
 
   private val fromStringMapper = fromDtoMapper.map(_.swap)
 
   val stringValues: List[String] = fromStringMapper.keys.toList
 
-  /** Returns string representation of [[ExternalResourceTypeDto]].
+  /** Returns string representation of [[ExternalResourceTypeDTO]].
+   *
    *  @param dto DTO to represent.
    */
-  def toString(dto: ExternalResourceTypeDto): String = fromDtoMapper(dto)
+  def toString(dto: ExternalResourceTypeDTO): String = fromDtoMapper(dto)
 
-  /** Returns [[ExternalResourceTypeDto]] for given string if valid.
+  /** Returns [[ExternalResourceTypeDTO]] for given string if valid.
+   *
    *  @param str string.
-   *  @return [[ExternalResourceTypeDto]] or `None` if given string is not
+   *  @return [[ExternalResourceTypeDTO]] or `None` if given string is not
    *    mapped to any DTO object.
    */
-  def fromString(str: String): Option[ExternalResourceTypeDto] =
+  def fromString(str: String): Option[ExternalResourceTypeDTO] =
     fromStringMapper.get(str)
