@@ -9,6 +9,8 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  DeletePersonRequest,
+  GetPersonRequest,
   PersonResource,
 }
 import application.{AggregatorPermission, PersonService}
@@ -69,13 +71,15 @@ private final class PersonServiceImpl[
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
-  override def get(id: UUID): F[Either[ErrorResponse, PersonResource]] =
-    val uuid = Uuid[Person](id)
+  override def get(
+      request: GetPersonRequest,
+  ): F[Either[ErrorResponse, PersonResource]] =
+    val uuid = Uuid[Person](request.name)
     (for
-      _ <- eitherTLogger.info(s"Find request: $id.")
+      _ <- eitherTLogger.info(s"Find request: $request.")
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.personNotFound)
-        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
+        .leftSemiflatTap(_ => warn"Couldn't find element: $request")
       response = PersonMapper.toResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
 
@@ -105,11 +109,13 @@ private final class PersonServiceImpl[
       yield response).value
     }.handleErrorWith(handleInternal)
 
-  override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
-    requirePermissionOrDeny(Modify, user) {
-      val uuid = Uuid[Person](id)
-      info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
-    }.handleErrorWith(handleInternal)
+  override def delete(
+      user: User,
+      request: DeletePersonRequest,
+  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
+    val uuid = Uuid[Person](request.name)
+    info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
+  }.handleErrorWith(handleInternal)
 
   /** Transforms list of UUIDs to NEL of typed UUIDs if possible. Or returns the
    *  appropiate error response.

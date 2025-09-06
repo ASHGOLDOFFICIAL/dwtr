@@ -10,6 +10,8 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  DeletePersonRequest,
+  GetPersonRequest,
   PersonResource,
 }
 
@@ -58,7 +60,8 @@ final class PersonsController[F[_]: Applicative](
     .summary("Returns a person with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.get(id)
+      val request = GetPersonRequest(name = id)
+      for result <- service.get(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -103,7 +106,8 @@ final class PersonsController[F[_]: Applicative](
     .summary("Deletes person with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      for result <- service.delete(user, id)
+      val request = DeletePersonRequest(name = id)
+      for result <- service.delete(user, request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
