@@ -105,7 +105,7 @@ final class PersonsController[F[_]: Applicative](
       .example(ListResponse)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
-    .name("ListAudioPlaySeries")
+    .name("ListPersons")
     .summary("Returns the list of persons.")
     .tag(tag)
     .serverLogic { (pageSize, pageToken) =>
@@ -123,7 +123,7 @@ final class PersonsController[F[_]: Applicative](
       .example(SearchResponse)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
-    .name("SearchAudioPlaySeries")
+    .name("SearchPersons")
     .summary("Searches persons by given query.")
     .tag(tag)
     .serverLogic { (query, limit) =>
