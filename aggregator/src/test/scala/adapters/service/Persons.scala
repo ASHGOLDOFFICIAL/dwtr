@@ -45,7 +45,7 @@ private[aggregator] object Persons:
     val persons = List(person1, person2, person3)
     persons.map(p => p.id -> PersonMapper.toResponse(p)).toMap
 
-  /** Stub [[PersonService]] implementation that supports only `findById` and
+  /** Stub [[PersonService]] implementation that supports only `get` and
    *  `batchGet` operation.
    *
    *  Contains only persons given in [[Persons]] object.

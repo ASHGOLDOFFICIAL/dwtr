@@ -4,6 +4,7 @@ package adapters.jdbc.postgres
 
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
+import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -12,6 +13,7 @@ import domain.model.audioplay.{
   CastMember,
 }
 import domain.model.person.Person
+import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
@@ -21,16 +23,6 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.aggregator.domain.model.audioplay.series.{
-  AudioPlaySeries,
-  AudioPlaySeriesName,
-}
-import org.aulune.aggregator.domain.model.shared.{
-  ExternalResource,
-  ImageUri,
-  ReleaseDate,
-  Synopsis,
-}
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
   nonEmptyStringMeta,
   uuidMeta,
@@ -54,17 +46,9 @@ object AudioPlayRepositoryImpl:
    */
   def build[F[_]: MonadCancelThrow](
       transactor: Transactor[F],
-  ): F[AudioPlayRepository[F]] = (for
-    _ <- createSeriesTable
-    _ <- createAudioPlaysTable
-  yield new AudioPlayRepositoryImpl[F](transactor))
+  ): F[AudioPlayRepository[F]] = createAudioPlaysTable
+    .as(new AudioPlayRepositoryImpl[F](transactor))
     .transact(transactor)
-
-  private val createSeriesTable = sql"""
-    |CREATE TABLE IF NOT EXISTS audio_play_series (
-    |  id   UUID         PRIMARY KEY,
-    |  name VARCHAR(255) NOT NULL
-    |)""".stripMargin.update.run
 
   private val createAudioPlaysTable = sql"""
     |CREATE TABLE IF NOT EXISTS audio_plays (
@@ -74,9 +58,7 @@ object AudioPlayRepositoryImpl:
     |  release_date  DATE         NOT NULL,
     |  writers       JSONB        NOT NULL,
     |  cast_members  JSONB        NOT NULL,
-    |  series_id     UUID
-    |                REFERENCES audio_play_series(id)
-    |                ON DELETE RESTRICT,
+    |  series_id     UUID,
     |  series_season INTEGER,
     |  series_number INTEGER,
     |  cover_url     TEXT,
@@ -95,8 +77,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .transact(transactor)
       .handleErrorWith(toRepositoryError)
 
-  override def persist(elem: AudioPlay): F[AudioPlay] =
-    val insertAudioPlay = sql"""
+  override def persist(elem: AudioPlay): F[AudioPlay] = sql"""
       |INSERT INTO audio_plays (
       |  id, title, synopsis, release_date,
       |  writers, cast_members,
@@ -106,19 +87,12 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |VALUES (
       |  ${elem.id}, ${elem.title}, ${elem.synopsis}, ${elem.releaseDate},
       |  ${elem.writers}, ${elem.cast},
-      |  ${elem.series.map(_.id)}, ${elem.seriesSeason}, ${elem.seriesNumber},
+      |  ${elem.seriesId}, ${elem.seriesSeason}, ${elem.seriesNumber},
       |  ${elem.coverUri}, ${elem.externalResources}
       |)""".stripMargin.update.run
-
-    val transaction =
-      for
-        _ <- insertSeriesIfMissing(elem.series)
-        _ <- insertAudioPlay
-      yield elem
-    transaction
-      .transact(transactor)
-      .handleErrorWith(toRepositoryError)
-  end persist
+    .as(elem)
+    .transact(transactor)
+    .handleErrorWith(toRepositoryError)
 
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val getAudioPlays = selectBase ++ sql"WHERE ap.id = $id"
@@ -137,7 +111,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |    release_date  = ${elem.releaseDate},
       |    writers       = ${elem.writers},
       |    cast_members  = ${elem.cast},
-      |    series_id     = ${elem.series.map(_.id)},
+      |    series_id     = ${elem.seriesId},
       |    series_season = ${elem.seriesSeason},
       |    series_number = ${elem.seriesNumber},
       |    cover_url     = ${elem.coverUri},
@@ -152,7 +126,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       for
         rows <- updateAudioPlay
         _ <- checkIfAny(rows)
-        _ <- insertSeriesIfMissing(elem.series)
       yield elem
 
     transaction.transact(transactor).handleErrorWith(toRepositoryError)
@@ -187,8 +160,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
   override def search(query: NonEmptyString, limit: Int): F[List[AudioPlay]] =
     val select = (selectBase ++ fr0"""
       |WHERE TO_TSVECTOR(ap.title) @@ PLAINTO_TSQUERY($query)
-      |ORDER BY TS_RANK(TO_TSVECTOR(ap.title),
-      |                 PLAINTO_TSQUERY($query)) DESC
+      |ORDER BY TS_RANK(TO_TSVECTOR(ap.title), PLAINTO_TSQUERY($query)) DESC
       |LIMIT $limit
       |""".stripMargin)
       .query[SelectResult]
@@ -201,16 +173,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     yield result).handleErrorWith(toRepositoryError)
   end search
 
-  override def getSeries(
-      id: Uuid[AudioPlaySeries],
-  ): F[Option[AudioPlaySeries]] =
-    sql"SELECT name FROM audio_play_series WHERE id = $id"
-      .query[AudioPlaySeriesName]
-      .map(name => AudioPlaySeries.unsafe(id, name))
-      .option
-      .transact(transactor)
-      .handleErrorWith(toRepositoryError)
-
   private type SelectResult = (
       Uuid[AudioPlay],
       AudioPlayTitle,
@@ -219,7 +181,6 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       List[Uuid[Person]],
       List[CastMember],
       Option[Uuid[AudioPlaySeries]],
-      Option[AudioPlaySeriesName],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
       Option[ImageUri],
@@ -234,23 +195,12 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |    ap.writers,
     |    ap.cast_members,
     |    ap.series_id,
-    |    s.name AS series_name,
     |    ap.series_season,
     |    ap.series_number,
     |    ap.cover_url,
     |    ap.resources
     |FROM audio_plays ap
-    |LEFT JOIN audio_play_series s ON ap.series_id = s.id
     |""".stripMargin
-
-  private def insertSeriesIfMissing(series: Option[AudioPlaySeries]) =
-    series match
-      case Some(s) => sql"""
-        |INSERT INTO audio_play_series (id, name)
-        |VALUES (${s.id}, ${s.name})
-        |ON CONFLICT (id) DO NOTHING
-        |""".stripMargin.update.run.void
-      case None => ().pure[ConnectionIO]
 
   /** Makes audio play from given data. */
   private def toAudioPlay(
@@ -261,26 +211,23 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       writerIds: List[Uuid[Person]],
       cast: List[CastMember],
       seriesId: Option[Uuid[AudioPlaySeries]],
-      seriesName: Option[AudioPlaySeriesName],
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUri],
       resources: List[ExternalResource],
-  ): AudioPlay =
-    val series = seriesId.zip(seriesName).map(AudioPlaySeries.unsafe)
-    AudioPlay.unsafe(
-      id = uuid,
-      title = title,
-      synopsis = synopsis,
-      releaseDate = releaseDate,
-      writers = writerIds,
-      cast = cast,
-      series = series,
-      seriesSeason = season,
-      seriesNumber = number,
-      coverUrl = coverUrl,
-      externalResources = resources,
-    )
+  ): AudioPlay = AudioPlay.unsafe(
+    id = uuid,
+    title = title,
+    synopsis = synopsis,
+    releaseDate = releaseDate,
+    writers = writerIds,
+    cast = cast,
+    seriesId = seriesId,
+    seriesSeason = season,
+    seriesNumber = number,
+    coverUrl = coverUrl,
+    externalResources = resources,
+  )
 
   /** Converts caught errors to [[RepositoryError]]. */
   private def toRepositoryError[A](err: Throwable) = err match

@@ -5,16 +5,11 @@ package domain.model.audioplay
 import domain.errors.AudioPlayValidationError
 import domain.errors.AudioPlayValidationError.*
 import domain.model.audioplay.AudioPlay.ValidationResult
+import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.person.Person
+import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.data.{NonEmptyChain, Validated, ValidatedNec}
-import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeries
-import org.aulune.aggregator.domain.model.shared.{
-  ExternalResource,
-  ImageUri,
-  ReleaseDate,
-  Synopsis,
-}
 import org.aulune.commons.types.Uuid
 
 
@@ -25,7 +20,7 @@ import org.aulune.commons.types.Uuid
  *  @param releaseDate release date of this audio play.
  *  @param writers author(s) of audio play.
  *  @param cast audio play cast.
- *  @param series audio play series ID.
+ *  @param seriesId audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
  *  @param coverUri URL to audio play cover.
@@ -38,7 +33,7 @@ final case class AudioPlay private (
     releaseDate: ReleaseDate,
     writers: List[Uuid[Person]],
     cast: List[CastMember],
-    series: Option[AudioPlaySeries],
+    seriesId: Option[Uuid[AudioPlaySeries]],
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
     coverUri: Option[ImageUri],
@@ -54,7 +49,7 @@ final case class AudioPlay private (
       releaseDate: ReleaseDate = releaseDate,
       writers: List[Uuid[Person]] = writers,
       cast: List[CastMember] = cast,
-      series: Option[AudioPlaySeries] = series,
+      seriesId: Option[Uuid[AudioPlaySeries]] = seriesId,
       seriesSeason: Option[AudioPlaySeason] = seriesSeason,
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
       coverUrl: Option[ImageUri] = coverUri,
@@ -66,7 +61,7 @@ final case class AudioPlay private (
     releaseDate = releaseDate,
     writers = writers,
     cast = cast,
-    series = series,
+    seriesId = seriesId,
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
     coverUrl = coverUrl,
@@ -90,7 +85,7 @@ object AudioPlay:
       releaseDate: ReleaseDate,
       writers: List[Uuid[Person]],
       cast: List[CastMember],
-      series: Option[AudioPlaySeries],
+      seriesId: Option[Uuid[AudioPlaySeries]],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUri],
@@ -103,7 +98,7 @@ object AudioPlay:
       releaseDate = releaseDate,
       writers = writers,
       cast = cast,
-      series = series,
+      seriesId = seriesId,
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
       coverUri = coverUrl,
@@ -120,7 +115,7 @@ object AudioPlay:
       releaseDate: ReleaseDate,
       writers: List[Uuid[Person]],
       cast: List[CastMember],
-      series: Option[AudioPlaySeries],
+      seriesId: Option[Uuid[AudioPlaySeries]],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUri],
@@ -132,7 +127,7 @@ object AudioPlay:
     releaseDate = releaseDate,
     writers = writers,
     cast = cast,
-    series = series,
+    seriesId = seriesId,
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
     coverUrl = coverUrl,
@@ -174,6 +169,6 @@ object AudioPlay:
    *  @return validation result.
    */
   private def validateSeriesInfo(ap: AudioPlay): ValidationResult[AudioPlay] =
-    val seriesAlright = ap.series.isDefined ||
+    val seriesAlright = ap.seriesId.isDefined ||
       (ap.seriesSeason.isEmpty && ap.seriesNumber.isEmpty)
     Validated.cond(seriesAlright, ap, NonEmptyChain.one(SeriesIsMissing))

@@ -78,6 +78,7 @@ object AggregatorApp:
           config.pagination,
           config.search,
           audioRepo,
+          seriesServ,
           personServ,
           permissionServ)
       audioEndpoints = new AudioPlaysController[F](
