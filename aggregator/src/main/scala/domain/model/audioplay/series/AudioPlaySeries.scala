@@ -11,7 +11,15 @@ import org.aulune.commons.types.Uuid
 final case class AudioPlaySeries private (
     id: Uuid[AudioPlaySeries],
     name: AudioPlaySeriesName,
-)
+):
+  /** Copies with validation. */
+  def update(
+      id: Uuid[AudioPlaySeries] = id,
+      name: AudioPlaySeriesName = name,
+  ): Option[AudioPlaySeries] = AudioPlaySeries(
+    id = id,
+    name = name,
+  )
 
 
 object AudioPlaySeries:
