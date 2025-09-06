@@ -10,20 +10,21 @@ import api.mappers.{
 }
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
-  AudioPlayTranslationTypeDto,
+  AudioPlayTranslationTypeDTO,
   CreateAudioPlayTranslationRequest,
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-  LanguageDto,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
-  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysResponse,
+}
+import application.dto.shared.{
+  ExternalResourceDTO,
+  ExternalResourceTypeDTO,
+  LanguageDTO,
 }
 
 import io.circe.generic.extras.semiauto.{
@@ -51,11 +52,11 @@ private[api] object AudioPlayTranslationCodecs:
   given Decoder[ListAudioPlayTranslationsResponse] = deriveConfiguredDecoder
   given Encoder[ListAudioPlayTranslationsResponse] = deriveConfiguredEncoder
 
-  private given Decoder[AudioPlayTranslationTypeDto] = Decoder.decodeString
+  private given Decoder[AudioPlayTranslationTypeDTO] = Decoder.decodeString
     .emap { str =>
       AudioPlayTranslationTypeMapper
         .fromString(str)
         .toRight(s"Invalid TranslationType: $str")
     }
-  private given Encoder[AudioPlayTranslationTypeDto] =
+  private given Encoder[AudioPlayTranslationTypeDTO] =
     Encoder.encodeString.contramap(AudioPlayTranslationTypeMapper.toString)

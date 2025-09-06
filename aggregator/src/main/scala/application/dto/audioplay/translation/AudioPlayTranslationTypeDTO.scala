@@ -3,7 +3,7 @@ package application.dto.audioplay.translation
 
 
 /** Values to be used as translation type. */
-enum AudioPlayTranslationTypeDto:
+enum AudioPlayTranslationTypeDTO:
   /** Translated as document. */
   case Transcript
 

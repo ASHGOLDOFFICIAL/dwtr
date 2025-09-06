@@ -7,8 +7,9 @@ import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{DownloadAudioPlays, Modify}
 import application.dto.audioplay.{
   AudioPlayResource,
-  CastMemberResource,
   CreateAudioPlayRequest,
+  DeleteAudioPlayRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -32,7 +33,7 @@ import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import org.aulune.commons.typeclasses.SortableUUIDGen
-import org.aulune.commons.types.{NonEmptyString, Uuid}
+import org.aulune.commons.types.Uuid
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
 import org.typelevel.log4cats.{Logger, LoggerFactory}
@@ -99,13 +100,15 @@ private final class AudioPlayServiceImpl[F[
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
-  override def get(id: UUID): F[Either[ErrorResponse, AudioPlayResource]] =
-    val uuid = Uuid[AudioPlay](id)
+  override def get(
+      request: GetAudioPlayRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]] =
+    val uuid = Uuid[AudioPlay](request.name)
     (for
-      _ <- eitherTLogger.info(s"Find request: $id.")
+      _ <- eitherTLogger.info(s"Find request: $request.")
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
-        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
+        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
       allPersonIds = (elem.writers ++ elem.cast.map(_.actor)).distinct
       persons <- EitherT(getPersonResources(allPersonIds))
       response = AudioPlayMapper.toResponse(elem, persons)
@@ -162,11 +165,13 @@ private final class AudioPlayServiceImpl[F[
       yield response).value
     }.handleErrorWith(handleInternal)
 
-  override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
-    requirePermissionOrDeny(Modify, user) {
-      val uuid = Uuid[AudioPlay](id)
-      info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
-    }.handleErrorWith(handleInternal)
+  override def delete(
+      user: User,
+      request: DeleteAudioPlayRequest,
+  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
+    val uuid = Uuid[AudioPlay](request.name)
+    info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
+  }.handleErrorWith(handleInternal)
 
   /** Retrieves person resources for a list of audio plays. */
   private def batchGetPersonResources(

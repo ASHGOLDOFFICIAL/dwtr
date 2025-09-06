@@ -8,25 +8,28 @@ import application.AggregatorPermission.Modify
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
+  DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
+import application.dto.audioplay.{DeleteAudioPlayRequest, GetAudioPlayRequest}
 import application.errors.AudioPlayServiceError.AudioPlayNotFound
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.{
-  AudioPlayTranslationCursor,
-  given,
-}
 import application.{
   AggregatorPermission,
   AudioPlayService,
   AudioPlayTranslationService,
 }
 import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import domain.repositories.AudioPlayTranslationRepository
+import domain.repositories.AudioPlayTranslationRepository.{
+  AudioPlayTranslationCursor,
+  given,
+}
 
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User
@@ -91,14 +94,14 @@ private final class AudioPlayTranslationServiceImpl[F[
   private given PermissionClientService[F] = permissionService
 
   override def get(
-      id: UUID,
+      request: GetAudioPlayTranslationRequest,
   ): F[Either[ErrorResponse, AudioPlayTranslationResource]] =
-    val uuid = Uuid[AudioPlayTranslation](id)
+    val uuid = Uuid[AudioPlayTranslation](request.name)
     (for
-      _ <- eitherTLogger.info(s"Find request: $id.")
+      _ <- eitherTLogger.info(s"Find request: $request.")
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.translationNotFound)
-        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $id")
+        .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
       response = AudioPlayTranslationMapper.toResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
 
@@ -125,7 +128,8 @@ private final class AudioPlayTranslationServiceImpl[F[
       val originalId = Uuid[AudioPlay](request.originalId)
       (for
         _ <- eitherTLogger.info(s"Create request $request from $user.")
-        original <- EitherT(audioPlayService.get(originalId))
+        audioPlayRequest = GetAudioPlayRequest(name = originalId)
+        original <- EitherT(audioPlayService.get(audioPlayRequest))
           .leftMap(handleAudioPlayNotFound)
           .leftSemiflatTap(_ => warn"Original was not found: $request")
         id <- EitherT.liftF(uuid)
@@ -137,11 +141,13 @@ private final class AudioPlayTranslationServiceImpl[F[
       yield response).value
     }.handleErrorWith(handleInternal)
 
-  override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
-    requirePermissionOrDeny(Modify, user) {
-      val uuid = Uuid[AudioPlayTranslation](id)
-      info"Delete request $id from $user" >> repo.delete(uuid).map(_.asRight)
-    }.handleErrorWith(handleInternal)
+  override def delete(
+      user: User,
+      request: DeleteAudioPlayTranslationRequest,
+  ): F[Either[ErrorResponse, Unit]] = requirePermissionOrDeny(Modify, user) {
+    val uuid = Uuid[AudioPlayTranslation](request.name)
+    info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
+  }.handleErrorWith(handleInternal)
 
   /** Converts [[AudioPlayNotFound]] response to original not found. Other
    *  responses are left as is.

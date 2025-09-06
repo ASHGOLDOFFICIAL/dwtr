@@ -4,12 +4,12 @@ package adapters.service
 
 import application.AuthenticationService
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import application.dto.OAuth2ProviderDto.Google
+import application.dto.OAuth2ProviderDTO.Google
 import application.dto.{
   AuthenticateUserRequest,
   AuthenticateUserResponse,
   CreateUserRequest,
-  OAuth2ProviderDto,
+  OAuth2ProviderDTO,
   UserInfo,
 }
 import application.errors.AuthenticationServiceError.{
@@ -87,7 +87,7 @@ final class AuthenticationServiceImplTest
       oauth2AuthHandler = mockOauth,
     ))
 
-  private val providerDto = OAuth2ProviderDto.Google
+  private val providerDto = OAuth2ProviderDTO.Google
   private val provider = OAuth2Provider.Google
   private val authorizationCode = AuthorizationCode.unsafe("code")
   private val oid = ExternalId.unsafe("google_id")

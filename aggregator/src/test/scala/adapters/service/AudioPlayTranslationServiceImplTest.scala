@@ -12,6 +12,8 @@ import application.AudioPlayTranslationService
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
+  DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
@@ -20,15 +22,15 @@ import application.errors.TranslationServiceError.{
   OriginalNotFound,
   TranslationNotFound,
 }
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.AudioPlayTranslation
+import domain.repositories.AudioPlayTranslationRepository
+import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.shared.TranslatedTitle
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
@@ -106,43 +108,37 @@ final class AudioPlayTranslationServiceImplTest
   private val newTranslation = translation
     .update(id = newUuid, title = TranslatedTitle.unsafe("Updated"))
     .getOrElse(throw new IllegalStateException())
-  private val createRequest = CreateAudioPlayTranslationRequest(
-    originalId = newTranslation.originalId,
-    title = newTranslation.title,
-    translationType = AudioPlayTranslationTypeMapper
-      .fromDomain(newTranslation.translationType),
-    language = LanguageMapper.fromDomain(newTranslation.language),
-    links = newTranslation.links.toList,
-  )
   private val newTranslationResponse = translationResponse.copy(
     id = newUuid,
     title = newTranslation.title,
   )
 
-  "findById method " - {
+  "get method " - {
+    val request = GetAudioPlayTranslationRequest(translation.id)
+
     "should " - {
       "find translations if they're present in repository" in stand { service =>
         val _ = mockGet(translation.some.pure)
-        for result <- service.get(translation.id)
+        for result <- service.get(request)
         yield result shouldBe translationResponse.asRight
       }
 
       "result in TranslationNotFound if translation doesn't exist" in stand {
         service =>
           val _ = mockGet(None.pure)
-          val find = service.get(translation.id)
+          val find = service.get(request)
           assertDomainError(find)(TranslationNotFound)
       }
 
       "handle errors from repository gracefully" in stand { service =>
         val _ = mockGet(IO.raiseError(new Throwable()))
-        val find = service.get(translation.id)
+        val find = service.get(request)
         assertInternalError(find)
       }
     }
   }
 
-  "listAll method " - {
+  "list method " - {
     "should " - {
       "list elements" in stand { service =>
         val request = ListAudioPlayTranslationsRequest(
@@ -181,18 +177,27 @@ final class AudioPlayTranslationServiceImplTest
   }
 
   "create method " - {
+    val request = CreateAudioPlayTranslationRequest(
+      originalId = newTranslation.originalId,
+      title = newTranslation.title,
+      translationType = AudioPlayTranslationTypeMapper
+        .fromDomain(newTranslation.translationType),
+      language = LanguageMapper.fromDomain(newTranslation.language),
+      links = newTranslation.links.toList,
+    )
+
     "should " - {
       "allow users with permissions to create translations if none exist" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockPersist(newTranslation.pure)
-          for result <- service.create(user, createRequest)
+          for result <- service.create(user, request)
           yield result shouldBe newTranslationResponse.asRight
       }
 
       "result in InvalidTranslation when creating invalid translation" in stand {
         service =>
-          val emptyNameRequest = createRequest.copy(title = "")
+          val emptyNameRequest = request.copy(title = "")
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val find = service.create(user, emptyNameRequest)
           assertDomainError(find)(InvalidTranslation)
@@ -200,7 +205,7 @@ final class AudioPlayTranslationServiceImplTest
 
       "result in OriginalNotFound when original audio play doesn't exist" in stand {
         service =>
-          val invalidRequest = createRequest.copy(originalId = uuid)
+          val invalidRequest = request.copy(originalId = uuid)
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val find = service.create(user, invalidRequest)
           assertDomainError(find)(OriginalNotFound)
@@ -208,51 +213,53 @@ final class AudioPlayTranslationServiceImplTest
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(Modify, false.asRight.pure)
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertErrorStatus(find)(PermissionDenied)
       }
 
       "handle exceptions from hasPermission gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, IO.raiseError(new Throwable()))
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertInternalError(find)
       }
 
       "handle exceptions from persist gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, true.asRight.pure)
         val _ = mockPersist(IO.raiseError(new Throwable()))
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertInternalError(find)
       }
     }
   }
 
   "delete method " - {
+    val request = DeleteAudioPlayTranslationRequest(translation.id)
+
     "should " - {
       "allow users with permissions to delete existing translations" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockDelete(().pure)
-          for result <- service.delete(user, translation.id)
+          for result <- service.delete(user, request)
           yield result shouldBe ().asRight
       }
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(Modify, false.asRight.pure)
-        val delete = service.delete(user, translation.id)
+        val delete = service.delete(user, request)
         assertErrorStatus(delete)(PermissionDenied)
       }
 
       "handle exceptions from hasPermission gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, IO.raiseError(new Throwable()))
-        val delete = service.delete(user, translation.id)
+        val delete = service.delete(user, request)
         assertInternalError(delete)
       }
 
       "handle exceptions from delete gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, true.asRight.pure)
         val _ = mockDelete(IO.raiseError(new Throwable()))
-        val delete = service.delete(user, translation.id)
+        val delete = service.delete(user, request)
         assertInternalError(delete)
       }
     }

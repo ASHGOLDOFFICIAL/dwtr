@@ -99,7 +99,7 @@ private final class PermissionServiceImpl[F[_]: MonadThrow: LoggerFactory](
     name = adminPermission.name,
   )
 
-  override def registerPermission(
+  override def create(
       request: CreatePermissionRequest,
   ): F[Either[ErrorResponse, PermissionResource]] = (for
     _ <- eitherTLogger.info(s"Permission create request: $request")

@@ -1,9 +1,9 @@
 package org.aulune.aggregator
-package application.dto.audioplay.translation
+package application.dto.shared
 
 
 /** Language of translation. */
-enum LanguageDto:
+enum LanguageDTO:
   /** Russian language. */
   case Russian
 

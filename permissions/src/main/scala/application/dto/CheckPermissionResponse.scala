@@ -1,6 +1,9 @@
 package org.aulune.permissions
 package application.dto
 
+
+import application.dto.CheckPermissionResponse.CheckPermissionStatus
+
 import java.util.UUID
 
 
@@ -16,3 +19,13 @@ final case class CheckPermissionResponse(
     namespace: String,
     permission: String,
 )
+
+
+object CheckPermissionResponse:
+  /** Possible outcomes of permission check. */
+  enum CheckPermissionStatus:
+    /** User does have required permission. */
+    case Granted
+
+    /** User doesn't have required permission. */
+    case Denied

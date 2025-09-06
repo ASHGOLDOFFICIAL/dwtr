@@ -4,11 +4,9 @@ package api.http
 
 import api.http.circe.AudioPlayCodecs.given
 import api.http.tapir.audioplay.AudioPlayExamples.{
-  ListRequest,
-  ListResponse,
   CreateRequest,
+  ListResponse,
   Resource,
-  SearchRequest,
   SearchResponse,
 }
 import api.http.tapir.audioplay.AudioPlaySchemas.given
@@ -16,6 +14,8 @@ import application.AudioPlayService
 import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
+  DeleteAudioPlayRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -27,7 +27,10 @@ import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
-import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.adapters.tapir.{
+  ErrorStatusCodeMapper,
+  MethodSpecificQueryParams,
+}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
@@ -70,15 +73,14 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.get(id)
+      val request = GetAudioPlayRequest(name = id)
+      for result <- service.get(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(jsonBody[ListAudioPlaysRequest]
-      .description("Request to list audio plays.")
-      .example(ListRequest))
+    .in(MethodSpecificQueryParams.pagination)
     .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
       .example(ListResponse)))
@@ -87,16 +89,16 @@ final class AudioPlaysController[F[_]: Applicative](
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
-    .serverLogic { request =>
+    .serverLogic { (pageSize, pageToken) =>
+      val request =
+        ListAudioPlaysRequest(pageSize = pageSize, pageToken = pageToken)
       for result <- service.list(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val searchEndpoint = endpoint.get
     .in(collectionPath + ":search")
-    .in(jsonBody[SearchAudioPlaysRequest]
-      .description("Request to search audio plays.")
-      .example(SearchRequest))
+    .in(MethodSpecificQueryParams.search)
     .out(statusCode(StatusCode.Ok).and(jsonBody[SearchAudioPlaysResponse]
       .description("List of matched audio plays.")
       .example(SearchResponse)))
@@ -105,7 +107,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .name("SearchAudioPlays")
     .summary("Searches audio plays by given query.")
     .tag(tag)
-    .serverLogic { request =>
+    .serverLogic { (query, limit) =>
+      val request = SearchAudioPlaysRequest(query = query, limit = limit)
       for result <- service.search(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
@@ -133,7 +136,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Deletes audio play resource with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      for result <- service.delete(user, id)
+      val request = DeleteAudioPlayRequest(name = id)
+      for result <- service.delete(user, request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 

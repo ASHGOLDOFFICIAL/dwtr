@@ -2,15 +2,15 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto.{
+import org.aulune.aggregator.application.dto.shared.LanguageDTO.{
   Russian,
   Ukrainian,
 }
 import domain.shared.Language
-import org.aulune.aggregator.application.dto.audioplay.translation.LanguageDto
+import org.aulune.aggregator.application.dto.shared.LanguageDTO
 
 
-/** Mapper between external [[LanguageDto]] and domain's [[Language]].
+/** Mapper between external [[LanguageDTO]] and domain's [[Language]].
  *
  *  @note Should not be used outside `service` package to not expose domain
  *    type.
@@ -22,16 +22,16 @@ private[service] object LanguageMapper:
   )
   private val fromType = toType.map(_.swap)
 
-  /** Convert [[LanguageDto]] to [[Language]].
+  /** Convert [[LanguageDTO]] to [[Language]].
    *
    *  @param dto external layer object.
    *  @return mapped domain object.
    */
-  def toDomain(dto: LanguageDto): Language = toType(dto)
+  def toDomain(dto: LanguageDTO): Language = toType(dto)
 
-  /** Convert [[Language]] to [[LanguageDto]].
+  /** Convert [[Language]] to [[LanguageDTO]].
    *
    *  @param domain inner domain object.
    *  @return mapped external object.
    */
-  def fromDomain(domain: Language): LanguageDto = fromType(domain)
+  def fromDomain(domain: Language): LanguageDTO = fromType(domain)

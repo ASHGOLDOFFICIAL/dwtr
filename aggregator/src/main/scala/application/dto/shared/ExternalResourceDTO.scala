@@ -1,5 +1,5 @@
 package org.aulune.aggregator
-package application.dto.audioplay.translation
+package application.dto.shared
 
 import java.net.URI
 
@@ -9,7 +9,7 @@ import java.net.URI
  *  @param resourceType type of external resource.
  *  @param link link to it.
  */
-final case class ExternalResourceDto(
-    resourceType: ExternalResourceTypeDto,
+final case class ExternalResourceDTO(
+    resourceType: ExternalResourceTypeDTO,
     link: URI,
 )

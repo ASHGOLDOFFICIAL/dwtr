@@ -2,12 +2,12 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto.*
+import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDTO.*
 import domain.model.audioplay.AudioPlayTranslationType
-import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDto
+import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDTO
 
 
-/** Mapper between external [[AudioPlayTranslationTypeDto]] and domain's
+/** Mapper between external [[AudioPlayTranslationTypeDTO]] and domain's
  *  [[AudioPlayTranslationType]].
  *
  *  @note Should not be used outside `service` package to not expose domain
@@ -21,19 +21,19 @@ private[service] object AudioPlayTranslationTypeMapper:
   )
   private val fromType = toType.map(_.swap)
 
-  /** Convert [[AudioPlayTranslationTypeDto]] to [[AudioPlayTranslationType]].
+  /** Convert [[AudioPlayTranslationTypeDTO]] to [[AudioPlayTranslationType]].
    *
    *  @param dto external layer object.
    *  @return mapped domain object.
    */
-  def toDomain(dto: AudioPlayTranslationTypeDto): AudioPlayTranslationType =
+  def toDomain(dto: AudioPlayTranslationTypeDTO): AudioPlayTranslationType =
     toType(dto)
 
-  /** Convert [[AudioPlayTranslationType]] to [[AudioPlayTranslationTypeDto]].
+  /** Convert [[AudioPlayTranslationType]] to [[AudioPlayTranslationTypeDTO]].
    *
    *  @param domain inner domain object.
    *  @return mapped external object.
    */
   def fromDomain(
       domain: AudioPlayTranslationType,
-  ): AudioPlayTranslationTypeDto = fromType(domain)
+  ): AudioPlayTranslationTypeDTO = fromType(domain)

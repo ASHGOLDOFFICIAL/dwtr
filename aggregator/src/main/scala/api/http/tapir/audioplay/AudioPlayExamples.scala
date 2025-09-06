@@ -3,19 +3,17 @@ package api.http.tapir.audioplay
 
 
 import api.http.tapir.person.PersonExamples
-import application.dto.audioplay.translation.ExternalResourceDto
-import application.dto.audioplay.translation.ExternalResourceTypeDto.Purchase
+import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDTO,
-  CastMemberResource,
   CreateAudioPlayRequest,
-  ListAudioPlaysRequest,
   ListAudioPlaysResponse,
-  SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
+import application.dto.shared.ExternalResourceDTO
+import application.dto.shared.ExternalResourceTypeDTO.Purchase
 
 import java.net.URI
 import java.time.LocalDate
@@ -89,12 +87,12 @@ object AudioPlayExamples:
     Some(URI.create("https://www.bigfinish.com/image/release/1605/large.jpg"))
 
   private val externalResourcesExample = List(
-    ExternalResourceDto(
+    ExternalResourceDTO(
       Purchase,
       URI
         .create("https://www.bigfinish.com/releases/v/cicero-episode-1-1605"),
     ),
-    ExternalResourceDto(
+    ExternalResourceDTO(
       Purchase,
       URI
         .create("https://www.bigfinish.com/releases/v/cicero-series-01-1777"),
@@ -134,19 +132,9 @@ object AudioPlayExamples:
     externalResources = externalResourcesExample,
   )
 
-  val ListRequest: ListAudioPlaysRequest = ListAudioPlaysRequest(
-    pageSize = Some(2),
-    pageToken = nextPageTokenExample,
-  )
-
   val ListResponse: ListAudioPlaysResponse = ListAudioPlaysResponse(
     audioPlays = List(Resource),
     nextPageToken = nextPageTokenExample,
-  )
-
-  val SearchRequest: SearchAudioPlaysRequest = SearchAudioPlaysRequest(
-    query = "scoundrels",
-    limit = Some(1),
   )
 
   val SearchResponse: SearchAudioPlaysResponse = SearchAudioPlaysResponse(

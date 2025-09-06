@@ -7,6 +7,8 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  DeletePersonRequest,
+  GetPersonRequest,
   PersonResource,
 }
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
@@ -25,10 +27,10 @@ trait PersonService[F[_]]:
    *
    *  Domain error [[PersonNotFound]] will be returned if person is not found.
    *
-   *  @param id person identity.
+   *  @param request request to get a person.
    *  @return requested person if found.
    */
-  def get(id: UUID): F[Either[ErrorResponse, PersonResource]]
+  def get(request: GetPersonRequest): F[Either[ErrorResponse, PersonResource]]
 
   /** Gets persons by their identities in batches.
    *
@@ -50,23 +52,23 @@ trait PersonService[F[_]]:
    *  invalid person.
    *
    *  @param user user who performs this action.
-   *  @param pr person creation request.
+   *  @param request person creation request.
    *  @return created person if success, otherwise error.
    *  @note user must have [[Modify]] permission.
    */
   def create(
       user: User,
-      pr: CreatePersonRequest,
+      request: CreatePersonRequest,
   ): F[Either[ErrorResponse, PersonResource]]
 
   /** Deletes existing person.
    *
    *  @param user user who performs this action.
-   *  @param id person ID.
+   *  @param request request to delete a person.
    *  @return `Unit` if success, otherwise error.
    *  @note user must have [[Modify]] permission.
    */
   def delete(
       user: User,
-      id: UUID,
+      request: DeletePersonRequest,
   ): F[Either[ErrorResponse, Unit]]

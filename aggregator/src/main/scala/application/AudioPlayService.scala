@@ -5,6 +5,8 @@ package application
 import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
+  DeleteAudioPlayRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -31,10 +33,12 @@ trait AudioPlayService[F[_]]:
    *  Domain error [[AudioPlayNotFound]] will be returned if audio play is not
    *  found.
    *
-   *  @param id audio play ID.
+   *  @param request request to get an audio play.
    *  @return requested audio play if found.
    */
-  def get(id: UUID): F[Either[ErrorResponse, AudioPlayResource]]
+  def get(
+      request: GetAudioPlayRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Get a portion of audio plays.
    *  @param request request to list audio plays.
@@ -61,22 +65,22 @@ trait AudioPlayService[F[_]]:
    *      audio play with ID of non-existent series.
    *
    *  @param user user who performs this action.
-   *  @param ac audio play request.
+   *  @param request audio play request.
    *  @return created audio play if success, otherwise error.
    *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def create(
       user: User,
-      ac: CreateAudioPlayRequest,
+      request: CreateAudioPlayRequest,
   ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Deletes existing audio play.
    *  @param user user who performs this action.
-   *  @param id audio play id.
+   *  @param request request to delete audio play.
    *  @return `Unit` if success, otherwise error.
    *  @note user must have [[AggregatorPermission.Modify]] permission.
    */
   def delete(
       user: User,
-      id: UUID,
+      request: DeleteAudioPlayRequest,
   ): F[Either[ErrorResponse, Unit]]

@@ -3,9 +3,12 @@ package application
 
 
 import application.AggregatorPermission.Modify
+import application.dto.audioplay.DeleteAudioPlayRequest
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
+  DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
@@ -30,10 +33,12 @@ trait AudioPlayTranslationService[F[_]]:
    *  Domain error [[TranslationNotFound]] will be returned if translation is
    *  not found.
    *
-   *  @param id translation ID.
+   *  @param request request to get a translation.
    *  @return requested translation if found.
    */
-  def get(id: UUID): F[Either[ErrorResponse, AudioPlayTranslationResource]]
+  def get(
+      request: GetAudioPlayTranslationRequest,
+  ): F[Either[ErrorResponse, AudioPlayTranslationResource]]
 
   /** Get a portion of translations.
    *  @param request request to list audio play translations.
@@ -63,8 +68,11 @@ trait AudioPlayTranslationService[F[_]]:
 
   /** Deletes existing translation.
    *  @param user user who performs this action.
-   *  @param id translation ID.
+   *  @param request request to delete a translation.
    *  @return `Unit` if success, otherwise error.
    *  @note user must have [[Modify]] permission.
    */
-  def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]]
+  def delete(
+      user: User,
+      request: DeleteAudioPlayTranslationRequest,
+  ): F[Either[ErrorResponse, Unit]]

@@ -8,6 +8,8 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  DeletePersonRequest,
+  GetPersonRequest,
   PersonResource,
 }
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
@@ -80,7 +82,6 @@ final class PersonServiceImplTest
   private val personResponse =
     PersonResource(id = person.id, name = person.name)
 
-  private val createRequest = CreatePersonRequest(name = person.name)
   private val newPerson = Person
     .unsafe(id = Uuid[Person](uuid), name = FullName.unsafe("John Smith"))
   private val newPersonResponse =
@@ -102,35 +103,37 @@ final class PersonServiceImplTest
     .expects(user, permission)
     .returning(returning)
 
-  "findById method " - {
+  "get method " - {
+    val request = GetPersonRequest(person.id)
+
     "should " - {
       "find persons if they're present in repository" in stand { service =>
         val _ = mockGet(person.some.pure)
-        for result <- service.get(person.id)
+        for result <- service.get(request)
         yield result shouldBe personResponse.asRight
       }
 
       "result in PersonNotFound if person doesn't exist" in stand { service =>
         val _ = mockGet(None.pure)
-        val find = service.get(person.id)
+        val find = service.get(request)
         assertDomainError(find)(PersonNotFound)
       }
 
       "handle errors from repository gracefully" in stand { service =>
         val _ = mockGet(IO.raiseError(new Throwable()))
-        val find = service.get(person.id)
+        val find = service.get(request)
         assertInternalError(find)
       }
     }
   }
 
   "batchGet method " - {
+    val elements = NonEmptyList.of(Persons.person1, Persons.person2)
+    val ids = elements.map(_.id)
+    val request = BatchGetPersonsRequest(names = ids.toList)
+
     "should " - {
       "return batch of elements when all are found" in stand { service =>
-        val elements = NonEmptyList.of(Persons.person1, Persons.person2)
-        val ids = elements.map(_.id)
-        val request = BatchGetPersonsRequest(names = ids.toList)
-
         val _ = (mockRepo.batchGet _)
           .expects(ids)
           .returning(elements.toList.pure)
@@ -143,10 +146,6 @@ final class PersonServiceImplTest
 
       "return PersonNotFound if at least one person is not found" in stand {
         service =>
-          val elements = NonEmptyList.of(Persons.person1, Persons.person2)
-          val ids = elements.map(_.id)
-          val request = BatchGetPersonsRequest(names = ids.toList)
-
           val _ = (mockRepo.batchGet _)
             .expects(ids)
             .returning(List(Persons.person1).pure)
@@ -158,12 +157,14 @@ final class PersonServiceImplTest
   }
 
   "create method " - {
+    val request = CreatePersonRequest(name = person.name)
+
     "should " - {
       "allow users with permissions to create persons if none exist" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockPersist(newPerson.pure)
-          for result <- service.create(user, createRequest)
+          for result <- service.create(user, request)
           yield result shouldBe newPersonResponse.asRight
       }
 
@@ -177,51 +178,53 @@ final class PersonServiceImplTest
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(Modify, false.asRight.pure)
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertErrorStatus(find)(PermissionDenied)
       }
 
       "handle exceptions from hasPermission gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, IO.raiseError(new Throwable()))
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertInternalError(find)
       }
 
       "handle exceptions from persist gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, true.asRight.pure)
         val _ = mockPersist(IO.raiseError(new Throwable()))
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertInternalError(find)
       }
     }
   }
 
   "delete method " - {
+    val request = DeletePersonRequest(person.id)
+
     "should " - {
       "allow users with permissions to delete existing persons" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockDelete(().pure)
-          for result <- service.delete(user, person.id)
+          for result <- service.delete(user, request)
           yield result shouldBe ().asRight
       }
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(Modify, false.asRight.pure)
-        val delete = service.delete(user, person.id)
+        val delete = service.delete(user, request)
         assertErrorStatus(delete)(PermissionDenied)
       }
 
       "handle exceptions from hasPermission gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, IO.raiseError(new Throwable()))
-        val delete = service.delete(user, person.id)
+        val delete = service.delete(user, request)
         assertInternalError(delete)
       }
 
       "handle exceptions from delete gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, true.asRight.pure)
         val _ = mockDelete(IO.raiseError(new Throwable()))
-        val delete = service.delete(user, person.id)
+        val delete = service.delete(user, request)
         assertInternalError(delete)
       }
     }

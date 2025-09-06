@@ -3,17 +3,17 @@ package api.http.circe
 
 
 import api.mappers.{ExternalResourceTypeMapper, LanguageMapper}
-import application.dto.audioplay.translation.{
-  ExternalResourceDto,
-  ExternalResourceTypeDto,
-  LanguageDto,
-}
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
+import org.aulune.aggregator.application.dto.shared.{
+  ExternalResourceDTO,
+  ExternalResourceTypeDTO,
+  LanguageDTO,
+}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 import java.net.{URI, URL}
@@ -25,21 +25,21 @@ private[api] object SharedCodecs:
   given Encoder[URI] = Encoder.encodeString.contramap(_.toString)
   given Decoder[URI] = Decoder.decodeString.emapTry(str => Try(URI.create(str)))
 
-  given Encoder[LanguageDto] =
+  given Encoder[LanguageDTO] =
     Encoder.encodeString.contramap(LanguageMapper.toString)
-  given Decoder[LanguageDto] = Decoder.decodeString.emap { str =>
+  given Decoder[LanguageDTO] = Decoder.decodeString.emap { str =>
     LanguageMapper
       .fromString(str)
       .toRight(s"Invalid TranslationType: $str")
   }
 
-  given Encoder[ExternalResourceTypeDto] =
+  given Encoder[ExternalResourceTypeDTO] =
     Encoder.encodeString.contramap(ExternalResourceTypeMapper.toString)
-  given Decoder[ExternalResourceTypeDto] = Decoder.decodeString.emap { str =>
+  given Decoder[ExternalResourceTypeDTO] = Decoder.decodeString.emap { str =>
     ExternalResourceTypeMapper
       .fromString(str)
       .toRight(s"Invalid ExternalResourceType: $str")
   }
 
-  given Encoder[ExternalResourceDto] = deriveConfiguredEncoder
-  given Decoder[ExternalResourceDto] = deriveConfiguredDecoder
+  given Encoder[ExternalResourceDTO] = deriveConfiguredEncoder
+  given Decoder[ExternalResourceDTO] = deriveConfiguredDecoder

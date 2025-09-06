@@ -11,14 +11,14 @@ import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
 import api.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
-  AudioPlayTranslationTypeDto,
+  AudioPlayTranslationTypeDTO,
   CreateAudioPlayTranslationRequest,
-  LanguageDto,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
 
 import io.circe.syntax.*
+import org.aulune.aggregator.application.dto.shared.LanguageDTO
 import sttp.tapir.{Schema, Validator}
 
 import java.net.URI
@@ -83,10 +83,10 @@ object AudioPlayTranslationSchemas:
 
   private given Schema[URI] = Schema.string[URI]
 
-  private given Schema[AudioPlayTranslationTypeDto] = Schema.string
+  private given Schema[AudioPlayTranslationTypeDTO] = Schema.string
     .validate(
       Validator
-        .enumeration(AudioPlayTranslationTypeDto.values.toList)
+        .enumeration(AudioPlayTranslationTypeDTO.values.toList)
         .encode(AudioPlayTranslationTypeMapper.toString))
     .encodedExample(
       AudioPlayTranslationTypeMapper
@@ -95,10 +95,10 @@ object AudioPlayTranslationSchemas:
         .toString)
     .description(translationTypeDescription)
 
-  private given Schema[LanguageDto] = Schema.string
+  private given Schema[LanguageDTO] = Schema.string
     .validate(
       Validator
-        .enumeration(LanguageDto.values.toList)
+        .enumeration(LanguageDTO.values.toList)
         .encode(LanguageMapper.toString))
     .encodedExample(
       LanguageMapper

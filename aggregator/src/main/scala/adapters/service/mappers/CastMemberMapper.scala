@@ -2,7 +2,8 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import application.dto.audioplay.{CastMemberDTO, CastMemberResource}
+import application.dto.audioplay.AudioPlayResource.CastMemberResource
+import application.dto.audioplay.CastMemberDTO
 import application.dto.person.PersonResource
 import domain.model.audioplay.{ActorRole, CastMember}
 import domain.model.person.Person

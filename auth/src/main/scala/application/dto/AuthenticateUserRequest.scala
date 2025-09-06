@@ -15,6 +15,6 @@ enum AuthenticateUserRequest:
    *  @param authorizationCode authorization code from third party.
    */
   case OAuth2Authentication(
-      provider: OAuth2ProviderDto,
+      provider: OAuth2ProviderDTO,
       authorizationCode: String,
   )
