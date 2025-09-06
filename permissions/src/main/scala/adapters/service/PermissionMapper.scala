@@ -2,7 +2,10 @@ package org.aulune.permissions
 package adapters.service
 
 
-import application.dto.CheckPermissionStatus.{Denied, Granted}
+import application.dto.CheckPermissionResponse.CheckPermissionStatus.{
+  Denied,
+  Granted,
+}
 import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,

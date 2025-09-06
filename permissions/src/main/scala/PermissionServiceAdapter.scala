@@ -2,7 +2,7 @@ package org.aulune.permissions
 
 
 import application.PermissionService
-import application.dto.CheckPermissionStatus.Granted
+import application.dto.CheckPermissionResponse.CheckPermissionStatus.Granted
 import application.dto.{CheckPermissionRequest, CreatePermissionRequest}
 
 import cats.Functor
@@ -26,7 +26,7 @@ private[permissions] final class PermissionServiceAdapter[F[_]: Functor](
   override def registerPermission(
       permission: Permission,
   ): F[Either[ErrorResponse, Unit]] =
-    service.registerPermission(makeCreateRequest(permission)).map(_.void)
+    service.create(makeCreateRequest(permission)).map(_.void)
 
   override def hasPermission(
       user: User,

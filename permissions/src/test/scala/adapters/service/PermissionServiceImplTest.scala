@@ -121,7 +121,7 @@ final class PermissionServiceImplTest
     "should " - {
       "add new permissions" in stand { service =>
         val _ = mockUpsert(testPermission.pure)
-        for result <- service.registerPermission(createRequest)
+        for result <- service.create(createRequest)
         yield result shouldBe permissionResource.asRight
       }
 
@@ -132,7 +132,7 @@ final class PermissionServiceImplTest
             name = "the same",
             description = "",
           )
-          val register = service.registerPermission(invalidRequest)
+          val register = service.create(invalidRequest)
           assertDomainError(register)(InvalidPermission)
       }
 
@@ -140,8 +140,8 @@ final class PermissionServiceImplTest
         val _ = mockUpsert(testPermission.pure)
         val _ = mockUpsert(testPermission.pure)
         for
-          _ <- service.registerPermission(createRequest)
-          result <- service.registerPermission(createRequest)
+          _ <- service.create(createRequest)
+          result <- service.create(createRequest)
         yield result shouldBe permissionResource.asRight
       }
     }
