@@ -9,12 +9,14 @@ import domain.repositories.PersonRepository
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
+  InvalidArgument,
 }
 import org.aulune.commons.testing.PostgresTestContainer
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -28,13 +30,13 @@ final class PersonRepositoryImplTest
 
   private def stand = makeStand(PersonRepositoryImpl.build[IO])
 
-  private val personTest = Persons.person1
-  private val updatedPersonTest = personTest
+  private val person = Persons.person1
+  private val updatedPerson = person
     .update(
       name = FullName.unsafe("John Brown"),
     )
     .getOrElse(throw new IllegalStateException())
-  private val personTests = List(
+  private val personList = List(
     Persons.person1,
     Persons.person2,
     Persons.person3,
@@ -43,14 +45,14 @@ final class PersonRepositoryImplTest
   "contains method " - {
     "should " - {
       "return false for non-existent person" in stand { repo =>
-        for exists <- repo.contains(personTest.id)
+        for exists <- repo.contains(person.id)
         yield exists shouldBe false
       }
 
       "return true for existent person" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          exists <- repo.contains(personTest.id)
+          _ <- repo.persist(person)
+          exists <- repo.contains(person.id)
         yield exists shouldBe true
       }
     }
@@ -59,15 +61,15 @@ final class PersonRepositoryImplTest
   "get method " - {
     "should " - {
       "return `None` for non-existent person" in stand { repo =>
-        for audio <- repo.get(personTest.id)
+        for audio <- repo.get(person.id)
         yield audio shouldBe None
       }
 
       "retrieve existing persons" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          audio <- repo.get(personTest.id)
-        yield audio shouldBe Some(personTest)
+          _ <- repo.persist(person)
+          audio <- repo.get(person.id)
+        yield audio shouldBe Some(person)
       }
     }
   }
@@ -76,8 +78,8 @@ final class PersonRepositoryImplTest
     "should " - {
       "throw error if an person exists" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          result <- repo.persist(updatedPersonTest).attempt
+          _ <- repo.persist(person)
+          result <- repo.persist(updatedPerson).attempt
         yield result shouldBe Left(AlreadyExists)
       }
     }
@@ -87,22 +89,22 @@ final class PersonRepositoryImplTest
     "should " - {
       "update persons" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          updated <- repo.update(updatedPersonTest)
-        yield updated shouldBe updatedPersonTest
+          _ <- repo.persist(person)
+          updated <- repo.update(updatedPerson)
+        yield updated shouldBe updatedPerson
       }
 
       "throw error for non-existent person" in stand { repo =>
-        for updated <- repo.update(personTest).attempt
+        for updated <- repo.update(person).attempt
         yield updated shouldBe Left(FailedPrecondition)
       }
 
       "be idempotent" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          updated <- repo.update(updatedPersonTest)
-          updated <- repo.update(updatedPersonTest)
-        yield updated shouldBe updatedPersonTest
+          _ <- repo.persist(person)
+          updated <- repo.update(updatedPerson)
+          updated <- repo.update(updatedPerson)
+        yield updated shouldBe updatedPerson
       }
     }
   }
@@ -111,16 +113,16 @@ final class PersonRepositoryImplTest
     "should " - {
       "delete persons" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          result <- repo.delete(personTest.id)
+          _ <- repo.persist(person)
+          result <- repo.delete(person.id)
         yield result shouldBe ()
       }
 
       "be idempotent" in stand { repo =>
         for
-          _ <- repo.persist(personTest)
-          _ <- repo.delete(personTest.id)
-          result <- repo.delete(personTest.id)
+          _ <- repo.persist(person)
+          _ <- repo.delete(person.id)
+          result <- repo.delete(person.id)
         yield result shouldBe ()
       }
     }
@@ -131,7 +133,7 @@ final class PersonRepositoryImplTest
       "get elements in batches" in stand { repo =>
         val ids = NonEmptyList.of(Persons.person1.id, Persons.person2.id)
         for
-          _ <- persistPersons(repo, personTests)
+          _ <- persistMany(repo)
           result <- repo.batchGet(ids)
         yield result shouldBe List(Persons.person1, Persons.person2)
       }
@@ -141,7 +143,7 @@ final class PersonRepositoryImplTest
           Uuid.unsafe[Person]("1dbcb7ed-8c13-40c6-b4be-d4b323535d2b")
         val ids = NonEmptyList.of(Persons.person1.id, missingId)
         for
-          _ <- persistPersons(repo, personTests)
+          _ <- persistMany(repo)
           result <- repo.batchGet(ids)
         yield result shouldBe List(Persons.person1)
       }
@@ -154,9 +156,64 @@ final class PersonRepositoryImplTest
     }
   }
 
-  private def persistPersons(
-      repo: PersonRepository[IO],
-      xs: List[Person],
-  ): IO[Unit] = xs.foldLeft(IO.unit)((io, cur) => io >> repo.persist(cur).void)
+  "list method " - {
+    "should " - {
+      "return empty list if no person's available" in stand { repo =>
+        for audios <- repo.list(None, 10)
+        yield audios shouldBe Nil
+      }
+
+      "return no more than asked" in stand { repo =>
+        for
+          _ <- persistMany(repo)
+          audios <- repo.list(None, 2)
+        yield audios shouldBe personList.take(2)
+      }
+
+      "continue listing if token is given" in stand { repo =>
+        for
+          _ <- persistMany(repo)
+          first <- repo.list(None, 1).map(_.head)
+          cursor = PersonRepository.Cursor(first.id)
+          rest <- repo.list(Some(cursor), 1)
+        yield rest.head shouldBe personList(1)
+      }
+    }
+  }
+
+  "search method " - {
+    "should " - {
+      "return matching elements" in stand { repo =>
+        val element = Persons.person1
+        val query = NonEmptyString.unsafe(element.name)
+        for
+          _ <- persistMany(repo)
+          result <- repo.search(query, 3)
+        yield result should contain(element)
+      }
+
+      "not return elements when none of them match" in stand { repo =>
+        for
+          _ <- persistMany(repo)
+          result <- repo.search(NonEmptyString.unsafe("nothing"), 1)
+        yield result shouldBe Nil
+      }
+
+      "return elements in order of likeness" in stand { repo =>
+        for
+          _ <- persistMany(repo)
+          result <- repo.search(NonEmptyString.unsafe("smith"), 3)
+        yield result shouldBe List(Persons.person1, Persons.person2)
+      }
+
+      "throw InvalidArgument when given non-positive limit" in stand { repo =>
+        for result <- repo.search(NonEmptyString.unsafe("something"), 0).attempt
+        yield result shouldBe InvalidArgument.asLeft
+      }
+    }
+  }
+
+  private def persistMany(repo: PersonRepository[IO]) =
+    personList.foldLeft(IO.unit)((io, audio) => io >> repo.persist(audio).void)
 
 end PersonRepositoryImplTest

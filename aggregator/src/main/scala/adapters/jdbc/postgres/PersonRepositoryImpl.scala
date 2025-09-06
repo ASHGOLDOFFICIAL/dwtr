@@ -14,13 +14,18 @@ import doobie.implicits.toSqlInterpolator
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
-import org.aulune.commons.adapters.doobie.postgres.Metas.{uuidMeta, uuidsMeta}
+import org.aulune.commons.adapters.doobie.postgres.Metas.{
+  nonEmptyStringMeta,
+  uuidMeta,
+  uuidsMeta,
+}
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
+  InvalidArgument,
 }
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
 
 import java.sql.SQLException
 
@@ -106,6 +111,42 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .to[List]
       .transact(transactor)
       .handleErrorWith(toRepositoryError)
+
+  override def list(
+      cursor: Option[PersonRepository.Cursor],
+      count: Int,
+  ): F[List[Person]] =
+    val sort = fr0"LIMIT $count"
+    val full = cursor match
+      case Some(t) => selectBase ++ fr"WHERE id > ${t.id}" ++ sort
+      case None    => selectBase ++ sort
+
+    val query = full.stripMargin
+      .query[SelectType]
+      .map(toPerson)
+      .to[List]
+
+    (for
+      _ <- MonadThrow[F].raiseWhen(count <= 0)(InvalidArgument)
+      result <- query.transact(transactor)
+    yield result).handleErrorWith(toRepositoryError)
+  end list
+
+  override def search(query: NonEmptyString, limit: Int): F[List[Person]] =
+    val select = (selectBase ++ fr0"""
+      |WHERE TO_TSVECTOR(name) @@ PLAINTO_TSQUERY($query)
+      |ORDER BY TS_RANK(TO_TSVECTOR(name), PLAINTO_TSQUERY($query)) DESC
+      |LIMIT $limit
+      |""".stripMargin)
+      .query[SelectType]
+      .map(toPerson)
+      .to[List]
+
+    (for
+      _ <- MonadThrow[F].raiseWhen(limit <= 0)(InvalidArgument)
+      result <- select.transact(transactor)
+    yield result).handleErrorWith(toRepositoryError)
+  end search
 
   private type SelectType = (Uuid[Person], FullName)
 

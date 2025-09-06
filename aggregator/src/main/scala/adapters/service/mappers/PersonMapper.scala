@@ -35,9 +35,9 @@ private[service] object PersonMapper:
       case None         => InvalidArguments.invalidNec
 
   /** Converts domain object to response object. */
-  def toResponse(domain: Person): PersonResource =
+  def makeResource(domain: Person): PersonResource =
     PersonResource(id = domain.id, name = domain.name)
 
   /** Converts list of domain objects to batch response. */
   def toBatchResponse(domains: List[Person]): BatchGetPersonsResponse =
-    BatchGetPersonsResponse(persons = domains.map(toResponse))
+    BatchGetPersonsResponse(persons = domains.map(makeResource))
