@@ -72,7 +72,12 @@ final class PersonServiceImplTest
       .expects(*)
       .returning(().asRight.pure)
     PersonServiceImpl
-      .build(2, mockRepo, mockPermissions)
+      .build(
+        2,
+        AggregatorConfig.PaginationParams(2, 1),
+        AggregatorConfig.SearchParams(2, 1),
+        mockRepo,
+        mockPermissions)
       .flatMap(testCase)
   end stand
 

@@ -11,7 +11,11 @@ import application.dto.person.{
   CreatePersonRequest,
   DeletePersonRequest,
   GetPersonRequest,
+  ListPersonsRequest,
+  ListPersonsResponse,
   PersonResource,
+  SearchPersonsRequest,
+  SearchPersonsResponse,
 }
 import domain.model.person.{FullName, Person}
 
@@ -26,16 +30,19 @@ import java.util.UUID
 
 /** [[Person]] objects for testing. */
 private[aggregator] object Persons:
+  /** John Smith. */
   val person1: Person = Person.unsafe(
     id = Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950481"),
     name = FullName.unsafe("John Smith"),
   )
 
+  /** Jane Smith. */
   val person2: Person = Person.unsafe(
     id = Uuid.unsafe("03205f95-7e75-4fb4-b2d9-23549b950482"),
     name = FullName.unsafe("Jane Smith"),
   )
 
+  /** Peter Jones. */
   val person3: Person = Person.unsafe(
     id = Uuid.unsafe("adfeccac-0c8e-4a6c-a0b3-08684e6bd336"),
     name = FullName.unsafe("Peter Jones"),
@@ -43,7 +50,7 @@ private[aggregator] object Persons:
 
   val resourceById: Map[UUID, PersonResource] =
     val persons = List(person1, person2, person3)
-    persons.map(p => p.id -> PersonMapper.toResponse(p)).toMap
+    persons.map(p => p.id -> PersonMapper.makeResource(p)).toMap
 
   /** Stub [[PersonService]] implementation that supports only `get` and
    *  `batchGet` operation.
@@ -65,6 +72,16 @@ private[aggregator] object Persons:
     ): F[Either[ErrorResponse, BatchGetPersonsResponse]] =
       val persons = request.names.mapFilter(resourceById.get)
       BatchGetPersonsResponse(persons).asRight.pure[F]
+
+    override def list(
+        request: ListPersonsRequest,
+    ): F[Either[ErrorResponse, ListPersonsResponse]] =
+      throw new UnsupportedOperationException()
+
+    override def search(
+        request: SearchPersonsRequest,
+    ): F[Either[ErrorResponse, SearchPersonsResponse]] =
+      throw new UnsupportedOperationException()
 
     override def create(
         user: User,

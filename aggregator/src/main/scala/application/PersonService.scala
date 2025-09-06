@@ -9,7 +9,11 @@ import application.dto.person.{
   CreatePersonRequest,
   DeletePersonRequest,
   GetPersonRequest,
+  ListPersonsRequest,
+  ListPersonsResponse,
   PersonResource,
+  SearchPersonsRequest,
+  SearchPersonsResponse,
 }
 import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
 
@@ -43,6 +47,24 @@ trait PersonService[F[_]]:
   def batchGet(
       request: BatchGetPersonsRequest,
   ): F[Either[ErrorResponse, BatchGetPersonsResponse]]
+
+  /** Get a portion of persons.
+   *
+   *  @param request request to list persons.
+   *  @return list of persons if success, otherwise error.
+   */
+  def list(
+      request: ListPersonsRequest,
+  ): F[Either[ErrorResponse, ListPersonsResponse]]
+
+  /** Search persons by some query.
+   *
+   *  @param request request with search information.
+   *  @return response with matched persons if success, otherwise error.
+   */
+  def search(
+      request: SearchPersonsRequest,
+  ): F[Either[ErrorResponse, SearchPersonsResponse]]
 
   /** Create new audio play.
    *

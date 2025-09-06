@@ -11,7 +11,11 @@ import application.dto.person.{
   CreatePersonRequest,
   DeletePersonRequest,
   GetPersonRequest,
+  ListPersonsRequest,
+  ListPersonsResponse,
   PersonResource,
+  SearchPersonsRequest,
+  SearchPersonsResponse,
 }
 import application.{AggregatorPermission, PersonService}
 import domain.errors.PersonValidationError
@@ -22,6 +26,8 @@ import cats.MonadThrow
 import cats.data.{EitherT, NonEmptyList}
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorResponse
+import org.aulune.commons.pagination.{CursorEncoder, PaginationParamsParser}
+import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
@@ -46,24 +52,44 @@ object PersonServiceImpl:
    */
   def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
       maxBatchGet: Int,
+      pagination: AggregatorConfig.PaginationParams,
+      search: AggregatorConfig.SearchParams,
       repo: PersonRepository[F],
       permissionService: PermissionClientService[F],
   ): F[PersonService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
+    val paginationParserO = PaginationParamsParser
+      .build[PersonRepository.Cursor](pagination.default, pagination.max)
+    val searchParserO = SearchParamsParser
+      .build(search.default, search.max)
+
     for
       _ <- info"Building service."
       _ <- MonadThrow[F]
         .raiseWhen(maxBatchGet <= 0)(new IllegalArgumentException())
         .onError(_ =>
           error"Non-positive maximum allowed number of get batch request elements.")
+      paginationParser <- MonadThrow[F]
+        .fromOption(paginationParserO, new IllegalArgumentException())
+        .onError(_ => error"Invalid pagination parser parameters are given.")
+      searchParser <- MonadThrow[F]
+        .fromOption(searchParserO, new IllegalArgumentException())
+        .onError(_ => error"Invalid search parser parameters are given.")
       _ <- permissionService.registerPermission(Modify)
-    yield new PersonServiceImpl[F](maxBatchGet, repo, permissionService)
+    yield new PersonServiceImpl[F](
+      maxBatchGet,
+      paginationParser,
+      searchParser,
+      repo,
+      permissionService)
 
 
 private final class PersonServiceImpl[
     F[_]: MonadThrow: SortableUUIDGen: LoggerFactory,
 ] private (
     maxBatchGet: Int,
+    paginationParser: PaginationParamsParser[PersonRepository.Cursor],
+    searchParser: SearchParamsParser,
     repo: PersonRepository[F],
     permissionService: PermissionClientService[F],
 ) extends PersonService[F]:
@@ -80,7 +106,7 @@ private final class PersonServiceImpl[
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.personNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element: $request")
-      response = PersonMapper.toResponse(elem)
+      response = PersonMapper.makeResource(elem)
     yield response).value.handleErrorWith(handleInternal)
 
   override def batchGet(
@@ -91,6 +117,35 @@ private final class PersonServiceImpl[
     elems <- EitherT.liftF(repo.batchGet(ids))
     response <- EitherT.fromEither(checkNoneIsMissing(ids, elems))
   yield response).value.handleErrorWith(handleInternal)
+
+  override def list(
+      request: ListPersonsRequest,
+  ): F[Either[ErrorResponse, ListPersonsResponse]] =
+    val paramsV = paginationParser.parse(request.pageSize, request.pageToken)
+    (for
+      _ <- eitherTLogger.info(s"List request: $request.")
+      params <- EitherT
+        .fromOption(paramsV.toOption, ErrorResponses.invalidPaginationParams)
+        .leftSemiflatTap(_ => warn"Invalid pagination params are given.")
+      elems <- EitherT.liftF(repo.list(params.cursor, params.pageSize))
+      resources = elems.map(PersonMapper.makeResource)
+      token = makePaginationToken(elems.lastOption)
+      response = ListPersonsResponse(resources, token)
+    yield response).value.handleErrorWith(handleInternal)
+
+  override def search(
+      request: SearchPersonsRequest,
+  ): F[Either[ErrorResponse, SearchPersonsResponse]] =
+    val paramsV = searchParser.parse(request.query, request.limit)
+    (for
+      _ <- eitherTLogger.info(s"Search request: $request.")
+      params <- EitherT
+        .fromOption(paramsV.toOption, ErrorResponses.invalidSearchParams)
+        .leftSemiflatTap(_ => warn"Invalid search params are given.")
+      elems <- EitherT.liftF(repo.search(params.query, params.limit))
+      resources = elems.map(PersonMapper.makeResource)
+      response = SearchPersonsResponse(resources)
+    yield response).value.handleErrorWith(handleInternal)
 
   override def create(
       user: User,
@@ -105,7 +160,7 @@ private final class PersonServiceImpl[
           .fromEither(makePerson(request, id))
           .leftSemiflatTap(_ => warn"Request to create bad element: $request.")
         persisted <- EitherT.liftF(repo.persist(person))
-        response = PersonMapper.toResponse(persisted)
+        response = PersonMapper.makeResource(persisted)
       yield response).value
     }.handleErrorWith(handleInternal)
 
@@ -159,6 +214,16 @@ private final class PersonServiceImpl[
       .fromCreateRequest(request, id)
       .leftMap(ErrorResponses.invalidPerson)
       .toEither
+
+  /** Converts list of domain objects to one list response.
+   *  @param last last sent element.
+   */
+  private def makePaginationToken(
+      last: Option[Person],
+  ): Option[String] = last.map { elem =>
+    val cursor = PersonRepository.Cursor(elem.id)
+    CursorEncoder[PersonRepository.Cursor].encode(cursor)
+  }
 
   /** Logs any error and returns internal error response. */
   private def handleInternal[A](e: Throwable) =

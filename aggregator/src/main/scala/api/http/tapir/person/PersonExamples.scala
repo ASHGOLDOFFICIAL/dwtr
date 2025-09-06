@@ -6,10 +6,12 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  ListPersonsResponse,
   PersonResource,
+  SearchPersonsResponse,
 }
 
-import java.util.UUID
+import java.util.{Base64, UUID}
 
 
 /** Example DTO objects for persons. */
@@ -45,6 +47,9 @@ object PersonExamples:
 
   val Resource: PersonResource = DavidLlewellynResource
 
+  private val NextPageToken =
+    Some(Base64.getEncoder.encodeToString(Resource.name.getBytes))
+
   val CreateRequest: CreatePersonRequest = CreatePersonRequest(
     name = DavidLlewellynResource.name,
   )
@@ -60,5 +65,26 @@ object PersonExamples:
     persons = List(
       DavidLlewellynResource,
       SamuelBarnettResource,
+    ),
+  )
+
+  val ListResponse: ListPersonsResponse = ListPersonsResponse(
+    persons = List(
+      DavidLlewellynResource,
+      ElizabethMortonResource,
+      GeorgeNaylorResource,
+      SamuelBarnettResource,
+      SimonLuddersResource,
+      StephenCritchlowResource,
+      YoussefKerkourResource,
+    ),
+    nextPageToken = NextPageToken,
+  )
+
+  val SearchResponse: SearchPersonsResponse = SearchPersonsResponse(
+    persons = List(
+      SamuelBarnettResource,
+      SimonLuddersResource,
+      StephenCritchlowResource,
     ),
   )

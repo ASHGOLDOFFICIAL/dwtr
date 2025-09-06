@@ -3,7 +3,14 @@ package api.http
 
 
 import api.http.circe.PersonCodecs.given
-import api.http.tapir.person.PersonExamples
+import api.http.tapir.person.PersonExamples.{
+  BatchGetRequest,
+  BatchGetResponse,
+  CreateRequest,
+  ListResponse,
+  Resource,
+  SearchResponse,
+}
 import api.http.tapir.person.PersonSchemas.given
 import application.PersonService
 import application.dto.person.{
@@ -12,7 +19,11 @@ import application.dto.person.{
   CreatePersonRequest,
   DeletePersonRequest,
   GetPersonRequest,
+  ListPersonsRequest,
+  ListPersonsResponse,
   PersonResource,
+  SearchPersonsRequest,
+  SearchPersonsResponse,
 }
 
 import cats.Applicative
@@ -20,7 +31,10 @@ import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
-import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.adapters.tapir.{
+  ErrorStatusCodeMapper,
+  MethodSpecificQueryParams,
+}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
@@ -53,7 +67,7 @@ final class PersonsController[F[_]: Applicative](
     .in(elementPath)
     .out(statusCode(StatusCode.Ok).and(jsonBody[PersonResource]
       .description("Requested person's information if found.")
-      .example(PersonExamples.Resource)))
+      .example(Resource)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetPerson")
@@ -69,10 +83,10 @@ final class PersonsController[F[_]: Applicative](
     .in(collectionPath + ":batchGet")
     .in(jsonBody[BatchGetPersonsRequest]
       .description("Request with IDs of persons to find")
-      .example(PersonExamples.BatchGetRequest))
+      .example(BatchGetRequest))
     .out(statusCode(StatusCode.Ok).and(jsonBody[BatchGetPersonsResponse]
       .description("List of requested persons")
-      .example(PersonExamples.BatchGetResponse)))
+      .example(BatchGetResponse)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("BatchGetPersons")
@@ -83,14 +97,49 @@ final class PersonsController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
+  private val listEndpoint = endpoint.get
+    .in(collectionPath)
+    .in(MethodSpecificQueryParams.pagination)
+    .out(statusCode(StatusCode.Ok).and(jsonBody[ListPersonsResponse]
+      .description("List of persons with token to get next page.")
+      .example(ListResponse)))
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
+    .name("ListPersons")
+    .summary("Returns the list of persons.")
+    .tag(tag)
+    .serverLogic { (pageSize, pageToken) =>
+      val request =
+        ListPersonsRequest(pageSize = pageSize, pageToken = pageToken)
+      for result <- service.list(request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
+  private val searchEndpoint = endpoint.get
+    .in(collectionPath + ":search")
+    .in(MethodSpecificQueryParams.search)
+    .out(statusCode(StatusCode.Ok).and(jsonBody[SearchPersonsResponse]
+      .description("List of matched persons.")
+      .example(SearchResponse)))
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
+    .name("SearchPersons")
+    .summary("Searches persons by given query.")
+    .tag(tag)
+    .serverLogic { (query, limit) =>
+      val request = SearchPersonsRequest(query = query, limit = limit)
+      for result <- service.search(request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
   private val postEndpoint = securedEndpoint.post
     .in(collectionPath)
     .in(jsonBody[CreatePersonRequest]
       .description("Person to create")
-      .example(PersonExamples.CreateRequest))
+      .example(CreateRequest))
     .out(statusCode(StatusCode.Created).and(jsonBody[PersonResource]
       .description("Created person.")
-      .example(PersonExamples.Resource)))
+      .example(Resource)))
     .name("CreatePerson")
     .summary("Creates a new person and returns it.")
     .tag(tag)
@@ -115,6 +164,8 @@ final class PersonsController[F[_]: Applicative](
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     batchGetEndpoint,
+    listEndpoint,
+    searchEndpoint,
     postEndpoint,
     deleteEndpoint,
   )
