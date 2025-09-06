@@ -7,7 +7,6 @@ import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{DownloadAudioPlays, Modify}
 import application.dto.audioplay.{
   AudioPlayResource,
-  CastMemberResource,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,

@@ -4,11 +4,11 @@ package api.http.circe
 
 import api.http.circe.PersonCodecs.given
 import api.http.circe.SharedCodecs.given
+import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDTO,
-  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,

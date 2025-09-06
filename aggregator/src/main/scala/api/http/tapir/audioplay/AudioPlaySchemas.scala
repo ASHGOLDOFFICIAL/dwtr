@@ -4,21 +4,18 @@ package api.http.tapir.audioplay
 
 import api.http.tapir.person.PersonSchemas.given
 import api.mappers.ExternalResourceTypeMapper
+import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDTO,
-  CastMemberResource,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
-import org.aulune.aggregator.application.dto.shared.{
-  ExternalResourceDTO,
-  ExternalResourceTypeDTO,
-}
+import application.dto.shared.{ExternalResourceDTO, ExternalResourceTypeDTO}
 
 import sttp.tapir.{Schema, Validator}
 

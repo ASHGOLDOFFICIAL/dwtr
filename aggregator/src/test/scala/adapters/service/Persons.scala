@@ -64,8 +64,8 @@ private[aggregator] object Persons:
       BatchGetPersonsResponse(persons).asRight.pure[F]
 
     override def create(
-                         user: User,
-                         request: CreatePersonRequest,
+        user: User,
+        request: CreatePersonRequest,
     ): F[Either[ErrorResponse, PersonResource]] =
       throw new UnsupportedOperationException()
 
