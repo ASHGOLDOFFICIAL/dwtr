@@ -3,15 +3,18 @@ package org.aulune.aggregator
 
 import adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
+  AudioPlaySeriesRepositoryImpl,
   AudioPlayTranslationRepositoryImpl,
   PersonRepositoryImpl,
 }
 import adapters.service.{
+  AudioPlaySeriesServiceImpl,
   AudioPlayServiceImpl,
   AudioPlayTranslationServiceImpl,
   PersonServiceImpl,
 }
 import api.http.{
+  AudioPlaySeriesController,
   AudioPlayTranslationsController,
   AudioPlaysController,
   PersonsController,
@@ -56,12 +59,26 @@ object AggregatorApp:
         .build[F](config.maxBatchGet, personRepo, permissionServ)
       personEndpoints = new PersonsController[F](personServ, authServ).endpoints
 
+      seriesRepo <- AudioPlaySeriesRepositoryImpl.build[F](transactor)
+      seriesServ <- AudioPlaySeriesServiceImpl.build[F](
+        config.maxBatchGet,
+        config.pagination,
+        config.search,
+        seriesRepo,
+        permissionServ,
+      )
+      seriesEndpoints = new AudioPlaySeriesController[F](
+        config.pagination,
+        seriesServ,
+        authServ).endpoints
+
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ <- AudioPlayServiceImpl
         .build[F](
           config.pagination,
           config.search,
           audioRepo,
+          seriesServ,
           personServ,
           permissionServ)
       audioEndpoints = new AudioPlaysController[F](
@@ -79,6 +96,6 @@ object AggregatorApp:
       ).endpoints
 
       allEndpoints =
-        audioEndpoints ++ audioTranslationEndpoints ++ personEndpoints
+        seriesEndpoints ++ audioEndpoints ++ audioTranslationEndpoints ++ personEndpoints
     yield new AggregatorApp[F]:
       override val endpoints: List[ServerEndpoint[Any, F]] = allEndpoints

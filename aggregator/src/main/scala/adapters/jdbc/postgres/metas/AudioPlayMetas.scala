@@ -6,13 +6,11 @@ import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
 }
 import domain.model.person.Person
-import domain.shared.{ExternalResource, ExternalResourceType}
 
 import doobie.Meta
 import io.circe.generic.extras.Configuration
@@ -22,6 +20,11 @@ import io.circe.generic.extras.semiauto.{
 }
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
+import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeriesName
+import org.aulune.aggregator.domain.model.shared.{
+  ExternalResource,
+  ExternalResourceType,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.jsonbMeta
 import org.aulune.commons.types.Uuid
 

@@ -3,19 +3,18 @@ package adapters.jdbc.postgres
 
 
 import adapters.service.AudioPlays
+import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeries,
-  AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
 }
+import domain.model.shared.ExternalResourceType.Purchase
+import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
-import domain.shared.ExternalResourceType.Purchase
-import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -213,29 +212,6 @@ final class AudioPlayRepositoryImplTest
       "throw InvalidArgument when given non-positive limit" in stand { repo =>
         for result <- repo.search(NonEmptyString.unsafe("something"), 0).attempt
         yield result shouldBe InvalidArgument.asLeft
-      }
-    }
-  }
-
-  "getSeries method " - {
-    "should " - {
-      "return None if series doesn't exist" in stand { repo =>
-        val nonExistent = Uuid
-          .unsafe[AudioPlaySeries]("7efa6d44-ffd6-4668-94a2-7650821cd9f9")
-        for result <- repo.getSeries(nonExistent)
-        yield result shouldBe None
-      }
-
-      "return correct series if it exists" in stand { repo =>
-        val series = AudioPlaySeries
-          .unsafe(
-            Uuid.unsafe("1bf2deb3-2915-4673-a7da-976343776f1d"),
-            AudioPlaySeriesName.unsafe("New Series"))
-          .some
-        for
-          _ <- repo.persist(audioPlayTest.update(series = series).toOption.get)
-          result <- repo.getSeries(series.get.id)
-        yield result shouldBe series
       }
     }
   }

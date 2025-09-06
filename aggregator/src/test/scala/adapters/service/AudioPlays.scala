@@ -15,24 +15,23 @@ import application.dto.audioplay.{
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
+import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeries,
-  AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
 }
-import domain.shared.ExternalResourceType.{
+import domain.model.shared.ExternalResourceType.{
   Download,
   Other,
   Private,
   Purchase,
   Streaming,
 }
-import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
+import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -42,7 +41,6 @@ import org.aulune.commons.types.Uuid
 
 import java.net.URI
 import java.time.LocalDate
-import java.util.UUID
 
 
 /** [[AudioPlay]] objects to use in tests. */
@@ -52,11 +50,6 @@ private[aggregator] object AudioPlays:
 
   private def makeReleaseDate(year: Int, month: Int, day: Int): ReleaseDate =
     ReleaseDate.unsafe(LocalDate.of(year, month, day))
-
-  private def makeSeries(uuid: String, name: String): Option[AudioPlaySeries] =
-    AudioPlaySeries
-      .unsafe(Uuid.unsafe(uuid), AudioPlaySeriesName.unsafe(name))
-      .some
 
   /** ''Magic Mountain'' audio play. */
   val audioPlay1: AudioPlay = AudioPlay.unsafe(
@@ -77,7 +70,7 @@ private[aggregator] object AudioPlays:
       ),
     ),
     releaseDate = makeReleaseDate(2000, 10, 10),
-    series = makeSeries("1e0a7f74-8143-4477-ae0f-33547de9c53f", "Series"),
+    seriesId = AudioPlaySeriesStubs.series1.id.some,
     seriesSeason = AudioPlaySeason.unsafe(1).some,
     seriesNumber = AudioPlaySeriesNumber.unsafe(1).some,
     coverUrl = makeCoverUri("https://imagahost.org/123"),
@@ -98,7 +91,7 @@ private[aggregator] object AudioPlays:
     releaseDate = makeReleaseDate(1999, 10, 3),
     writers = Nil,
     cast = Nil,
-    series = makeSeries("e810039b-c44c-405f-a360-e44fadc43ead", "Series"),
+    seriesId = AudioPlaySeriesStubs.series3.id.some,
     seriesSeason = None,
     seriesNumber = AudioPlaySeriesNumber.unsafe(2).some,
     coverUrl = makeCoverUri("https://cdn.test.org/23"),
@@ -120,7 +113,7 @@ private[aggregator] object AudioPlays:
         main = false,
       ),
     ),
-    series = None,
+    seriesId = None,
     seriesSeason = None,
     seriesNumber = None,
     coverUrl = None,
@@ -128,7 +121,7 @@ private[aggregator] object AudioPlays:
       List(ExternalResource(Streaming, URI.create("https://audio.com/2"))),
   )
 
-  /** Stub [[AudioPlayService]] implementation that supports only `findById` and
+  /** Stub [[AudioPlayService]] implementation that supports only `get` and
    *  `search` operations.
    *
    *  Contains only persons given in [[AudioPlays]] object.
@@ -144,7 +137,13 @@ private[aggregator] object AudioPlays:
         request: GetAudioPlayRequest,
     ): F[Either[ErrorResponse, AudioPlayResource]] = audioById
       .get(Uuid[AudioPlay](request.name))
-      .map(AudioPlayMapper.toResponse(_, Persons.resourceById))
+      .map { audioPlay =>
+        AudioPlayMapper.makeResource(
+          audioPlay,
+          audioPlay.seriesId.map(AudioPlaySeriesStubs.resourceById),
+          Persons.resourceById,
+        )
+      }
       .toRight(AudioPlayServiceErrorResponses.audioPlayNotFound)
       .pure[F]
 
@@ -159,10 +158,15 @@ private[aggregator] object AudioPlays:
       val elements = audioById.values
         .filter(a => a.title == request.query)
         .toList
-      AudioPlayMapper
-        .toSearchResponse(elements, Persons.resourceById)
-        .asRight
-        .pure[F]
+      SearchAudioPlaysResponse(
+        elements.map { audioPlay =>
+          AudioPlayMapper.makeResource(
+            audioPlay,
+            audioPlay.seriesId.map(AudioPlaySeriesStubs.resourceById),
+            Persons.resourceById,
+          )
+        },
+      ).asRight.pure[F]
 
     override def create(
         user: User,

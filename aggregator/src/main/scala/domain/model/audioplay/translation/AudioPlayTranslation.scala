@@ -1,17 +1,14 @@
 package org.aulune.aggregator
-package domain.model.audioplay
+package domain.model.audioplay.translation
 
 
 import domain.errors.TranslationValidationError
-import domain.errors.TranslationValidationError.*
-import domain.model.audioplay.AudioPlayTranslation.{
-  ValidationResult,
-  validateState,
-}
-import domain.shared.{Language, TranslatedTitle}
+import domain.model.audioplay.AudioPlay
+import domain.model.audioplay.translation.AudioPlayTranslation.ValidationResult
 
 import cats.data.{NonEmptyList, Validated, ValidatedNec}
-import cats.syntax.all.*
+import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.shared.{Language, TranslatedTitle}
 import org.aulune.commons.types.Uuid
 
 import java.net.URI

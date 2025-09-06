@@ -6,9 +6,9 @@ import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.Modify
 import application.AudioPlayService
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
+import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.{
   AudioPlayResource,
-  AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
@@ -22,7 +22,8 @@ import application.errors.AudioPlayServiceError.{
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
 }
-import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import domain.model.audioplay.AudioPlay
+import domain.model.audioplay.series.AudioPlaySeries
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
@@ -64,6 +65,7 @@ final class AudioPlayServiceImplTest
   private given LoggerFactory[IO] = Slf4jFactory.create
 
   private val mockRepo = mock[AudioPlayRepository[IO]]
+  private val mockSeries = AudioPlaySeriesStubs.service[IO]
   private val mockPerson = Persons.service[IO]
   private val mockPermissions = mock[PermissionClientService[IO]]
 
@@ -87,6 +89,7 @@ final class AudioPlayServiceImplTest
         AggregatorConfig.PaginationParams(2, 1),
         AggregatorConfig.SearchParams(2, 1),
         mockRepo,
+        mockSeries,
         mockPerson,
         mockPermissions)
       .flatMap(testCase)
@@ -108,11 +111,7 @@ final class AudioPlayServiceImplTest
         roles = m.roles,
         main = m.main,
       )),
-    series = audioPlay.series.map(s =>
-      AudioPlaySeriesResource(
-        id = s.id,
-        name = s.name,
-      )),
+    series = audioPlay.seriesId.map(AudioPlaySeriesStubs.resourceById),
     seriesSeason = audioPlay.seriesSeason,
     seriesNumber = audioPlay.seriesNumber,
     coverUri = audioPlay.coverUri,
@@ -176,8 +175,9 @@ final class AudioPlayServiceImplTest
         val _ = (mockRepo.list _)
           .expects(cursor, 1)
           .returning(List(AudioPlays.audioPlay2).pure)
-        val response = AudioPlayMapper.toResponse(
+        val response = AudioPlayMapper.makeResource(
           AudioPlays.audioPlay2,
+          AudioPlays.audioPlay2.seriesId.map(AudioPlaySeriesStubs.resourceById),
           Persons.resourceById)
         for result <- service.list(request)
         yield result match
@@ -207,8 +207,13 @@ final class AudioPlayServiceImplTest
         for result <- service.search(request)
         yield result match
           case Left(_)     => fail("Error was not expected")
-          case Right(list) => list.audioPlays shouldBe elements.map(
-              AudioPlayMapper.toResponse(_, Persons.resourceById))
+          case Right(list) => list.audioPlays shouldBe elements.map { ap =>
+              AudioPlayMapper.makeResource(
+                ap,
+                ap.seriesId.map(AudioPlaySeriesStubs.resourceById),
+                Persons.resourceById,
+              )
+            }
       }
     }
   }
@@ -225,7 +230,7 @@ final class AudioPlayServiceImplTest
           roles = m.roles,
           main = m.main,
         )),
-      seriesId = audioPlay.series.map(_.id),
+      seriesId = audioPlay.seriesId,
       seriesSeason = audioPlay.seriesSeason,
       seriesNumber = audioPlay.seriesNumber,
       externalResources = Nil,
@@ -235,7 +240,6 @@ final class AudioPlayServiceImplTest
       "allow users with permissions to create audio plays if none exist" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
-          val _ = mockGetSeries(audioPlay.series.pure)
           val _ = mockPersist(newAudioPlay.pure)
           for result <- service.create(user, request)
           yield result shouldBe newAudioPlayResponse.asRight
@@ -245,17 +249,18 @@ final class AudioPlayServiceImplTest
         service =>
           val emptyNameRequest = request.copy(title = "")
           val _ = mockHasPermission(Modify, true.asRight.pure)
-          val _ = mockGetSeries(audioPlay.series.pure)
           val find = service.create(user, emptyNameRequest)
           assertDomainError(find)(InvalidAudioPlay)
       }
 
       "result in AudioPlaySeriesNotFound when creating audio play of non-existent series" in stand {
         service =>
-          val emptyNameRequest = request.copy(title = "")
+          val badRequest = request.copy(
+            seriesId =
+              UUID.fromString("a72e0458-b29f-4ac5-b19f-21197a8d18f8").some,
+          )
           val _ = mockHasPermission(Modify, true.asRight.pure)
-          val _ = mockGetSeries(None.pure)
-          val find = service.create(user, emptyNameRequest)
+          val find = service.create(user, badRequest)
           assertDomainError(find)(AudioPlaySeriesNotFound)
       }
 
@@ -273,7 +278,6 @@ final class AudioPlayServiceImplTest
 
       "handle exceptions from persist gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, true.asRight.pure)
-        val _ = mockGetSeries(audioPlay.series.pure)
         val _ = mockPersist(IO.raiseError(new Throwable()))
         val find = service.create(user, request)
         assertInternalError(find)
@@ -322,9 +326,6 @@ final class AudioPlayServiceImplTest
 
   private def mockDelete(returning: IO[Unit]) =
     (mockRepo.delete _).expects(audioPlay.id).returning(returning)
-
-  private def mockGetSeries(returning: IO[Option[AudioPlaySeries]]) =
-    (mockRepo.getSeries _).expects(audioPlay.series.get.id).returning(returning)
 
   private def mockHasPermission(
       permission: Permission,

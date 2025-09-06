@@ -2,10 +2,9 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres.metas
 
 
-import domain.model.audioplay.AudioPlayTranslationType
-import domain.shared.{Language, TranslatedTitle}
-
 import doobie.Meta
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslationType
+import org.aulune.aggregator.domain.model.shared.{Language, TranslatedTitle}
 
 
 private[postgres] object AudioPlayTranslationMetas:

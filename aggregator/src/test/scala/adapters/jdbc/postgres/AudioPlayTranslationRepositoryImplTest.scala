@@ -3,13 +3,14 @@ package adapters.jdbc.postgres
 
 
 import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
-import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
-import domain.shared.TranslatedTitle
+import domain.model.audioplay.AudioPlay
 
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.aulune.aggregator.adapters.service.AudioPlayTranslations
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
+import org.aulune.aggregator.domain.model.shared.TranslatedTitle
 import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,

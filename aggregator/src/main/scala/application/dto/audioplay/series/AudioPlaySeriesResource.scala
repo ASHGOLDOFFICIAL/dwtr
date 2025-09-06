@@ -1,5 +1,5 @@
 package org.aulune.aggregator
-package application.dto.audioplay
+package application.dto.audioplay.series
 
 import java.util.UUID
 

@@ -1,5 +1,5 @@
 package org.aulune.aggregator
-package domain.shared
+package domain.model.shared
 
 
 /** Type of links for resource. */

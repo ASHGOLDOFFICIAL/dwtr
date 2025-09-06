@@ -1,6 +1,12 @@
 package org.aulune.aggregator
-package domain.model.audioplay
+package domain.model.audioplay.series
 
+
+import domain.errors.AudioPlaySeriesValidationError
+import domain.model.audioplay.series.AudioPlaySeries.ValidationResult
+
+import cats.data.{Validated, ValidatedNec}
+import cats.syntax.all.given
 import org.aulune.commons.types.Uuid
 
 
@@ -11,10 +17,21 @@ import org.aulune.commons.types.Uuid
 final case class AudioPlaySeries private (
     id: Uuid[AudioPlaySeries],
     name: AudioPlaySeriesName,
-)
+):
+  /** Copies with validation. */
+  def update(
+      id: Uuid[AudioPlaySeries] = id,
+      name: AudioPlaySeriesName = name,
+  ): ValidationResult[AudioPlaySeries] = AudioPlaySeries(
+    id = id,
+    name = name,
+  )
 
 
 object AudioPlaySeries:
+  private type ValidationResult[A] =
+    ValidatedNec[AudioPlaySeriesValidationError, A]
+
   /** Creates an audio play series with state validation.
    *  @param id series ID.
    *  @param name series name.
@@ -23,16 +40,16 @@ object AudioPlaySeries:
   def apply(
       id: Uuid[AudioPlaySeries],
       name: AudioPlaySeriesName,
-  ): Option[AudioPlaySeries] = Some(new AudioPlaySeries(id, name))
+  ): ValidationResult[AudioPlaySeries] = new AudioPlaySeries(id, name).validNec
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param id series ID.
    *  @param name series name.
-   *  @throws IllegalArgumentException if given params are invalid.
+   *  @throws AudioPlaySeriesValidationError if given params are invalid.
    */
   def unsafe(
       id: Uuid[AudioPlaySeries],
       name: AudioPlaySeriesName,
   ): AudioPlaySeries = AudioPlaySeries(id, name) match
-    case Some(value) => value
-    case None        => throw new IllegalArgumentException()
+    case Validated.Valid(value)  => value
+    case Validated.Invalid(errs) => throw errs.head

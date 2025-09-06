@@ -6,7 +6,6 @@ import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
-  AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
   ListAudioPlaysResponse,
@@ -14,6 +13,9 @@ import application.dto.audioplay.{
 }
 import application.dto.shared.ExternalResourceDTO
 import application.dto.shared.ExternalResourceTypeDTO.Purchase
+
+import org.aulune.aggregator.api.http.tapir.audioplay.series.AudioPlaySeriesExamples
+import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 
 import java.net.URI
 import java.time.LocalDate
@@ -25,15 +27,6 @@ import java.util.{Base64, UUID}
  *    example.
  */
 object AudioPlayExamples:
-  private val seriesIdExample =
-    UUID.fromString("3cb893bf-5382-49ef-b881-2f07e75bfcdd")
-  private val seriesNameExample = "Cicero"
-  private val seriesExample = Some(
-    AudioPlaySeriesResource(
-      id = seriesIdExample,
-      name = seriesNameExample,
-    ))
-
   private val titleExample = "Though Scoundrels Are Discovered"
   private val synopsisExample = "Rome, 80 BC. A wealthy landowner has been murdered" +
     "in the street. His son, Sextus Roscius, is accused of the crime. When every " +
@@ -108,7 +101,7 @@ object AudioPlayExamples:
     releaseDate = releaseDateExample,
     writers = writersExample,
     cast = castExample,
-    series = seriesExample,
+    series = Some(AudioPlaySeriesExamples.Resource),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
     coverUri = coverUriExample,
@@ -126,7 +119,7 @@ object AudioPlayExamples:
         roles = r.roles,
         main = r.main,
       )),
-    seriesId = Some(seriesIdExample),
+    seriesId = Some(AudioPlaySeriesExamples.Resource.id),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
     externalResources = externalResourcesExample,

@@ -16,6 +16,21 @@ trait BaseAggregatorErrorResponses:
     details = ErrorDetails(),
   )
 
+  val emptyBatchGet: ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = "Empty batch get request is given",
+    details = ErrorDetails(),
+  )
+
+  /** Maximum allowed elements for batch get request is exceeded.
+   *  @param max maximum allowed.
+   */
+  def maxExceededBatchGet(max: Int): ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = s"Too many elements, max allowed: $max",
+    details = ErrorDetails(),
+  )
+
   val invalidSearchParams: ErrorResponse = ErrorResponse(
     status = InvalidArgument,
     message = "Query should be non-empty",

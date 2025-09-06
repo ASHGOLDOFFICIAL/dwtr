@@ -1,5 +1,5 @@
 package org.aulune.aggregator
-package domain.model.audioplay
+package domain.model.audioplay.translation
 
 
 /** Possible audio translation types. */
