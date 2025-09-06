@@ -46,12 +46,6 @@ object AudioPlayTranslationExamples:
       links = linksExample,
     )
 
-  val listRequestExample: ListAudioPlayTranslationsRequest =
-    ListAudioPlayTranslationsRequest(
-      pageSize = Some(2),
-      pageToken = nextTokenExample,
-    )
-
   val listResponseExample: ListAudioPlayTranslationsResponse =
     ListAudioPlayTranslationsResponse(
       translations = List(responseExample),

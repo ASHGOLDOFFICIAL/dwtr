@@ -9,9 +9,7 @@ import application.dto.audioplay.{
   AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
-  ListAudioPlaysRequest,
   ListAudioPlaysResponse,
-  SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
 import application.dto.shared.ExternalResourceDTO
@@ -134,19 +132,9 @@ object AudioPlayExamples:
     externalResources = externalResourcesExample,
   )
 
-  val ListRequest: ListAudioPlaysRequest = ListAudioPlaysRequest(
-    pageSize = Some(2),
-    pageToken = nextPageTokenExample,
-  )
-
   val ListResponse: ListAudioPlaysResponse = ListAudioPlaysResponse(
     audioPlays = List(Resource),
     nextPageToken = nextPageTokenExample,
-  )
-
-  val SearchRequest: SearchAudioPlaysRequest = SearchAudioPlaysRequest(
-    query = "scoundrels",
-    limit = Some(1),
   )
 
   val SearchResponse: SearchAudioPlaysResponse = SearchAudioPlaysResponse(

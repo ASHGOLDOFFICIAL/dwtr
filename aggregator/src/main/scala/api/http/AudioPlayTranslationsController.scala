@@ -4,7 +4,6 @@ package api.http
 
 import api.http.circe.AudioPlayTranslationCodecs.given
 import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
-  listRequestExample,
   listResponseExample,
   requestExample,
   responseExample,
@@ -25,13 +24,16 @@ import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
-import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.adapters.tapir.{
+  ErrorStatusCodeMapper,
+  MethodSpecificQueryParams,
+}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.{EndpointInput, endpoint, path, statusCode, stringToPath}
+import sttp.tapir.{endpoint, path, statusCode, stringToPath}
 
 import java.util.UUID
 
@@ -75,9 +77,7 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(jsonBody[ListAudioPlayTranslationsRequest]
-      .description("Request to list audio play translations.")
-      .example(listRequestExample))
+    .in(MethodSpecificQueryParams.pagination)
     .out(
       statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlayTranslationsResponse]
         .description("List of audio plays and a token to retrieve next page.")
@@ -87,7 +87,10 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .name("ListTranslations")
     .summary("Returns the list of translation for given parent.")
     .tag(tag)
-    .serverLogic { request =>
+    .serverLogic { (pageSize, pageToken) =>
+      val request = ListAudioPlayTranslationsRequest(
+        pageSize = pageSize,
+        pageToken = pageToken)
       for result <- service.list(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }

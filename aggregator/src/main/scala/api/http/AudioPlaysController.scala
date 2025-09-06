@@ -5,10 +5,8 @@ package api.http
 import api.http.circe.AudioPlayCodecs.given
 import api.http.tapir.audioplay.AudioPlayExamples.{
   CreateRequest,
-  ListRequest,
   ListResponse,
   Resource,
-  SearchRequest,
   SearchResponse,
 }
 import api.http.tapir.audioplay.AudioPlaySchemas.given
@@ -29,7 +27,10 @@ import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
 import org.aulune.commons.adapters.tapir.AuthenticationEndpoints.securedEndpoint
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
-import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.adapters.tapir.{
+  ErrorStatusCodeMapper,
+  MethodSpecificQueryParams,
+}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
@@ -79,9 +80,7 @@ final class AudioPlaysController[F[_]: Applicative](
 
   private val listEndpoint = endpoint.get
     .in(collectionPath)
-    .in(jsonBody[ListAudioPlaysRequest]
-      .description("Request to list audio plays.")
-      .example(ListRequest))
+    .in(MethodSpecificQueryParams.pagination)
     .out(statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlaysResponse]
       .description("List of audio plays with token to get next page.")
       .example(ListResponse)))
@@ -90,16 +89,16 @@ final class AudioPlaysController[F[_]: Applicative](
     .name("ListAudioPlays")
     .summary("Returns the list of audio play resources.")
     .tag(tag)
-    .serverLogic { request =>
+    .serverLogic { (pageSize, pageToken) =>
+      val request =
+        ListAudioPlaysRequest(pageSize = pageSize, pageToken = pageToken)
       for result <- service.list(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
   private val searchEndpoint = endpoint.get
     .in(collectionPath + ":search")
-    .in(jsonBody[SearchAudioPlaysRequest]
-      .description("Request to search audio plays.")
-      .example(SearchRequest))
+    .in(MethodSpecificQueryParams.search)
     .out(statusCode(StatusCode.Ok).and(jsonBody[SearchAudioPlaysResponse]
       .description("List of matched audio plays.")
       .example(SearchResponse)))
@@ -108,7 +107,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .name("SearchAudioPlays")
     .summary("Searches audio plays by given query.")
     .tag(tag)
-    .serverLogic { request =>
+    .serverLogic { (query, limit) =>
+      val request = SearchAudioPlaysRequest(query = query, limit = limit)
       for result <- service.search(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
