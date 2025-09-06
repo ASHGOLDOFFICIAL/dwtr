@@ -8,7 +8,7 @@ import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.{
   AuthenticateUserRequest,
   AuthenticateUserResponse,
-  OAuth2ProviderDto,
+  OAuth2ProviderDTO,
 }
 
 import io.circe.generic.extras.Configuration
@@ -22,10 +22,10 @@ import org.aulune.commons.adapters.circe.CirceUtils.config
 
 /** [[Decoder]] and [[Encoder]] instances for [[AuthenticationController]]. */
 private[api] object AuthenticationCodecs:
-  given Encoder[OAuth2ProviderDto] = Encoder.encodeString
+  given Encoder[OAuth2ProviderDTO] = Encoder.encodeString
     .contramap(OAuth2ProviderMapper.toString)
 
-  given Decoder[OAuth2ProviderDto] = Decoder.decodeString.emap { str =>
+  given Decoder[OAuth2ProviderDTO] = Decoder.decodeString.emap { str =>
     OAuth2ProviderMapper
       .fromString(str)
       .toRight(s"Invalid OAuth2Provider: $str")

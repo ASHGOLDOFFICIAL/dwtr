@@ -3,7 +3,7 @@ package api.http.tapir.examples
 
 
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
-import application.dto.OAuth2ProviderDto.Google
+import application.dto.OAuth2ProviderDTO.Google
 import application.dto.{AuthenticateUserRequest, CreateUserRequest}
 
 
