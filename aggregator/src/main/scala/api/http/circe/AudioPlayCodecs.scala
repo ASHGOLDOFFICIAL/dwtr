@@ -7,7 +7,6 @@ import api.http.circe.SharedCodecs.given
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
-  AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
@@ -21,6 +20,7 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
+import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 

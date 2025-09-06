@@ -6,7 +6,6 @@ import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
-  AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
   ListAudioPlaysResponse,
@@ -14,6 +13,7 @@ import application.dto.audioplay.{
 }
 import application.dto.shared.ExternalResourceDTO
 import application.dto.shared.ExternalResourceTypeDTO.Purchase
+import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 
 import java.net.URI
 import java.time.LocalDate

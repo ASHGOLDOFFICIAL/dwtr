@@ -8,7 +8,6 @@ import application.AudioPlayService
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
-  AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
@@ -29,6 +28,7 @@ import domain.repositories.AudioPlayRepository.AudioPlayCursor
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User

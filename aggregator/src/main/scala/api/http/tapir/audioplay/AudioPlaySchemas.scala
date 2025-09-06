@@ -7,7 +7,6 @@ import api.mappers.ExternalResourceTypeMapper
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
-  AudioPlaySeriesResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
   ListAudioPlaysRequest,
@@ -16,6 +15,7 @@ import application.dto.audioplay.{
   SearchAudioPlaysResponse,
 }
 import application.dto.shared.{ExternalResourceDTO, ExternalResourceTypeDTO}
+import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 
 import sttp.tapir.{Schema, Validator}
 

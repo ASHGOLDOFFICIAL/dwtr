@@ -6,6 +6,8 @@ import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.person.PersonResource
 import application.dto.shared.ExternalResourceDTO
 
+import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
+
 import java.net.URI
 import java.time.LocalDate
 import java.util.UUID
