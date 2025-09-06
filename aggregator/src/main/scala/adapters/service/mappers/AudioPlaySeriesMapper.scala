@@ -1,8 +1,9 @@
 package org.aulune.aggregator
 package adapters.service.mappers
 
-import domain.model.audioplay.AudioPlaySeries
+
 import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
+import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeries
 
 
 /** Mapper between external [[AudioPlaySeriesResource]] and domain's

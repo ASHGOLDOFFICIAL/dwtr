@@ -3,8 +3,8 @@ package adapters.service.mappers
 
 
 import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDTO.*
-import domain.model.audioplay.AudioPlayTranslationType
 import org.aulune.aggregator.application.dto.audioplay.translation.AudioPlayTranslationTypeDTO
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslationType
 
 
 /** Mapper between external [[AudioPlayTranslationTypeDTO]] and domain's

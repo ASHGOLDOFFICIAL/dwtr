@@ -2,10 +2,13 @@ package org.aulune.aggregator
 package adapters.service.mappers
 
 
-import domain.shared.{ExternalResource, ExternalResourceType}
 import org.aulune.aggregator.application.dto.shared.{
   ExternalResourceDTO,
   ExternalResourceTypeDTO,
+}
+import org.aulune.aggregator.domain.model.shared.{
+  ExternalResource,
+  ExternalResourceType,
 }
 
 

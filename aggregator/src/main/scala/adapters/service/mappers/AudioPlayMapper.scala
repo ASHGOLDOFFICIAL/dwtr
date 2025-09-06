@@ -13,16 +13,16 @@ import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeries,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
 }
 import domain.model.person.Person
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
-import domain.shared.{ReleaseDate, Synopsis}
 
 import cats.data.ValidatedNec
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeries
+import org.aulune.aggregator.domain.model.shared.{ReleaseDate, Synopsis}
 import org.aulune.commons.pagination.CursorEncoder
 import org.aulune.commons.types.Uuid
 

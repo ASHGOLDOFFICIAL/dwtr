@@ -19,23 +19,30 @@ import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeries,
-  AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
 }
-import domain.shared.ExternalResourceType.{
+import org.aulune.aggregator.domain.model.shared.ExternalResourceType.{
   Download,
   Other,
   Private,
   Purchase,
   Streaming,
 }
-import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.Applicative
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.series.{
+  AudioPlaySeries,
+  AudioPlaySeriesName,
+}
+import org.aulune.aggregator.domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  Synopsis,
+}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid

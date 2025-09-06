@@ -2,11 +2,14 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres.metas
 
 
-import domain.shared.{ImageUri, ReleaseDate, Synopsis}
-
 import cats.Show
 import doobie.Meta
 import doobie.postgres.implicits.JavaLocalDateMeta
+import org.aulune.aggregator.domain.model.shared.{
+  ImageUri,
+  ReleaseDate,
+  Synopsis,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.uriMeta
 
 import java.net.{URI, URL}

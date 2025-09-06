@@ -6,8 +6,8 @@ import org.aulune.aggregator.application.dto.shared.LanguageDTO.{
   Russian,
   Ukrainian,
 }
-import domain.shared.Language
 import org.aulune.aggregator.application.dto.shared.LanguageDTO
+import org.aulune.aggregator.domain.model.shared.Language
 
 
 /** Mapper between external [[LanguageDTO]] and domain's [[Language]].

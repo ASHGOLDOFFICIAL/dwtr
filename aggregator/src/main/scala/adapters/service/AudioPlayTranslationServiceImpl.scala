@@ -20,7 +20,7 @@ import application.{
   AudioPlayService,
   AudioPlayTranslationService,
 }
-import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import domain.model.audioplay.AudioPlay
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.{
   AudioPlayTranslationCursor,
@@ -30,6 +30,7 @@ import domain.repositories.AudioPlayTranslationRepository.{
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User

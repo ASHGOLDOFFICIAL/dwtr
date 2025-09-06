@@ -6,20 +6,27 @@ import adapters.service.AudioPlays
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeries,
-  AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
 }
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
-import domain.shared.ExternalResourceType.Purchase
-import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
+import org.aulune.aggregator.domain.model.shared.ExternalResourceType.Purchase
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.series.{
+  AudioPlaySeries,
+  AudioPlaySeriesName,
+}
+import org.aulune.aggregator.domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  Synopsis,
+}
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,

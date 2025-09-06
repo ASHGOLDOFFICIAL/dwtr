@@ -7,8 +7,6 @@ import adapters.jdbc.postgres.metas.SharedMetas.given
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
-  AudioPlaySeries,
-  AudioPlaySeriesName,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
@@ -16,7 +14,6 @@ import domain.model.audioplay.{
 import domain.model.person.Person
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
-import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.MonadThrow
 import cats.effect.MonadCancelThrow
@@ -24,6 +21,16 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
+import org.aulune.aggregator.domain.model.audioplay.series.{
+  AudioPlaySeries,
+  AudioPlaySeriesName,
+}
+import org.aulune.aggregator.domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  Synopsis,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
   nonEmptyStringMeta,
   uuidMeta,

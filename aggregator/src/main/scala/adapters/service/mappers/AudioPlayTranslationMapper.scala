@@ -9,11 +9,12 @@ import application.dto.audioplay.translation.{
 }
 import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.errors.TranslationValidationError
-import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
-import domain.shared.TranslatedTitle
+import domain.model.audioplay.AudioPlay
 
 import cats.data.{NonEmptyList, ValidatedNec}
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
+import org.aulune.aggregator.domain.model.shared.TranslatedTitle
 import org.aulune.commons.pagination.CursorEncoder
 import org.aulune.commons.types.Uuid
 

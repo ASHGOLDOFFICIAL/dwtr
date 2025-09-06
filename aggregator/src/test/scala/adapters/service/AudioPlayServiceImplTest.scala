@@ -21,7 +21,7 @@ import application.errors.AudioPlayServiceError.{
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
 }
-import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import domain.model.audioplay.AudioPlay
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
@@ -29,6 +29,7 @@ import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
+import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeries
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User

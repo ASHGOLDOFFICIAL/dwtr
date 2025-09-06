@@ -19,13 +19,14 @@ import application.dto.person.{BatchGetPersonsRequest, PersonResource}
 import application.errors.PersonServiceError
 import application.{AggregatorPermission, AudioPlayService, PersonService}
 import domain.errors.AudioPlayValidationError
-import domain.model.audioplay.{AudioPlay, AudioPlaySeries}
+import domain.model.audioplay.AudioPlay
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeries
 import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.search.SearchParamsParser

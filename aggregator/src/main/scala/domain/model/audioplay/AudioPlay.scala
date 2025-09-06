@@ -6,9 +6,15 @@ import domain.errors.AudioPlayValidationError
 import domain.errors.AudioPlayValidationError.*
 import domain.model.audioplay.AudioPlay.ValidationResult
 import domain.model.person.Person
-import domain.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
 
 import cats.data.{NonEmptyChain, Validated, ValidatedNec}
+import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeries
+import org.aulune.aggregator.domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  Synopsis,
+}
 import org.aulune.commons.types.Uuid
 
 

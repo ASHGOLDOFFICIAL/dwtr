@@ -3,7 +3,8 @@ package domain.repositories
 
 
 import AudioPlayTranslationRepository.AudioPlayTranslationCursor
-import domain.model.audioplay.{AudioPlay, AudioPlayTranslation}
+import domain.model.audioplay.AudioPlay
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
 
 import org.aulune.commons.pagination.{CursorDecoder, CursorEncoder}
 import org.aulune.commons.repositories.{GenericRepository, PaginatedList}

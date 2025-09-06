@@ -22,15 +22,15 @@ import application.errors.TranslationServiceError.{
   OriginalNotFound,
   TranslationNotFound,
 }
-import domain.model.audioplay.AudioPlayTranslation
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
-import domain.shared.TranslatedTitle
 
 import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
+import org.aulune.aggregator.domain.model.shared.TranslatedTitle
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User

@@ -2,16 +2,16 @@ package org.aulune.aggregator
 package adapters.service
 
 
-import domain.model.audioplay.AudioPlayTranslation
-import domain.model.audioplay.AudioPlayTranslationType.{
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslationType.{
   Subtitles,
   Transcript,
   VoiceOver,
 }
-import domain.shared.Language.{Russian, Ukrainian}
-import domain.shared.TranslatedTitle
+import org.aulune.aggregator.domain.model.shared.Language.{Russian, Ukrainian}
 
 import cats.data.NonEmptyList
+import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
+import org.aulune.aggregator.domain.model.shared.TranslatedTitle
 import org.aulune.commons.types.Uuid
 
 import java.net.URI
