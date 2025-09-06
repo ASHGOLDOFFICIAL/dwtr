@@ -27,11 +27,11 @@ trait PermissionService[F[_]]:
    *  permission.
    *
    *  @param request request with permission details.
-   *  @return `Unit` if everything is OK, otherwise error.
+   *  @return created resource if everything is OK, otherwise error.
    *  @note registering already existing permission isn't an exceptional
    *    situation.
    */
-  def registerPermission(
+  def create(
       request: CreatePermissionRequest,
   ): F[Either[ErrorResponse, PermissionResource]]
 
