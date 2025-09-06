@@ -14,7 +14,6 @@ import cats.data.NonEmptyChain
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorStatus.{
   FailedPrecondition,
-  Internal,
   InvalidArgument,
   NotFound,
 }
