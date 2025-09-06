@@ -163,8 +163,8 @@ private[aggregator] object AudioPlays:
         .pure[F]
 
     override def create(
-        user: User,
-        ac: CreateAudioPlayRequest,
+                         user: User,
+                         request: CreateAudioPlayRequest,
     ): F[Either[ErrorResponse, AudioPlayResource]] =
       throw new UnsupportedOperationException()
 

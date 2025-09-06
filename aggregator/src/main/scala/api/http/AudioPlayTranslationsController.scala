@@ -14,6 +14,8 @@ import application.AudioPlayTranslationService
 import application.dto.audioplay.translation.{
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
+  DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
@@ -66,7 +68,8 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .summary("Returns a translation with given ID for given parent.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.get(id)
+      val request = GetAudioPlayTranslationRequest(name = id)
+      for result <- service.get(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -113,7 +116,8 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .summary("Deletes translation resource with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      for result <- service.delete(user, id)
+      val request = DeleteAudioPlayTranslationRequest(name = id)
+      for result <- service.delete(user, request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 

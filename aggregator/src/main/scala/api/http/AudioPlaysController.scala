@@ -4,9 +4,9 @@ package api.http
 
 import api.http.circe.AudioPlayCodecs.given
 import api.http.tapir.audioplay.AudioPlayExamples.{
+  CreateRequest,
   ListRequest,
   ListResponse,
-  CreateRequest,
   Resource,
   SearchRequest,
   SearchResponse,
@@ -16,6 +16,8 @@ import application.AudioPlayService
 import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
+  DeleteAudioPlayRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -70,7 +72,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Returns an audio play with given ID.")
     .tag(tag)
     .serverLogic { id =>
-      for result <- service.get(id)
+      val request = GetAudioPlayRequest(name = id)
+      for result <- service.get(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -133,7 +136,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Deletes audio play resource with given ID.")
     .tag(tag)
     .serverLogic { user => id =>
-      for result <- service.delete(user, id)
+      val request = DeleteAudioPlayRequest(name = id)
+      for result <- service.delete(user, request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
