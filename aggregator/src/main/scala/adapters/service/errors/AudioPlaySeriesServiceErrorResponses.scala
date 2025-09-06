@@ -4,7 +4,7 @@ package adapters.service.errors
 
 import application.errors.AudioPlaySeriesServiceError.{
   InvalidSeries,
-  SeriesNotFound
+  SeriesNotFound,
 }
 import domain.errors.AudioPlaySeriesValidationError
 

@@ -12,7 +12,7 @@ import application.dto.audioplay.series.{
   ListAudioPlaySeriesRequest,
   ListAudioPlaySeriesResponse,
   SearchAudioPlaySeriesRequest,
-  SearchAudioPlaySeriesResponse
+  SearchAudioPlaySeriesResponse,
 }
 import application.errors.AudioPlaySeriesServiceError.{
   InvalidSeries,

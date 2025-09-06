@@ -17,7 +17,7 @@ import java.util.UUID
  *  [[org.aulune.aggregator.adapters.service.PersonServiceImpl]].
  */
 object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
-  
+
   val personNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Person is not found.",

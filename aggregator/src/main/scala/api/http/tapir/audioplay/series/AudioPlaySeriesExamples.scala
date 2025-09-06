@@ -8,7 +8,7 @@ import application.dto.audioplay.series.{
   BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   ListAudioPlaySeriesResponse,
-  SearchAudioPlaySeriesResponse
+  SearchAudioPlaySeriesResponse,
 }
 
 import java.util.{Base64, UUID}
