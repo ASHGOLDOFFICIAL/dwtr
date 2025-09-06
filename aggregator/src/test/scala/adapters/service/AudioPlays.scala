@@ -8,6 +8,8 @@ import application.AudioPlayService
 import application.dto.audioplay.{
   AudioPlayResource,
   CreateAudioPlayRequest,
+  DeleteAudioPlayRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -139,9 +141,9 @@ private[aggregator] object AudioPlays:
     )
 
     override def get(
-        id: UUID,
+        request: GetAudioPlayRequest,
     ): F[Either[ErrorResponse, AudioPlayResource]] = audioById
-      .get(Uuid[AudioPlay](id))
+      .get(Uuid[AudioPlay](request.name))
       .map(AudioPlayMapper.toResponse(_, Persons.resourceById))
       .toRight(AudioPlayServiceErrorResponses.audioPlayNotFound)
       .pure[F]
@@ -168,5 +170,8 @@ private[aggregator] object AudioPlays:
     ): F[Either[ErrorResponse, AudioPlayResource]] =
       throw new UnsupportedOperationException()
 
-    override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
+    override def delete(
+        user: User,
+        request: DeleteAudioPlayRequest,
+    ): F[Either[ErrorResponse, Unit]] =
       throw new UnsupportedOperationException()

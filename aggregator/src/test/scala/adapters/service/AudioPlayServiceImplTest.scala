@@ -5,12 +5,14 @@ package adapters.service
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.Modify
 import application.AudioPlayService
+import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
   AudioPlaySeriesResource,
   CastMemberDTO,
-  CastMemberResource,
   CreateAudioPlayRequest,
+  DeleteAudioPlayRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -116,22 +118,6 @@ final class AudioPlayServiceImplTest
     coverUri = audioPlay.coverUri,
     externalResources = Nil,
   )
-  private val createRequest = CreateAudioPlayRequest(
-    title = audioPlay.title,
-    synopsis = audioPlay.synopsis,
-    releaseDate = audioPlay.releaseDate,
-    writers = audioPlay.writers,
-    cast = audioPlay.cast.map(m =>
-      CastMemberDTO(
-        actor = m.actor,
-        roles = m.roles,
-        main = m.main,
-      )),
-    seriesId = audioPlay.series.map(_.id),
-    seriesSeason = audioPlay.seriesSeason,
-    seriesNumber = audioPlay.seriesNumber,
-    externalResources = Nil,
-  )
   private val newUuid = Uuid[AudioPlay](uuid)
   private val newAudioPlay = audioPlay
     .update(id = newUuid, coverUrl = None)
@@ -141,30 +127,32 @@ final class AudioPlayServiceImplTest
     coverUri = None,
   )
 
-  "findById method " - {
+  "get method " - {
+    val request = GetAudioPlayRequest(audioPlay.id)
+
     "should " - {
       "find audio plays if they're present in repository" in stand { service =>
         val _ = mockGet(audioPlay.some.pure)
-        for result <- service.get(audioPlay.id)
+        for result <- service.get(request)
         yield result shouldBe audioPlayResponse.asRight
       }
 
       "result in AudioPlayNotFound if audio play doesn't exist" in stand {
         service =>
           val _ = mockGet(None.pure)
-          val find = service.get(audioPlay.id)
+          val find = service.get(request)
           assertDomainError(find)(AudioPlayNotFound)
       }
 
       "handle errors from repository gracefully" in stand { service =>
         val _ = mockGet(IO.raiseError(new Throwable()))
-        val find = service.get(audioPlay.id)
+        val find = service.get(request)
         assertInternalError(find)
       }
     }
   }
 
-  "listAll method " - {
+  "list method " - {
     "should " - {
       "list elements" in stand { service =>
         val request = ListAudioPlaysRequest(
@@ -200,13 +188,14 @@ final class AudioPlayServiceImplTest
   }
 
   "search method " - {
+    val query = NonEmptyString.unsafe("thing")
+    val request = SearchAudioPlaysRequest(
+      query = query,
+      limit = 2.some,
+    )
+
     "should " - {
       "return list of elements" in stand { service =>
-        val query = NonEmptyString.unsafe("thing")
-        val request = SearchAudioPlaysRequest(
-          query = query,
-          limit = 2.some,
-        )
         val elements = List(
           AudioPlays.audioPlay3,
           AudioPlays.audioPlay2,
@@ -225,19 +214,36 @@ final class AudioPlayServiceImplTest
   }
 
   "create method " - {
+    val request = CreateAudioPlayRequest(
+      title = audioPlay.title,
+      synopsis = audioPlay.synopsis,
+      releaseDate = audioPlay.releaseDate,
+      writers = audioPlay.writers,
+      cast = audioPlay.cast.map(m =>
+        CastMemberDTO(
+          actor = m.actor,
+          roles = m.roles,
+          main = m.main,
+        )),
+      seriesId = audioPlay.series.map(_.id),
+      seriesSeason = audioPlay.seriesSeason,
+      seriesNumber = audioPlay.seriesNumber,
+      externalResources = Nil,
+    )
+
     "should " - {
       "allow users with permissions to create audio plays if none exist" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockGetSeries(audioPlay.series.pure)
           val _ = mockPersist(newAudioPlay.pure)
-          for result <- service.create(user, createRequest)
+          for result <- service.create(user, request)
           yield result shouldBe newAudioPlayResponse.asRight
       }
 
       "result in InvalidAudioPlay when creating invalid audio play" in stand {
         service =>
-          val emptyNameRequest = createRequest.copy(title = "")
+          val emptyNameRequest = request.copy(title = "")
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockGetSeries(audioPlay.series.pure)
           val find = service.create(user, emptyNameRequest)
@@ -246,7 +252,7 @@ final class AudioPlayServiceImplTest
 
       "result in AudioPlaySeriesNotFound when creating audio play of non-existent series" in stand {
         service =>
-          val emptyNameRequest = createRequest.copy(title = "")
+          val emptyNameRequest = request.copy(title = "")
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockGetSeries(None.pure)
           val find = service.create(user, emptyNameRequest)
@@ -255,13 +261,13 @@ final class AudioPlayServiceImplTest
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(Modify, false.asRight.pure)
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertErrorStatus(find)(PermissionDenied)
       }
 
       "handle exceptions from hasPermission gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, IO.raiseError(new Throwable()))
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertInternalError(find)
       }
 
@@ -269,38 +275,40 @@ final class AudioPlayServiceImplTest
         val _ = mockHasPermission(Modify, true.asRight.pure)
         val _ = mockGetSeries(audioPlay.series.pure)
         val _ = mockPersist(IO.raiseError(new Throwable()))
-        val find = service.create(user, createRequest)
+        val find = service.create(user, request)
         assertInternalError(find)
       }
     }
   }
 
   "delete method " - {
+    val request = DeleteAudioPlayRequest(audioPlay.id)
+
     "should " - {
       "allow users with permissions to delete existing audio plays" in stand {
         service =>
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockDelete(().pure)
-          for result <- service.delete(user, audioPlay.id)
+          for result <- service.delete(user, request)
           yield result shouldBe ().asRight
       }
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(Modify, false.asRight.pure)
-        val delete = service.delete(user, audioPlay.id)
+        val delete = service.delete(user, request)
         assertErrorStatus(delete)(PermissionDenied)
       }
 
       "handle exceptions from hasPermission gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, IO.raiseError(new Throwable()))
-        val delete = service.delete(user, audioPlay.id)
+        val delete = service.delete(user, request)
         assertInternalError(delete)
       }
 
       "handle exceptions from delete gracefully" in stand { service =>
         val _ = mockHasPermission(Modify, true.asRight.pure)
         val _ = mockDelete(IO.raiseError(new Throwable()))
-        val delete = service.delete(user, audioPlay.id)
+        val delete = service.delete(user, request)
         assertInternalError(delete)
       }
     }

@@ -9,6 +9,8 @@ import application.dto.person.{
   BatchGetPersonsRequest,
   BatchGetPersonsResponse,
   CreatePersonRequest,
+  DeletePersonRequest,
+  GetPersonRequest,
   PersonResource,
 }
 import domain.model.person.{FullName, Person}
@@ -51,11 +53,12 @@ private[aggregator] object Persons:
    *  @tparam F effect type.
    */
   def service[F[_]: Applicative]: PersonService[F] = new PersonService[F]:
-    override def get(id: UUID): F[Either[ErrorResponse, PersonResource]] =
-      resourceById
-        .get(id)
-        .toRight(PersonServiceErrorResponses.personNotFound)
-        .pure[F]
+    override def get(
+        request: GetPersonRequest,
+    ): F[Either[ErrorResponse, PersonResource]] = resourceById
+      .get(request.name)
+      .toRight(PersonServiceErrorResponses.personNotFound)
+      .pure[F]
 
     override def batchGet(
         request: BatchGetPersonsRequest,
@@ -69,5 +72,8 @@ private[aggregator] object Persons:
     ): F[Either[ErrorResponse, PersonResource]] =
       throw new UnsupportedOperationException()
 
-    override def delete(user: User, id: UUID): F[Either[ErrorResponse, Unit]] =
+    override def delete(
+        user: User,
+        request: DeletePersonRequest,
+    ): F[Either[ErrorResponse, Unit]] =
       throw new UnsupportedOperationException()

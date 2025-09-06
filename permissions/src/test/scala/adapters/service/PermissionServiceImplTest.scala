@@ -3,11 +3,14 @@ package adapters.service
 
 
 import application.PermissionService
-import application.dto.CheckPermissionStatus.{Denied, Granted}
+import application.dto.CheckPermissionResponse.CheckPermissionStatus
+import application.dto.CheckPermissionResponse.CheckPermissionStatus.{
+  Denied,
+  Granted,
+}
 import application.dto.{
   CheckPermissionRequest,
   CheckPermissionResponse,
-  CheckPermissionStatus,
   CreatePermissionRequest,
   PermissionResource,
 }
@@ -60,6 +63,7 @@ final class PermissionServiceImplTest
     p.namespace == adminNamespace && p.name == adminName
 
   private val mockRepo = mock[PermissionRepository[IO]]
+
   private def stand(
       testCase: PermissionService[IO] => IO[Assertion],
   ): IO[Assertion] =
@@ -74,54 +78,31 @@ final class PermissionServiceImplTest
     id = UUID.fromString("e05d2bd1-f347-4861-ac53-f2d36a6f942f"),
     username = "username")
 
-  private val testPermission = Permission.unsafe(
+  private val permission = Permission.unsafe(
     namespace = PermissionNamespace.unsafe("testing"),
     name = PermissionName.unsafe("test"),
     description = PermissionDescription.unsafe("Used for testing."),
   )
-  private val testPermissionIdentity = PermissionIdentity(
-    namespace = testPermission.namespace,
-    name = testPermission.name,
+  private val permissionIdentity = PermissionIdentity(
+    namespace = permission.namespace,
+    name = permission.name,
   )
   private val permissionResource = PermissionResource(
-    namespace = testPermission.namespace,
-    name = testPermission.name,
-    description = testPermission.description)
-  private val createRequest = CreatePermissionRequest(
-    namespace = testPermission.namespace,
-    name = testPermission.name,
-    description = testPermission.description,
-  )
+    namespace = permission.namespace,
+    name = permission.name,
+    description = permission.description)
 
-  private val checkRequest = CheckPermissionRequest(
-    namespace = testPermission.namespace,
-    permission = testPermission.name,
-    user = user.id,
-  )
-  private def checkResponse(status: CheckPermissionStatus) =
-    CheckPermissionResponse(
-      status = status,
-      user = user.id,
-      namespace = checkRequest.namespace,
-      permission = checkRequest.permission,
+  "create method " - {
+    val request = CreatePermissionRequest(
+      namespace = permission.namespace,
+      name = permission.name,
+      description = permission.description,
     )
 
-  private def mockUpsert(returning: IO[Permission]) = (mockRepo.upsert _)
-    .expects(testPermission)
-    .returning(returning)
-
-  private def mockHasPermission(
-      permission: PermissionIdentity,
-      returning: IO[Boolean],
-  ) = (mockRepo.hasPermission _)
-    .expects(Uuid[User](user.id), permission)
-    .returning(returning)
-
-  "registerPermission method " - {
     "should " - {
       "add new permissions" in stand { service =>
-        val _ = mockUpsert(testPermission.pure)
-        for result <- service.create(createRequest)
+        val _ = mockUpsert(permission.pure)
+        for result <- service.create(request)
         yield result shouldBe permissionResource.asRight
       }
 
@@ -137,45 +118,59 @@ final class PermissionServiceImplTest
       }
 
       "be idempotent" in stand { service =>
-        val _ = mockUpsert(testPermission.pure)
-        val _ = mockUpsert(testPermission.pure)
+        val _ = mockUpsert(permission.pure)
+        val _ = mockUpsert(permission.pure)
         for
-          _ <- service.create(createRequest)
-          result <- service.create(createRequest)
+          _ <- service.create(request)
+          result <- service.create(request)
         yield result shouldBe permissionResource.asRight
       }
     }
   }
 
   "checkPermission method " - {
+    val request = CheckPermissionRequest(
+      namespace = permission.namespace,
+      permission = permission.name,
+      user = user.id,
+    )
+
     "should " - {
       "grant permission to those who have it" in stand { service =>
         val _ = mockHasPermission(adminPermission, false.pure)
-        val _ = mockHasPermission(testPermissionIdentity, true.pure)
-        for result <- service.checkPermission(checkRequest)
-        yield result shouldBe checkResponse(Granted).asRight
+        val _ = mockHasPermission(permissionIdentity, true.pure)
+        for result <- service.checkPermission(request)
+        yield result match
+          case Left(_)         => fail("Error was not expected")
+          case Right(response) => response.status shouldBe Granted
       }
 
       "deny permission to those who don't have it" in stand { service =>
         val _ = mockHasPermission(adminPermission, false.pure)
-        val _ = mockHasPermission(testPermissionIdentity, false.pure)
-        for result <- service.checkPermission(checkRequest)
-        yield result shouldBe checkResponse(Denied).asRight
+        val _ = mockHasPermission(permissionIdentity, false.pure)
+        for result <- service.checkPermission(request)
+        yield result match
+          case Left(_)         => fail("Error was not expected")
+          case Right(response) => response.status shouldBe Denied
       }
 
       "grant permission to admin if they have it" in stand { service =>
         val _ = mockHasPermission(adminPermission, true.pure)
-        val _ = mockHasPermission(testPermissionIdentity, true.pure)
-        for result <- service.checkPermission(checkRequest)
-        yield result shouldBe checkResponse(Granted).asRight
+        val _ = mockHasPermission(permissionIdentity, true.pure)
+        for result <- service.checkPermission(request)
+        yield result match
+          case Left(_)         => fail("Error was not expected")
+          case Right(response) => response.status shouldBe Granted
       }
 
       "grant permission to admin even if they don't have it" in stand {
         service =>
           val _ = mockHasPermission(adminPermission, true.pure)
-          val _ = mockHasPermission(testPermissionIdentity, false.pure)
-          for result <- service.checkPermission(checkRequest)
-          yield result shouldBe checkResponse(Granted).asRight
+          val _ = mockHasPermission(permissionIdentity, false.pure)
+          for result <- service.checkPermission(request)
+          yield result match
+            case Left(_)         => fail("Error was not expected")
+            case Right(response) => response.status shouldBe Granted
       }
 
       "result in InvalidPermission when trying to check invalid permission" in stand {
@@ -192,12 +187,23 @@ final class PermissionServiceImplTest
       "result in PermissionNotFound if permission hadn't been registered prior" in stand {
         service =>
           val _ = mockHasPermission(
-            testPermissionIdentity,
+            permissionIdentity,
             IO.raiseError(RepositoryError.FailedPrecondition))
-          val check = service.checkPermission(checkRequest)
+          val check = service.checkPermission(request)
           assertDomainError(check)(PermissionNotFound)
       }
     }
   }
+
+  private def mockUpsert(returning: IO[Permission]) = (mockRepo.upsert _)
+    .expects(permission)
+    .returning(returning)
+
+  private def mockHasPermission(
+      permission: PermissionIdentity,
+      returning: IO[Boolean],
+  ) = (mockRepo.hasPermission _)
+    .expects(Uuid[User](user.id), permission)
+    .returning(returning)
 
 end PermissionServiceImplTest
