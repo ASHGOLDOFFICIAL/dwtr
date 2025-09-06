@@ -3,10 +3,12 @@ package adapters.service
 
 
 import adapters.service.errors.AudioPlaySeriesServiceErrorResponses as ErrorResponses
-import adapters.service.mappers.{AudioPlayMapper, AudioPlaySeriesMapper}
+import adapters.service.mappers.AudioPlaySeriesMapper
 import application.AggregatorPermission.Modify
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
+  BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   DeleteAudioPlaySeriesRequest,
   GetAudioPlaySeriesRequest,
@@ -15,28 +17,14 @@ import application.dto.audioplay.series.{
   SearchAudioPlaySeriesRequest,
   SearchAudioPlaySeriesResponse,
 }
-import application.dto.audioplay.{
-  AudioPlayResource,
-  CreateAudioPlayRequest,
-  DeleteAudioPlayRequest,
-  ListAudioPlaysRequest,
-  ListAudioPlaysResponse,
-  SearchAudioPlaysRequest,
-  SearchAudioPlaysResponse,
-}
-import application.dto.person.{BatchGetPersonsRequest, PersonResource}
-import application.errors.PersonServiceError
-import application.{AggregatorPermission, AudioPlaySeriesService, PersonService}
-import domain.errors.AudioPlayValidationError
-import domain.model.audioplay.AudioPlay
+import application.{AggregatorPermission, AudioPlaySeriesService}
 import domain.model.audioplay.series.AudioPlaySeries
-import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
-import domain.repositories.{AudioPlayRepository, AudioPlaySeriesRepository}
+import domain.repositories.AudioPlaySeriesRepository
 
 import cats.MonadThrow
-import cats.data.EitherT
+import cats.data.{EitherT, NonEmptyList}
 import cats.syntax.all.given
-import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
+import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
@@ -62,6 +50,7 @@ object AudioPlaySeriesServiceImpl:
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
   def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
+      maxBatchGet: Int,
       pagination: AggregatorConfig.PaginationParams,
       search: AggregatorConfig.SearchParams,
       repo: AudioPlaySeriesRepository[F],
@@ -77,6 +66,10 @@ object AudioPlaySeriesServiceImpl:
 
     for
       _ <- info"Building service."
+      _ <- MonadThrow[F]
+        .raiseWhen(maxBatchGet <= 0)(new IllegalArgumentException())
+        .onError(_ =>
+          error"Non-positive maximum allowed number of get batch request elements.")
       paginationParser <- MonadThrow[F]
         .fromOption(paginationParserO, new IllegalArgumentException())
         .onError(_ => error"Invalid pagination parser parameters are given.")
@@ -85,6 +78,7 @@ object AudioPlaySeriesServiceImpl:
         .onError(_ => error"Invalid search parser parameters are given.")
       _ <- permissionService.registerPermission(Modify)
     yield new AudioPlaySeriesServiceImpl[F](
+      maxBatchGet,
       paginationParser,
       searchParser,
       repo,
@@ -97,6 +91,7 @@ end AudioPlaySeriesServiceImpl
 private final class AudioPlaySeriesServiceImpl[F[
     _,
 ]: MonadThrow: SortableUUIDGen: LoggerFactory](
+    maxBatchGet: Int,
     paginationParser: PaginationParamsParser[AudioPlaySeriesRepository.Cursor],
     searchParser: SearchParamsParser,
     repo: AudioPlaySeriesRepository[F],
@@ -117,6 +112,15 @@ private final class AudioPlaySeriesServiceImpl[F[
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
       response = AudioPlaySeriesMapper.toResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
+
+  override def batchGet(
+      request: BatchGetAudioPlaySeriesRequest,
+  ): F[Either[ErrorResponse, BatchGetAudioPlaySeriesResponse]] = (for
+    _ <- eitherTLogger.info(s"Batch get request: $request.")
+    ids <- EitherT.fromEither(parseIdList(request.names))
+    elems <- EitherT.liftF(repo.batchGet(ids))
+    response <- EitherT.fromEither(checkNoneIsMissing(ids, elems))
+  yield response).value.handleErrorWith(handleInternal)
 
   override def list(
       request: ListAudioPlaySeriesRequest,
@@ -170,6 +174,40 @@ private final class AudioPlaySeriesServiceImpl[F[
     val uuid = Uuid[AudioPlaySeries](request.name)
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
+
+  /** Transforms list of UUIDs to NEL of typed UUIDs if possible. Or returns the
+   *  appropriate error response.
+   *  @param ids list of persons IDs.
+   */
+  private def parseIdList(
+      ids: List[UUID],
+  ): Either[ErrorResponse, NonEmptyList[Uuid[AudioPlaySeries]]] =
+    for
+      _ <- Either.raiseWhen(ids.size > maxBatchGet)(
+        ErrorResponses.maxExceededBatchGet(maxBatchGet))
+      idsO = NonEmptyList.fromList(ids.map(Uuid[AudioPlaySeries]))
+      parsed <- Either.fromOption(idsO, ErrorResponses.emptyBatchGet)
+    yield parsed
+
+  /** Checks that for ID a series is given.
+   *  @param ids IDs of series.
+   *  @param series given series.
+   */
+  private def checkNoneIsMissing(
+      ids: NonEmptyList[Uuid[AudioPlaySeries]],
+      series: List[AudioPlaySeries],
+  ): Either[ErrorResponse, BatchGetAudioPlaySeriesResponse] =
+    val set = series.map(_.id).toSet
+    val missing = ids.filterNot(set.contains)
+    for
+      _ <- NonEmptyList
+        .fromList(missing)
+        .toLeft(())
+        .leftMap(ErrorResponses.seriesNotFound)
+      response = BatchGetAudioPlaySeriesResponse(
+        audioPlaySeries = series.map(AudioPlaySeriesMapper.toResponse),
+      )
+    yield response
 
   /** Makes series from given creation request and assigned ID.
    *  @param request creation request.

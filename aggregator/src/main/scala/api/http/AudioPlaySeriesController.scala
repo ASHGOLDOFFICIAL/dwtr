@@ -4,6 +4,8 @@ package api.http
 
 import api.http.circe.AudioPlaySeriesCodecs.given
 import api.http.tapir.audioplay.series.AudioPlaySeriesExamples.{
+  BatchGetRequest,
+  BatchGetResponse,
   CreateRequest,
   ListResponse,
   Resource,
@@ -13,6 +15,8 @@ import api.http.tapir.audioplay.series.AudioPlaySeriesSchemas.given
 import application.AudioPlaySeriesService
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
+  BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   DeleteAudioPlaySeriesRequest,
   GetAudioPlaySeriesRequest,
@@ -76,6 +80,24 @@ final class AudioPlaySeriesController[F[_]: Applicative](
     .serverLogic { id =>
       val request = GetAudioPlaySeriesRequest(name = id)
       for result <- service.get(request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
+  private val batchGetEndpoint = endpoint.get
+    .in(collectionPath + ":batchGet")
+    .in(jsonBody[BatchGetAudioPlaySeriesRequest]
+      .description("Request with IDs of series to find.")
+      .example(BatchGetRequest))
+    .out(statusCode(StatusCode.Ok).and(jsonBody[BatchGetAudioPlaySeriesResponse]
+      .description("List of requested series.")
+      .example(BatchGetResponse)))
+    .errorOut(statusCode.and(
+      jsonBody[ErrorResponse].description("Description of error.")))
+    .name("BatchGetAudioPlaySeries")
+    .summary("Returns audio play series for given IDs.")
+    .tag(tag)
+    .serverLogic { request =>
+      for result <- service.batchGet(request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
@@ -145,6 +167,7 @@ final class AudioPlaySeriesController[F[_]: Applicative](
   /** Returns Tapir endpoints for audio play series. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
+    batchGetEndpoint,
     listEndpoint,
     createEndpoint,
     deleteEndpoint,

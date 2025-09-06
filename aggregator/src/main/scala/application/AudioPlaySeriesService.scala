@@ -4,13 +4,15 @@ package application
 
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
+  BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   DeleteAudioPlaySeriesRequest,
   GetAudioPlaySeriesRequest,
   ListAudioPlaySeriesRequest,
   ListAudioPlaySeriesResponse,
   SearchAudioPlaySeriesRequest,
-  SearchAudioPlaySeriesResponse,
+  SearchAudioPlaySeriesResponse
 }
 import application.errors.AudioPlaySeriesServiceError.{
   InvalidSeries,
@@ -32,6 +34,20 @@ trait AudioPlaySeriesService[F[_]]:
   def get(
       request: GetAudioPlaySeriesRequest,
   ): F[Either[ErrorResponse, AudioPlaySeriesResource]]
+
+  /** Gets series by their identities in batches.
+   *
+   *  Persons are returned in the same order as in request.
+   *
+   *  Domain error [[SeriesNotFound]] will be returned if any of the series are
+   *  not found.
+   *
+   *  @param request request with IDs.
+   *  @return resources for every given ID or error.
+   */
+  def batchGet(
+      request: BatchGetAudioPlaySeriesRequest,
+  ): F[Either[ErrorResponse, BatchGetAudioPlaySeriesResponse]]
 
   /** Get a portion of audio play series.
    *  @param request request to list audio play series.

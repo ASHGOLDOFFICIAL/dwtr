@@ -7,6 +7,8 @@ import api.http.circe.SharedCodecs.given
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
+  BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   ListAudioPlaySeriesRequest,
   ListAudioPlaySeriesResponse,
@@ -35,6 +37,12 @@ import org.aulune.commons.adapters.circe.CirceUtils.config
 private[api] object AudioPlaySeriesCodecs:
   given Encoder[AudioPlaySeriesResource] = deriveConfiguredEncoder
   given Decoder[AudioPlaySeriesResource] = deriveConfiguredDecoder
+
+  given Encoder[BatchGetAudioPlaySeriesResponse] = deriveConfiguredEncoder
+  given Decoder[BatchGetAudioPlaySeriesResponse] = deriveConfiguredDecoder
+
+  given Encoder[BatchGetAudioPlaySeriesRequest] = deriveConfiguredEncoder
+  given Decoder[BatchGetAudioPlaySeriesRequest] = deriveConfiguredDecoder
 
   given Encoder[CreateAudioPlaySeriesRequest] = deriveConfiguredEncoder
   given Decoder[CreateAudioPlaySeriesRequest] = deriveConfiguredDecoder

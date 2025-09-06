@@ -2,12 +2,12 @@ package org.aulune.aggregator
 package adapters.service
 
 
-import adapters.service.mappers.{AudioPlayMapper, AudioPlaySeriesMapper}
+import adapters.service.mappers.AudioPlaySeriesMapper
 import application.AggregatorPermission.Modify
 import application.AudioPlaySeriesService
-import application.dto.audioplay.AudioPlayResource
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
   CreateAudioPlaySeriesRequest,
   DeleteAudioPlaySeriesRequest,
   GetAudioPlaySeriesRequest,
@@ -21,6 +21,7 @@ import application.errors.AudioPlaySeriesServiceError.{
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.repositories.AudioPlaySeriesRepository
 
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
@@ -79,6 +80,7 @@ final class AudioPlaySeriesServiceImplTest
       .anyNumberOfTimes()
     AudioPlaySeriesServiceImpl
       .build(
+        2,
         AggregatorConfig.PaginationParams(2, 1),
         AggregatorConfig.SearchParams(2, 1),
         mockRepo,
@@ -114,6 +116,38 @@ final class AudioPlaySeriesServiceImplTest
         val _ = mockGet(None.pure)
         val find = service.get(request)
         assertDomainError(find)(SeriesNotFound)
+      }
+    }
+  }
+
+  "batchGet method " - {
+    val elements = NonEmptyList.of(
+      AudioPlaySeriesStubs.series1,
+      AudioPlaySeriesStubs.series2)
+    val ids = elements.map(_.id)
+    val request = BatchGetAudioPlaySeriesRequest(names = ids.toList)
+
+    "should " - {
+      "return batch of elements when all are found" in stand { service =>
+        val _ = (mockRepo.batchGet _)
+          .expects(ids)
+          .returning(elements.toList.pure)
+
+        for result <- service.batchGet(request)
+        yield result match
+          case Left(_)         => fail("Error was not expected.")
+          case Right(response) =>
+            response.audioPlaySeries.map(_.id) shouldBe ids.toList
+      }
+
+      "return SeriesNotFound if at least one series is not found" in stand {
+        service =>
+          val _ = (mockRepo.batchGet _)
+            .expects(ids)
+            .returning(List(AudioPlaySeriesStubs.series1).pure)
+
+          val batchGet = service.batchGet(request)
+          assertDomainError(batchGet)(SeriesNotFound)
       }
     }
   }

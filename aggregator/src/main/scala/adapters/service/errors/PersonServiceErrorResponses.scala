@@ -17,21 +17,7 @@ import java.util.UUID
  *  [[org.aulune.aggregator.adapters.service.PersonServiceImpl]].
  */
 object PersonServiceErrorResponses extends BaseAggregatorErrorResponses:
-  val emptyBatchGet: ErrorResponse = ErrorResponse(
-    status = InvalidArgument,
-    message = "Empty batch get request is given",
-    details = ErrorDetails(),
-  )
-
-  /** Maximum allowed elements for batch get request is exceeded.
-   *  @param max maximum allowed.
-   */
-  def maxExceededBatchGet(max: Int): ErrorResponse = ErrorResponse(
-    status = InvalidArgument,
-    message = s"Too many elements, max allowed: $max",
-    details = ErrorDetails(),
-  )
-
+  
   val personNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Person is not found.",

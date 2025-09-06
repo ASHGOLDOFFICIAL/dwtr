@@ -61,6 +61,7 @@ object AggregatorApp:
 
       seriesRepo <- AudioPlaySeriesRepositoryImpl.build[F](transactor)
       seriesServ <- AudioPlaySeriesServiceImpl.build[F](
+        config.maxBatchGet,
         config.pagination,
         config.search,
         seriesRepo,

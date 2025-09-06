@@ -6,6 +6,7 @@ import adapters.service.AudioPlaySeriesStubs
 import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.repositories.AudioPlaySeriesRepository
 
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
@@ -121,6 +122,38 @@ final class AudioPlaySeriesRepositoryImplTest
           _ <- repo.delete(series.id)
           result <- repo.delete(series.id)
         yield result shouldBe ()
+      }
+    }
+  }
+
+  "batchGet method " - {
+    "should " - {
+      "get elements in batches" in stand { repo =>
+        val ids = NonEmptyList.of(
+          AudioPlaySeriesStubs.series1.id,
+          AudioPlaySeriesStubs.series2.id)
+        for
+          _ <- persistMany(repo)
+          result <- repo.batchGet(ids)
+        yield result shouldBe List(
+          AudioPlaySeriesStubs.series1,
+          AudioPlaySeriesStubs.series2)
+      }
+
+      "skip missing elements" in stand { repo =>
+        val missingId =
+          Uuid.unsafe[AudioPlaySeries]("1dbcb7ed-8c13-40c6-b4be-d4b323535d2b")
+        val ids = NonEmptyList.of(AudioPlaySeriesStubs.series1.id, missingId)
+        for
+          _ <- persistMany(repo)
+          result <- repo.batchGet(ids)
+        yield result shouldBe List(AudioPlaySeriesStubs.series1)
+      }
+
+      "return empty list when none is found" in stand { repo =>
+        val ids = NonEmptyList.of(AudioPlaySeriesStubs.series1.id)
+        for result <- repo.batchGet(ids)
+        yield result shouldBe Nil
       }
     }
   }

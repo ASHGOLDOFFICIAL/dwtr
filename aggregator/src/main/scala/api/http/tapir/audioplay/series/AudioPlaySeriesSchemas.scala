@@ -7,6 +7,8 @@ import api.mappers.ExternalResourceTypeMapper
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
+  BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   ListAudioPlaySeriesRequest,
   ListAudioPlaySeriesResponse,
@@ -31,8 +33,12 @@ import java.net.URI
 
 /** Tapir [[Schema]]s for audio play series objects. */
 object AudioPlaySeriesSchemas:
-  given Schema[CreateAudioPlaySeriesRequest] = Schema.derived
   given Schema[AudioPlaySeriesResource] = Schema.derived
+
+  given Schema[CreateAudioPlaySeriesRequest] = Schema.derived
+
+  given Schema[BatchGetAudioPlaySeriesResponse] = Schema.derived
+  given Schema[BatchGetAudioPlaySeriesRequest] = Schema.derived
 
   given Schema[ListAudioPlaySeriesRequest] = Schema.derived
   given Schema[ListAudioPlaySeriesResponse] = Schema.derived

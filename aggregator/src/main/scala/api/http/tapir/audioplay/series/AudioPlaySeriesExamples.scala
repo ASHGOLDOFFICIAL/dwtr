@@ -4,9 +4,11 @@ package api.http.tapir.audioplay.series
 
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
+  BatchGetAudioPlaySeriesRequest,
+  BatchGetAudioPlaySeriesResponse,
   CreateAudioPlaySeriesRequest,
   ListAudioPlaySeriesResponse,
-  SearchAudioPlaySeriesResponse,
+  SearchAudioPlaySeriesResponse
 }
 
 import java.util.{Base64, UUID}
@@ -22,6 +24,16 @@ private[http] object AudioPlaySeriesExamples:
 
   private val NextPageToken =
     Some(Base64.getEncoder.encodeToString(Resource.name.getBytes))
+
+  val BatchGetRequest: BatchGetAudioPlaySeriesRequest =
+    BatchGetAudioPlaySeriesRequest(
+      List(Resource.id),
+    )
+
+  val BatchGetResponse: BatchGetAudioPlaySeriesResponse =
+    BatchGetAudioPlaySeriesResponse(
+      List(Resource),
+    )
 
   val CreateRequest: CreateAudioPlaySeriesRequest =
     CreateAudioPlaySeriesRequest(

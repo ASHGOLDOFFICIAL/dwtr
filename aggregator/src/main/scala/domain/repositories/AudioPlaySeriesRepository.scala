@@ -7,6 +7,7 @@ import domain.repositories.AudioPlaySeriesRepository.Cursor
 
 import org.aulune.commons.pagination.{CursorDecoder, CursorEncoder}
 import org.aulune.commons.repositories.{
+  BatchGet,
   GenericRepository,
   PaginatedList,
   TextSearch,
@@ -20,6 +21,7 @@ import scala.util.Try
 
 trait AudioPlaySeriesRepository[F[_]]
     extends GenericRepository[F, AudioPlaySeries, Uuid[AudioPlaySeries]]
+    with BatchGet[F, AudioPlaySeries, Uuid[AudioPlaySeries]]
     with PaginatedList[F, AudioPlaySeries, Cursor]
     with TextSearch[F, AudioPlaySeries]
 

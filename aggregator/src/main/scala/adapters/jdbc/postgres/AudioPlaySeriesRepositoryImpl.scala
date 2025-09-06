@@ -3,21 +3,11 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
-import adapters.jdbc.postgres.metas.SharedMetas.given
 import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
-import domain.model.audioplay.{
-  AudioPlay,
-  AudioPlaySeason,
-  AudioPlaySeriesNumber,
-  AudioPlayTitle,
-  CastMember,
-}
-import domain.model.person.Person
-import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
-import domain.repositories.AudioPlayRepository.AudioPlayCursor
-import domain.repositories.{AudioPlayRepository, AudioPlaySeriesRepository}
+import domain.repositories.AudioPlaySeriesRepository
 
 import cats.MonadThrow
+import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.postgres.sqlstate
@@ -26,6 +16,7 @@ import doobie.{ConnectionIO, Transactor}
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
   nonEmptyStringMeta,
   uuidMeta,
+  uuidsMeta,
 }
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
@@ -109,6 +100,20 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
       .transact(transactor)
       .void
       .handleErrorWith(toRepositoryError)
+
+  override def batchGet(
+      ids: NonEmptyList[Uuid[AudioPlaySeries]],
+  ): F[List[AudioPlaySeries]] = sql"""
+    |SELECT aps.id, aps.name
+    |FROM UNNEST(${ids.toList.toArray}) WITH ORDINALITY AS t(id, ord)
+    |JOIN audio_play_series aps ON aps.id = t.id
+    |ORDER BY t.ord
+    """.stripMargin
+    .query[SelectResult]
+    .map(toAudioPlaySeries)
+    .to[List]
+    .transact(transactor)
+    .handleErrorWith(toRepositoryError)
 
   override def list(
       cursor: Option[AudioPlaySeriesRepository.Cursor],

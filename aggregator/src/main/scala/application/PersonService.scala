@@ -16,8 +16,6 @@ import application.errors.PersonServiceError.{InvalidPerson, PersonNotFound}
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
 
-import java.util.UUID
-
 
 /** Service managing persons.
  *  @tparam F effect type.
@@ -40,7 +38,7 @@ trait PersonService[F[_]]:
    *  not found.
    *
    *  @param request request with IDs.
-   *  @return
+   *  @return resources for every given ID or error.
    */
   def batchGet(
       request: BatchGetPersonsRequest,

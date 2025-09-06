@@ -4,14 +4,16 @@ package adapters.service.errors
 
 import application.errors.AudioPlaySeriesServiceError.{
   InvalidSeries,
-  SeriesNotFound,
+  SeriesNotFound
 }
 import domain.errors.AudioPlaySeriesValidationError
 
-import cats.data.NonEmptyChain
+import cats.data.{NonEmptyChain, NonEmptyList}
 import cats.syntax.all.given
 import org.aulune.commons.errors.ErrorStatus.{InvalidArgument, NotFound}
 import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
+
+import java.util.UUID
 
 
 /** Error responses for
@@ -23,6 +25,20 @@ object AudioPlaySeriesServiceErrorResponses
   val seriesNotFound: ErrorResponse = ErrorResponse(
     status = NotFound,
     message = "Audio play series is not found.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = SeriesNotFound,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  /** Some of the series are not found.
+   *  @param uuids UUIDs of missing persons.
+   */
+  def seriesNotFound(uuids: NonEmptyList[UUID]): ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = uuids.mkString_("Some series are not found: ", ", ", "."),
     details = ErrorDetails(
       info = ErrorInfo(
         reason = SeriesNotFound,
