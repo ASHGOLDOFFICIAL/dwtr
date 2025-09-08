@@ -4,7 +4,7 @@ package adapters.service
 
 import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
-import application.AggregatorPermission.{DownloadAudioPlays, Modify}
+import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
   BatchGetAudioPlaySeriesRequest,
@@ -15,6 +15,8 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,
+  GetAudioPlaySelfHostedLocationRequest,
+  GetAudioPlaySelfHostedLocationResponse,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -89,7 +91,7 @@ object AudioPlayServiceImpl:
         .fromOption(searchParserO, new IllegalArgumentException())
         .onError(_ => error"Invalid search parser parameters are given.")
       _ <- permissionService.registerPermission(Modify)
-      _ <- permissionService.registerPermission(DownloadAudioPlays)
+      _ <- permissionService.registerPermission(SeeSelfHostedLocation)
     yield new AudioPlayServiceImpl[F](
       paginationParser,
       searchParser,
@@ -196,6 +198,23 @@ private final class AudioPlayServiceImpl[F[
     val uuid = Uuid[AudioPlay](request.name)
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
+
+  override def getSelfHostedLocation(
+      user: User,
+      request: GetAudioPlaySelfHostedLocationRequest,
+  ): F[Either[ErrorResponse, GetAudioPlaySelfHostedLocationResponse]] =
+    requirePermissionOrDeny(SeeSelfHostedLocation, user) {
+      val uuid = Uuid[AudioPlay](request.name)
+      (for
+        _ <- eitherTLogger.info(s"Get link request: $request.")
+        elem <- EitherT
+          .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
+          .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
+        link <- EitherT
+          .fromOption(elem.selfHostedLocation, ErrorResponses.notSelfHosted)
+        response = GetAudioPlaySelfHostedLocationResponse(link)
+      yield response).value.handleErrorWith(handleInternal)
+    }
 
   /** Retrieves person resources for a list of audio plays. */
   private def batchGetPersons(

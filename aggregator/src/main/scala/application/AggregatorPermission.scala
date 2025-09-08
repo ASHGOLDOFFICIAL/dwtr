@@ -17,8 +17,8 @@ enum AggregatorPermission(name: String, description: String)
         "modify",
         "Allows to modify content and persons inside aggregator module.")
 
-  /** Permission to download audio plays. */
-  case DownloadAudioPlays
+  /** Permission to see links to self-hosted material. */
+  case SeeSelfHostedLocation
       extends AggregatorPermission(
-        "download",
-        "Allows to download audio plays from inner servers.")
+        "see_self_hosted",
+        "Allows to see self-hosted material.")

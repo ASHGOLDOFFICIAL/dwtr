@@ -21,5 +21,8 @@ enum AudioPlayServiceError(val reason: String) extends ErrorReason(reason):
   /** No audio play with given ID is found. */
   case AudioPlayNotFound extends AudioPlayServiceError("AUDIO_PLAY_NOT_FOUND")
 
+  /** Audio play is not self-hosted. */
+  case NotSelfHosted extends AudioPlayServiceError("NOT_SELF_HOSTED")
+
   /** Given audio play is not valid audio play. */
   case InvalidAudioPlay extends AudioPlayServiceError("INVALID_AUDIO_PLAY")

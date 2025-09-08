@@ -3,12 +3,7 @@ package adapters.service.mappers
 
 
 import application.dto.audioplay.series.AudioPlaySeriesResource
-import application.dto.audioplay.{
-  AudioPlayResource,
-  CreateAudioPlayRequest,
-  ListAudioPlaysResponse,
-  SearchAudioPlaysResponse,
-}
+import application.dto.audioplay.{AudioPlayResource, CreateAudioPlayRequest}
 import application.dto.person.PersonResource
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.series.AudioPlaySeries
@@ -19,12 +14,10 @@ import domain.model.audioplay.{
   AudioPlayTitle,
 }
 import domain.model.person.Person
-import domain.model.shared.{ReleaseDate, Synopsis}
-import domain.repositories.AudioPlayRepository.AudioPlayCursor
+import domain.model.shared.{ReleaseDate, SelfHostedLocation, Synopsis}
 
 import cats.data.ValidatedNec
 import cats.syntax.all.given
-import org.aulune.commons.pagination.CursorEncoder
 import org.aulune.commons.types.Uuid
 
 import java.util.UUID
@@ -52,6 +45,7 @@ private[service] object AudioPlayMapper:
     season <- request.seriesSeason.map(AudioPlaySeason.apply)
     number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
     seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
+    download <- request.selfHostLink.map(SelfHostedLocation.apply)
     resources = request.externalResources.map(ExternalResourceMapper.toDomain)
   yield AudioPlay(
     id = Uuid[AudioPlay](id),
@@ -64,6 +58,7 @@ private[service] object AudioPlayMapper:
     seriesSeason = season,
     seriesNumber = number,
     coverUrl = None,
+    selfHostedLocation = download,
     externalResources = resources,
   )).getOrElse(AudioPlayValidationError.InvalidArguments.invalidNec)
 

@@ -7,7 +7,13 @@ import domain.errors.AudioPlayValidationError.*
 import domain.model.audioplay.AudioPlay.ValidationResult
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.person.Person
-import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
+import domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  SelfHostedLocation,
+  Synopsis,
+}
 
 import cats.data.{NonEmptyChain, Validated, ValidatedNec}
 import org.aulune.commons.types.Uuid
@@ -24,6 +30,8 @@ import org.aulune.commons.types.Uuid
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
  *  @param coverUri URL to audio play cover.
+ *  @param selfHostedLocation link to self-hosted place where this audio play
+ *    can be consumed.
  *  @param externalResources links to different resources.
  */
 final case class AudioPlay private (
@@ -37,6 +45,7 @@ final case class AudioPlay private (
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
     coverUri: Option[ImageUri],
+    selfHostedLocation: Option[SelfHostedLocation],
     externalResources: List[ExternalResource],
 ):
   /** Copies with validation.
@@ -53,6 +62,7 @@ final case class AudioPlay private (
       seriesSeason: Option[AudioPlaySeason] = seriesSeason,
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
       coverUrl: Option[ImageUri] = coverUri,
+      selfHostedLocation: Option[SelfHostedLocation] = selfHostedLocation,
       externalResources: List[ExternalResource] = externalResources,
   ): ValidationResult[AudioPlay] = AudioPlay(
     id = id,
@@ -65,6 +75,7 @@ final case class AudioPlay private (
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
     coverUrl = coverUrl,
+    selfHostedLocation = selfHostedLocation,
     externalResources = externalResources,
   )
 
@@ -89,6 +100,7 @@ object AudioPlay:
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUri],
+      selfHostedLocation: Option[SelfHostedLocation],
       externalResources: List[ExternalResource],
   ): ValidationResult[AudioPlay] = validateState(
     new AudioPlay(
@@ -102,6 +114,7 @@ object AudioPlay:
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
       coverUri = coverUrl,
+      selfHostedLocation = selfHostedLocation,
       externalResources = externalResources,
     ))
 
@@ -119,6 +132,7 @@ object AudioPlay:
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUri],
+      selfHostedLocation: Option[SelfHostedLocation],
       externalResources: List[ExternalResource],
   ): AudioPlay = AudioPlay(
     id = id,
@@ -131,6 +145,7 @@ object AudioPlay:
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
     coverUrl = coverUrl,
+    selfHostedLocation = selfHostedLocation,
     externalResources = externalResources,
   ) match
     case Validated.Valid(a)   => a

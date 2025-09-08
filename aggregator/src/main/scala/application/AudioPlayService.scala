@@ -7,6 +7,8 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,
+  GetAudioPlaySelfHostedLocationRequest,
+  GetAudioPlaySelfHostedLocationResponse,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -16,12 +18,11 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
+  NotSelfHosted,
 }
 
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
-
-import java.util.UUID
 
 
 /** Service managing audio plays.
@@ -84,3 +85,21 @@ trait AudioPlayService[F[_]]:
       user: User,
       request: DeleteAudioPlayRequest,
   ): F[Either[ErrorResponse, Unit]]
+
+  /** Gets link to self-hosted resource where audio play can be consumed.
+   *
+   *  Domain errors:
+   *    - [[AudioPlayNotFound]] will be returned if audio play is not
+   *  found.
+   *    - [[NotSelfHosted]] will be returned if audio play is not self-hosted.
+   *
+   *  @param user user who performs this action.
+   *  @param request request information.
+   *  @return response with URI if everything is OK, otherwise error.
+   *  @note user must have [[AggregatorPermission.SeeSelfHostedLocation]]
+   *    permission.
+   */
+  def getSelfHostedLocation(
+      user: User,
+      request: GetAudioPlaySelfHostedLocationRequest,
+  ): F[Either[ErrorResponse, GetAudioPlaySelfHostedLocationResponse]]

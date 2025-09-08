@@ -6,6 +6,7 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
+  NotSelfHosted,
   PersonNotFound,
 }
 import domain.errors.AudioPlayValidationError
@@ -52,6 +53,17 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
     details = ErrorDetails(
       info = ErrorInfo(
         reason = AudioPlayNotFound,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  val notSelfHosted: ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = "Audio play is not self hosted.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = NotSelfHosted,
         domain = domain,
       ).some,
     ),

@@ -12,7 +12,12 @@ import domain.model.audioplay.{
   CastMember,
 }
 import domain.model.shared.ExternalResourceType.Purchase
-import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
+import domain.model.shared.{
+  ExternalResource,
+  ReleaseDate,
+  SelfHostedLocation,
+  Synopsis,
+}
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
