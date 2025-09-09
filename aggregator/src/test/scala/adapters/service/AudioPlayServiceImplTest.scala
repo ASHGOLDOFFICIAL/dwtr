@@ -3,7 +3,7 @@ package adapters.service
 
 
 import adapters.service.mappers.AudioPlayMapper
-import application.AggregatorPermission.Modify
+import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
 import application.AudioPlayService
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.series.AudioPlaySeriesResource
@@ -13,6 +13,7 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,
+  GetAudioPlayLocationRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -21,6 +22,7 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   InvalidAudioPlay,
+  NotSelfHosted,
 }
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
@@ -99,7 +101,7 @@ final class AudioPlayServiceImplTest
     .update(externalResources = Nil)
     .getOrElse(throw new IllegalStateException())
 
-  private val audioPlayResponse = AudioPlayResource(
+  private val resource = AudioPlayResource(
     id = audioPlay.id,
     title = audioPlay.title,
     synopsis = audioPlay.synopsis,
@@ -121,7 +123,7 @@ final class AudioPlayServiceImplTest
   private val newAudioPlay = audioPlay
     .update(id = newUuid, coverUrl = None)
     .getOrElse(throw new IllegalStateException())
-  private val newAudioPlayResponse = audioPlayResponse.copy(
+  private val newResource = resource.copy(
     id = newUuid,
     coverUri = None,
   )
@@ -133,7 +135,7 @@ final class AudioPlayServiceImplTest
       "find audio plays if they're present in repository" in stand { service =>
         val _ = mockGet(audioPlay.some.pure)
         for result <- service.get(request)
-        yield result shouldBe audioPlayResponse.asRight
+        yield result shouldBe resource.asRight
       }
 
       "result in AudioPlayNotFound if audio play doesn't exist" in stand {
@@ -163,7 +165,7 @@ final class AudioPlayServiceImplTest
         for result <- service.list(request)
         yield result match
           case Left(_)     => fail("Error was not expected")
-          case Right(list) => list.audioPlays shouldBe List(audioPlayResponse)
+          case Right(list) => list.audioPlays shouldBe List(resource)
       }
 
       "return next page when asked" in stand { service =>
@@ -233,6 +235,7 @@ final class AudioPlayServiceImplTest
       seriesId = audioPlay.seriesId,
       seriesSeason = audioPlay.seriesSeason,
       seriesNumber = audioPlay.seriesNumber,
+      selfHostLink = audioPlay.selfHostedLocation,
       externalResources = Nil,
     )
 
@@ -242,7 +245,7 @@ final class AudioPlayServiceImplTest
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val _ = mockPersist(newAudioPlay.pure)
           for result <- service.create(user, request)
-          yield result shouldBe newAudioPlayResponse.asRight
+          yield result shouldBe newResource.asRight
       }
 
       "result in InvalidAudioPlay when creating invalid audio play" in stand {
@@ -314,6 +317,49 @@ final class AudioPlayServiceImplTest
         val _ = mockDelete(IO.raiseError(new Throwable()))
         val delete = service.delete(user, request)
         assertInternalError(delete)
+      }
+    }
+  }
+
+  "getLocation method " - {
+    val request = GetAudioPlayLocationRequest(audioPlay.id)
+
+    "should " - {
+      "allow users with permissions to see self-hosted locations" in stand {
+        service =>
+          val _ = mockHasPermission(SeeSelfHostedLocation, true.asRight.pure)
+          val _ = mockGet(audioPlay.some.pure)
+          for result <- service.getLocation(user, request)
+          yield result match
+            case Left(_)         => fail("Error was not expected.")
+            case Right(response) =>
+              response.uri shouldBe audioPlay.selfHostedLocation.get
+      }
+
+      "result in AudioPlayNotFound if audio play doesn't exist" in stand {
+        service =>
+          val _ = mockHasPermission(SeeSelfHostedLocation, true.asRight.pure)
+          val _ = mockGet(None.pure)
+          val get = service.getLocation(user, request)
+          assertDomainError(get)(AudioPlayNotFound)
+      }
+
+      "result in NotSelfHosted if audio play is not hosted" in stand {
+        service =>
+          val notSelfHosted = audioPlay
+            .update(selfHostedLocation = None)
+            .getOrElse(throw new IllegalStateException())
+
+          val _ = mockHasPermission(SeeSelfHostedLocation, true.asRight.pure)
+          val _ = mockGet(notSelfHosted.some.pure)
+          val get = service.getLocation(user, request)
+          assertDomainError(get)(NotSelfHosted)
+      }
+
+      "result in PermissionDenied for unauthorized users" in stand { service =>
+        val _ = mockHasPermission(SeeSelfHostedLocation, false.asRight.pure)
+        val delete = service.getLocation(user, request)
+        assertErrorStatus(delete)(PermissionDenied)
       }
     }
   }

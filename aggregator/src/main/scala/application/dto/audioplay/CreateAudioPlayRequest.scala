@@ -4,6 +4,7 @@ package application.dto.audioplay
 
 import application.dto.shared.ExternalResourceDTO
 
+import java.net.URI
 import java.time.LocalDate
 import java.util.UUID
 
@@ -17,6 +18,8 @@ import java.util.UUID
  *  @param seriesId audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play number in series.
+ *  @param selfHostLink link to self-hosted place where this audio play can be
+ *    consumed.
  *  @param externalResources links to external resources.
  */
 final case class CreateAudioPlayRequest(
@@ -28,5 +31,6 @@ final case class CreateAudioPlayRequest(
     seriesId: Option[UUID],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
+    selfHostLink: Option[URI],
     externalResources: List[ExternalResourceDTO],
 )

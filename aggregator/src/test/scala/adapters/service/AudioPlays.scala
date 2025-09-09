@@ -10,12 +10,14 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,
+  GetAudioPlayLocationRequest,
+  AudioPlayLocationResource,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
-import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
+import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
@@ -31,7 +33,13 @@ import domain.model.shared.ExternalResourceType.{
   Purchase,
   Streaming,
 }
-import domain.model.shared.{ExternalResource, ImageUri, ReleaseDate, Synopsis}
+import domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  SelfHostedLocation,
+  Synopsis,
+}
 
 import cats.Applicative
 import cats.syntax.all.given
@@ -74,6 +82,9 @@ private[aggregator] object AudioPlays:
     seriesSeason = AudioPlaySeason.unsafe(1).some,
     seriesNumber = AudioPlaySeriesNumber.unsafe(1).some,
     coverUrl = makeCoverUri("https://imagahost.org/123"),
+    selfHostedLocation = SelfHostedLocation
+      .unsafe(URI.create("file:///media/example1.mp3"))
+      .some,
     externalResources = List(
       ExternalResource(Purchase, URI.create("https://test.org/1")),
       ExternalResource(Download, URI.create("https://test.org/2")),
@@ -95,6 +106,9 @@ private[aggregator] object AudioPlays:
     seriesSeason = None,
     seriesNumber = AudioPlaySeriesNumber.unsafe(2).some,
     coverUrl = makeCoverUri("https://cdn.test.org/23"),
+    selfHostedLocation = SelfHostedLocation
+      .unsafe(URI.create("file:///media/example2.mp3"))
+      .some,
     externalResources =
       List(ExternalResource(Download, URI.create("https://audio.com/1"))),
   )
@@ -117,6 +131,9 @@ private[aggregator] object AudioPlays:
     seriesSeason = None,
     seriesNumber = None,
     coverUrl = None,
+    selfHostedLocation = SelfHostedLocation
+      .unsafe(URI.create("file:///media/example3.mp3"))
+      .some,
     externalResources =
       List(ExternalResource(Streaming, URI.create("https://audio.com/2"))),
   )
@@ -178,4 +195,10 @@ private[aggregator] object AudioPlays:
         user: User,
         request: DeleteAudioPlayRequest,
     ): F[Either[ErrorResponse, Unit]] =
+      throw new UnsupportedOperationException()
+
+    override def getLocation(
+        user: User,
+        request: GetAudioPlayLocationRequest,
+    ): F[Either[ErrorResponse, AudioPlayLocationResource]] =
       throw new UnsupportedOperationException()

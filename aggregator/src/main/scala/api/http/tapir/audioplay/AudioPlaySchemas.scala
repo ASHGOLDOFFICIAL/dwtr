@@ -2,20 +2,20 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
+import api.http.tapir.audioplay.series.AudioPlaySeriesSchemas.given
 import api.http.tapir.person.PersonSchemas.given
 import api.mappers.ExternalResourceTypeMapper
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
+import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.{
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
-  ListAudioPlaysRequest,
+  AudioPlayLocationResource,
   ListAudioPlaysResponse,
-  SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
 import application.dto.shared.{ExternalResourceDTO, ExternalResourceTypeDTO}
-import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 
 import sttp.tapir.{Schema, Validator}
 
@@ -26,13 +26,10 @@ import java.net.URI
 object AudioPlaySchemas:
   given Schema[CreateAudioPlayRequest] = Schema.derived
   given Schema[AudioPlayResource] = Schema.derived
-  given Schema[AudioPlaySeriesResource] = Schema.derived
 
-  given Schema[ListAudioPlaysRequest] = Schema.derived
   given Schema[ListAudioPlaysResponse] = Schema.derived
-
-  given Schema[SearchAudioPlaysRequest] = Schema.derived
   given Schema[SearchAudioPlaysResponse] = Schema.derived
+  given Schema[AudioPlayLocationResource] = Schema.derived
 
   private given Schema[URI] = Schema.string[URI]
   private given Schema[CastMemberDTO] = Schema.derived

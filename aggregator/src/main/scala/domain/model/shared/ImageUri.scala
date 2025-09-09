@@ -9,7 +9,7 @@ opaque type ImageUri <: URI = URI
 
 object ImageUri:
   /** Returns [[ImageUri]] if argument is valid. Only allows `https` URLs.
-   *  @param uri title.
+   *  @param uri image URI.
    */
   def apply(uri: URI): Option[ImageUri] =
     Option.when(uri.getScheme == "https")(uri)

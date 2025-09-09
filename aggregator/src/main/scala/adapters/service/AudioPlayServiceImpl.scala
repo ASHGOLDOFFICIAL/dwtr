@@ -4,16 +4,18 @@ package adapters.service
 
 import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
-import application.AggregatorPermission.{DownloadAudioPlays, Modify}
+import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
 import application.dto.audioplay.series.{
   AudioPlaySeriesResource,
   BatchGetAudioPlaySeriesRequest,
   GetAudioPlaySeriesRequest,
 }
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
+  GetAudioPlayLocationRequest,
   GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
@@ -89,7 +91,7 @@ object AudioPlayServiceImpl:
         .fromOption(searchParserO, new IllegalArgumentException())
         .onError(_ => error"Invalid search parser parameters are given.")
       _ <- permissionService.registerPermission(Modify)
-      _ <- permissionService.registerPermission(DownloadAudioPlays)
+      _ <- permissionService.registerPermission(SeeSelfHostedLocation)
     yield new AudioPlayServiceImpl[F](
       paginationParser,
       searchParser,
@@ -121,7 +123,7 @@ private final class AudioPlayServiceImpl[F[
   ): F[Either[ErrorResponse, AudioPlayResource]] =
     val uuid = Uuid[AudioPlay](request.name)
     (for
-      _ <- eitherTLogger.info(s"Find request: $request.")
+      _ <- eitherTLogger.info(s"Get request: $request.")
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
@@ -196,6 +198,23 @@ private final class AudioPlayServiceImpl[F[
     val uuid = Uuid[AudioPlay](request.name)
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
+
+  override def getLocation(
+      user: User,
+      request: GetAudioPlayLocationRequest,
+  ): F[Either[ErrorResponse, AudioPlayLocationResource]] =
+    requirePermissionOrDeny(SeeSelfHostedLocation, user) {
+      val uuid = Uuid[AudioPlay](request.name)
+      (for
+        _ <- eitherTLogger.info(s"Get location request: $request.")
+        elem <- EitherT
+          .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
+          .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
+        link <- EitherT
+          .fromOption(elem.selfHostedLocation, ErrorResponses.notSelfHosted)
+        response = AudioPlayLocationResource(link)
+      yield response).value.handleErrorWith(handleInternal)
+    }
 
   /** Retrieves person resources for a list of audio plays. */
   private def batchGetPersons(

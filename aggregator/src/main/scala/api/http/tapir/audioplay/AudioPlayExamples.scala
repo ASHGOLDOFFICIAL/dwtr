@@ -2,20 +2,19 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
+import api.http.tapir.audioplay.series.AudioPlaySeriesExamples
 import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
+  AudioPlayLocationResource,
   ListAudioPlaysResponse,
   SearchAudioPlaysResponse,
 }
 import application.dto.shared.ExternalResourceDTO
 import application.dto.shared.ExternalResourceTypeDTO.Purchase
-
-import org.aulune.aggregator.api.http.tapir.audioplay.series.AudioPlaySeriesExamples
-import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 
 import java.net.URI
 import java.time.LocalDate
@@ -73,6 +72,10 @@ object AudioPlayExamples:
     ),
   )
 
+  private val selfHostedLocationExample = URI.create(
+    "https://selfhosted.org:8096/stable/web/#/details?id=6ea6c8076b1147849b2311030699d047",
+  )
+
   private val seriesSeasonExample = Some(1)
   private val seriesNumberExample = Some(1)
 
@@ -122,6 +125,7 @@ object AudioPlayExamples:
     seriesId = Some(AudioPlaySeriesExamples.Resource.id),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
+    selfHostLink = Some(selfHostedLocationExample),
     externalResources = externalResourcesExample,
   )
 
@@ -133,3 +137,8 @@ object AudioPlayExamples:
   val SearchResponse: SearchAudioPlaysResponse = SearchAudioPlaysResponse(
     audioPlays = List(Resource),
   )
+
+  val GetSelfHostedLocationResponse: AudioPlayLocationResource =
+    AudioPlayLocationResource(
+      uri = selfHostedLocationExample,
+    )
