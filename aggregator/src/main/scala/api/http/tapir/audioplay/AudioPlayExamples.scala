@@ -9,6 +9,7 @@ import application.dto.audioplay.{
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
+  AudioPlayLocationResource,
   ListAudioPlaysResponse,
   SearchAudioPlaysResponse,
 }
@@ -71,10 +72,8 @@ object AudioPlayExamples:
     ),
   )
 
-  private val selfhostExample = Some(
-    URI.create(
-      "https://selfhosted.org:8096/stable/web/#/details?id=6ea6c8076b1147849b2311030699d047",
-    ),
+  private val selfHostedLocationExample = URI.create(
+    "https://selfhosted.org:8096/stable/web/#/details?id=6ea6c8076b1147849b2311030699d047",
   )
 
   private val seriesSeasonExample = Some(1)
@@ -126,7 +125,7 @@ object AudioPlayExamples:
     seriesId = Some(AudioPlaySeriesExamples.Resource.id),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
-    selfHostLink = selfhostExample,
+    selfHostLink = Some(selfHostedLocationExample),
     externalResources = externalResourcesExample,
   )
 
@@ -138,3 +137,8 @@ object AudioPlayExamples:
   val SearchResponse: SearchAudioPlaysResponse = SearchAudioPlaysResponse(
     audioPlays = List(Resource),
   )
+
+  val GetSelfHostedLocationResponse: AudioPlayLocationResource =
+    AudioPlayLocationResource(
+      uri = selfHostedLocationExample,
+    )

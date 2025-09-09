@@ -11,12 +11,12 @@ import application.dto.audioplay.series.{
   GetAudioPlaySeriesRequest,
 }
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
+  GetAudioPlayLocationRequest,
   GetAudioPlayRequest,
-  GetAudioPlaySelfHostedLocationRequest,
-  GetAudioPlaySelfHostedLocationResponse,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -123,7 +123,7 @@ private final class AudioPlayServiceImpl[F[
   ): F[Either[ErrorResponse, AudioPlayResource]] =
     val uuid = Uuid[AudioPlay](request.name)
     (for
-      _ <- eitherTLogger.info(s"Find request: $request.")
+      _ <- eitherTLogger.info(s"Get request: $request.")
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
@@ -199,20 +199,20 @@ private final class AudioPlayServiceImpl[F[
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
 
-  override def getSelfHostedLocation(
+  override def getLocation(
       user: User,
-      request: GetAudioPlaySelfHostedLocationRequest,
-  ): F[Either[ErrorResponse, GetAudioPlaySelfHostedLocationResponse]] =
+      request: GetAudioPlayLocationRequest,
+  ): F[Either[ErrorResponse, AudioPlayLocationResource]] =
     requirePermissionOrDeny(SeeSelfHostedLocation, user) {
       val uuid = Uuid[AudioPlay](request.name)
       (for
-        _ <- eitherTLogger.info(s"Get link request: $request.")
+        _ <- eitherTLogger.info(s"Get location request: $request.")
         elem <- EitherT
           .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
           .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
         link <- EitherT
           .fromOption(elem.selfHostedLocation, ErrorResponses.notSelfHosted)
-        response = GetAudioPlaySelfHostedLocationResponse(link)
+        response = AudioPlayLocationResource(link)
       yield response).value.handleErrorWith(handleInternal)
     }
 

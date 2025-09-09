@@ -4,10 +4,9 @@ package application.dto.audioplay
 import java.util.UUID
 
 
-/** Request to get link to a self-hosted location where audio play can be
- *  consumed.
+/** Request to get a self-hosted location where audio play can be consumed.
  *  @param name resource identifier.
  */
-final case class GetAudioPlaySelfHostedLocationRequest(
+final case class GetAudioPlayLocationRequest(
     name: UUID,
 )

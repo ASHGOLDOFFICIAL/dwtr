@@ -5,10 +5,12 @@ package api.http.circe
 import api.http.circe.PersonCodecs.given
 import api.http.circe.SharedCodecs.given
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
+import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.{
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
+  AudioPlayLocationResource,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -20,7 +22,6 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 
@@ -52,3 +53,6 @@ private[api] object AudioPlayCodecs:
 
   given Encoder[SearchAudioPlaysResponse] = deriveConfiguredEncoder
   given Decoder[SearchAudioPlaysResponse] = deriveConfiguredDecoder
+
+  given Encoder[AudioPlayLocationResource] = deriveConfiguredEncoder
+  given Decoder[AudioPlayLocationResource] = deriveConfiguredDecoder

@@ -10,8 +10,8 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,
-  GetAudioPlaySelfHostedLocationRequest,
-  GetAudioPlaySelfHostedLocationResponse,
+  GetAudioPlayLocationRequest,
+  AudioPlayLocationResource,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -197,8 +197,8 @@ private[aggregator] object AudioPlays:
     ): F[Either[ErrorResponse, Unit]] =
       throw new UnsupportedOperationException()
 
-    override def getSelfHostedLocation(
+    override def getLocation(
         user: User,
-        request: GetAudioPlaySelfHostedLocationRequest,
-    ): F[Either[ErrorResponse, GetAudioPlaySelfHostedLocationResponse]] =
+        request: GetAudioPlayLocationRequest,
+    ): F[Either[ErrorResponse, AudioPlayLocationResource]] =
       throw new UnsupportedOperationException()

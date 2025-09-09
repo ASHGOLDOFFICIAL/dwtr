@@ -5,6 +5,7 @@ package api.http
 import api.http.circe.AudioPlayCodecs.given
 import api.http.tapir.audioplay.AudioPlayExamples.{
   CreateRequest,
+  GetSelfHostedLocationResponse,
   ListResponse,
   Resource,
   SearchResponse,
@@ -12,9 +13,11 @@ import api.http.tapir.audioplay.AudioPlayExamples.{
 import api.http.tapir.audioplay.AudioPlaySchemas.given
 import application.AudioPlayService
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
+  GetAudioPlayLocationRequest,
   GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
@@ -141,6 +144,21 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
+  private val getLocationEndpoint = securedEndpoint.get
+    .in(elementPath / "location")
+    .out(
+      statusCode(StatusCode.Ok).and(jsonBody[AudioPlayLocationResource]
+        .description("Location of a self-hosted audio play.")
+        .example(GetSelfHostedLocationResponse)))
+    .name("GetAudioPlayLocation")
+    .summary("Gets location of a self-hosted audio play.")
+    .tag(tag)
+    .serverLogic { user => id =>
+      val request = GetAudioPlayLocationRequest(name = id)
+      for result <- service.getLocation(user, request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
   /** Returns Tapir endpoints for audio plays. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
@@ -148,4 +166,5 @@ final class AudioPlaysController[F[_]: Applicative](
     searchEndpoint,
     postEndpoint,
     deleteEndpoint,
+    getLocationEndpoint,
   )

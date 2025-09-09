@@ -4,7 +4,7 @@ package adapters.jdbc.postgres
 
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
-import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
+import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,

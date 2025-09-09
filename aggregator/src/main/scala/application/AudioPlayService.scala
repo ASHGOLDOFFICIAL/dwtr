@@ -3,12 +3,12 @@ package application
 
 
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
+  GetAudioPlayLocationRequest,
   GetAudioPlayRequest,
-  GetAudioPlaySelfHostedLocationRequest,
-  GetAudioPlaySelfHostedLocationResponse,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -86,7 +86,7 @@ trait AudioPlayService[F[_]]:
       request: DeleteAudioPlayRequest,
   ): F[Either[ErrorResponse, Unit]]
 
-  /** Gets link to self-hosted resource where audio play can be consumed.
+  /** Gets audio play self-hosted location.
    *
    *  Domain errors:
    *    - [[AudioPlayNotFound]] will be returned if audio play is not
@@ -99,7 +99,7 @@ trait AudioPlayService[F[_]]:
    *  @note user must have [[AggregatorPermission.SeeSelfHostedLocation]]
    *    permission.
    */
-  def getSelfHostedLocation(
+  def getLocation(
       user: User,
-      request: GetAudioPlaySelfHostedLocationRequest,
-  ): F[Either[ErrorResponse, GetAudioPlaySelfHostedLocationResponse]]
+      request: GetAudioPlayLocationRequest,
+  ): F[Either[ErrorResponse, AudioPlayLocationResource]]

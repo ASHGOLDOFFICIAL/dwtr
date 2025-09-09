@@ -13,7 +13,7 @@ import application.dto.audioplay.{
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
   GetAudioPlayRequest,
-  GetAudioPlaySelfHostedLocationRequest,
+  GetAudioPlayLocationRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -321,15 +321,15 @@ final class AudioPlayServiceImplTest
     }
   }
 
-  "getSelfHostedLocation method " - {
-    val request = GetAudioPlaySelfHostedLocationRequest(audioPlay.id)
+  "getLocation method " - {
+    val request = GetAudioPlayLocationRequest(audioPlay.id)
 
     "should " - {
       "allow users with permissions to see self-hosted locations" in stand {
         service =>
           val _ = mockHasPermission(SeeSelfHostedLocation, true.asRight.pure)
           val _ = mockGet(audioPlay.some.pure)
-          for result <- service.getSelfHostedLocation(user, request)
+          for result <- service.getLocation(user, request)
           yield result match
             case Left(_)         => fail("Error was not expected.")
             case Right(response) =>
@@ -340,7 +340,7 @@ final class AudioPlayServiceImplTest
         service =>
           val _ = mockHasPermission(SeeSelfHostedLocation, true.asRight.pure)
           val _ = mockGet(None.pure)
-          val get = service.getSelfHostedLocation(user, request)
+          val get = service.getLocation(user, request)
           assertDomainError(get)(AudioPlayNotFound)
       }
 
@@ -352,13 +352,13 @@ final class AudioPlayServiceImplTest
 
           val _ = mockHasPermission(SeeSelfHostedLocation, true.asRight.pure)
           val _ = mockGet(notSelfHosted.some.pure)
-          val get = service.getSelfHostedLocation(user, request)
+          val get = service.getLocation(user, request)
           assertDomainError(get)(NotSelfHosted)
       }
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(SeeSelfHostedLocation, false.asRight.pure)
-        val delete = service.getSelfHostedLocation(user, request)
+        val delete = service.getLocation(user, request)
         assertErrorStatus(delete)(PermissionDenied)
       }
     }
