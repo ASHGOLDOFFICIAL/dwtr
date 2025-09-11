@@ -7,14 +7,14 @@ import application.dto.audioplay.translation.{
   CreateAudioPlayTranslationRequest,
   ListAudioPlayTranslationsResponse,
 }
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.errors.TranslationValidationError
 import domain.model.audioplay.AudioPlay
+import domain.model.audioplay.translation.AudioPlayTranslation
+import domain.model.shared.{SelfHostedLocation, TranslatedTitle}
+import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
 import cats.data.{NonEmptyList, ValidatedNec}
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
-import org.aulune.aggregator.domain.model.shared.TranslatedTitle
 import org.aulune.commons.pagination.CursorEncoder
 import org.aulune.commons.types.Uuid
 
@@ -38,20 +38,22 @@ private[service] object AudioPlayTranslationMapper:
     translationType = AudioPlayTranslationTypeMapper
       .toDomain(request.translationType)
     language = LanguageMapper.toDomain(request.language)
-    links <- NonEmptyList.fromList(request.links)
+    location <- request.selfHostedLocation.map(SelfHostedLocation.apply)
+    resources = request.externalResources.map(ExternalResourceMapper.toDomain)
   yield AudioPlayTranslation(
     originalId = Uuid[AudioPlay](request.originalId),
     id = id,
     title = title,
     translationType = translationType,
     language = language,
-    links = links,
+    selfHostedLocation = location,
+    externalResources = resources,
   )).getOrElse(TranslationValidationError.InvalidArguments.invalidNec)
 
   /** Converts domain object to response object.
    *  @param domain entity to use as a base.
    */
-  def toResponse(domain: AudioPlayTranslation): AudioPlayTranslationResource =
+  def makeResource(domain: AudioPlayTranslation): AudioPlayTranslationResource =
     AudioPlayTranslationResource(
       originalId = domain.originalId,
       id = domain.id,
@@ -59,7 +61,8 @@ private[service] object AudioPlayTranslationMapper:
       translationType = AudioPlayTranslationTypeMapper
         .fromDomain(domain.translationType),
       language = LanguageMapper.fromDomain(domain.language),
-      links = domain.links.toList,
+      externalResources = domain.externalResources
+        .map(ExternalResourceMapper.fromDomain),
     )
 
   /** Converts list of domain objects to one list response.
@@ -72,5 +75,5 @@ private[service] object AudioPlayTranslationMapper:
       val cursor = AudioPlayTranslationCursor(elem.id)
       CursorEncoder[AudioPlayTranslationCursor].encode(cursor)
     }
-    val elements = translations.map(toResponse)
+    val elements = translations.map(makeResource)
     ListAudioPlayTranslationsResponse(elements, nextPageToken)

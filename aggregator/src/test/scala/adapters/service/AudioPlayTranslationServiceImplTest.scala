@@ -5,6 +5,7 @@ package adapters.service
 import adapters.service.mappers.{
   AudioPlayTranslationMapper,
   AudioPlayTranslationTypeMapper,
+  ExternalResourceMapper,
   LanguageMapper,
 }
 import application.AggregatorPermission.Modify
@@ -22,6 +23,8 @@ import application.errors.TranslationServiceError.{
   OriginalNotFound,
   TranslationNotFound,
 }
+import domain.model.audioplay.translation.AudioPlayTranslation
+import domain.model.shared.TranslatedTitle
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
@@ -29,8 +32,6 @@ import cats.effect.IO
 import cats.effect.std.UUIDGen
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
-import org.aulune.aggregator.domain.model.shared.TranslatedTitle
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
@@ -101,7 +102,8 @@ final class AudioPlayTranslationServiceImplTest
     translationType = AudioPlayTranslationTypeMapper
       .fromDomain(translation.translationType),
     language = LanguageMapper.fromDomain(translation.language),
-    links = translation.links.toList,
+    externalResources = translation.externalResources
+      .map(ExternalResourceMapper.fromDomain),
   )
 
   private val newUuid = Uuid[AudioPlayTranslation](uuid)
@@ -165,7 +167,7 @@ final class AudioPlayTranslationServiceImplTest
         val _ = (mockRepo.list _)
           .expects(cursor, 1)
           .returning(List(AudioPlayTranslations.translation2).pure)
-        val response = AudioPlayTranslationMapper.toResponse(
+        val response = AudioPlayTranslationMapper.makeResource(
           AudioPlayTranslations.translation2)
 
         for result <- service.list(request)
@@ -183,7 +185,9 @@ final class AudioPlayTranslationServiceImplTest
       translationType = AudioPlayTranslationTypeMapper
         .fromDomain(newTranslation.translationType),
       language = LanguageMapper.fromDomain(newTranslation.language),
-      links = newTranslation.links.toList,
+      selfHostedLocation = newTranslation.selfHostedLocation,
+      externalResources = newTranslation.externalResources
+        .map(ExternalResourceMapper.fromDomain),
     )
 
     "should " - {

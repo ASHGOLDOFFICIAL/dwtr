@@ -4,20 +4,21 @@ package adapters.service.errors
 
 import application.errors.TranslationServiceError.{
   InvalidTranslation,
-  TranslationNotFound,
   OriginalNotFound,
+  TranslationNotFound,
+  NotSelfHosted,
 }
 import domain.errors.TranslationValidationError
 
 import cats.data.NonEmptyChain
 import cats.syntax.all.given
-import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 import org.aulune.commons.errors.ErrorStatus.{
   FailedPrecondition,
   Internal,
   InvalidArgument,
   NotFound,
 }
+import org.aulune.commons.errors.{ErrorDetails, ErrorInfo, ErrorResponse}
 
 
 /** Error responses for
@@ -58,6 +59,17 @@ object AudioPlayTranslationServiceErrorResponses
     details = ErrorDetails(
       info = ErrorInfo(
         reason = InvalidTranslation,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  val notSelfHosted: ErrorResponse = ErrorResponse(
+    status = NotFound,
+    message = "Translation is not self hosted.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = NotSelfHosted,
         domain = domain,
       ).some,
     ),

@@ -2,7 +2,7 @@ package org.aulune.aggregator
 package application.dto.audioplay.translation
 
 
-import org.aulune.aggregator.application.dto.shared.LanguageDTO
+import application.dto.shared.{ExternalResourceDTO, LanguageDTO}
 
 import java.net.URI
 import java.util.UUID
@@ -14,7 +14,7 @@ import java.util.UUID
  *  @param id translation ID.
  *  @param title translated title.
  *  @param translationType type of translation.
- *  @param links links to translation publications.
+ *  @param externalResources links to external resources.
  */
 final case class AudioPlayTranslationResource(
     originalId: UUID,
@@ -22,5 +22,5 @@ final case class AudioPlayTranslationResource(
     title: String,
     translationType: AudioPlayTranslationTypeDTO,
     language: LanguageDTO,
-    links: List[URI],
+    externalResources: List[ExternalResourceDTO],
 )

@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay.translation
 
 
+import api.http.tapir.SharedSchemas.given
 import api.http.tapir.audioplay.AudioPlayExamples
 import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
   listResponseExample,
@@ -16,9 +17,9 @@ import application.dto.audioplay.translation.{
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
+import application.dto.shared.LanguageDTO
 
-import io.circe.syntax.*
-import org.aulune.aggregator.application.dto.shared.LanguageDTO
+import io.circe.syntax.given
 import sttp.tapir.{Schema, Validator}
 
 import java.net.URI
@@ -40,8 +41,6 @@ object AudioPlayTranslationSchemas:
       _.encodedExample(responseExample.title.asJson.toString)
         .description(titleDescription)
     }
-    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
-      .description(linksDescription))
 
   given Schema[CreateAudioPlayTranslationRequest] = Schema
     .derived[CreateAudioPlayTranslationRequest]
@@ -49,8 +48,6 @@ object AudioPlayTranslationSchemas:
       _.encodedExample(requestExample.title.asJson.toString)
         .description(titleDescription)
     }
-    .modify(_.links)(_.encodedExample(requestExample.links.asJson.toString)
-      .description(linksDescription))
 
   given Schema[ListAudioPlayTranslationsRequest] = Schema
     .derived[ListAudioPlayTranslationsRequest]
@@ -74,14 +71,10 @@ object AudioPlayTranslationSchemas:
   private val titleDescription = "Translated version of audio play's title."
   private val translationTypeDescription = "Type of translation: one of " +
     AudioPlayTranslationTypeMapper.stringValues.mkString(", ")
-  private val languageDescription = "Language of translation."
-  private val linksDescription = "Links to where translation is published."
   private val pageSizeDescription = "Desirable number of elements in response."
   private val pageTokenDescription =
     "Page token to continue previously started listing."
   private val nextPageDescription = "Token to retrieve next page."
-
-  private given Schema[URI] = Schema.string[URI]
 
   private given Schema[AudioPlayTranslationTypeDTO] = Schema.string
     .validate(
@@ -94,15 +87,3 @@ object AudioPlayTranslationSchemas:
         .asJson
         .toString)
     .description(translationTypeDescription)
-
-  private given Schema[LanguageDTO] = Schema.string
-    .validate(
-      Validator
-        .enumeration(LanguageDTO.values.toList)
-        .encode(LanguageMapper.toString))
-    .encodedExample(
-      LanguageMapper
-        .toString(responseExample.language)
-        .asJson
-        .toString)
-    .description(languageDescription)

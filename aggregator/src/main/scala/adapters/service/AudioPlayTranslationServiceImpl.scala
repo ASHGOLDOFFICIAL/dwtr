@@ -4,11 +4,13 @@ package adapters.service
 
 import adapters.service.errors.AudioPlayTranslationServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayTranslationMapper
-import application.AggregatorPermission.Modify
+import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
 import application.dto.audioplay.translation.{
+  AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
   DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationLocationRequest,
   GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
@@ -21,6 +23,7 @@ import application.{
   AudioPlayTranslationService,
 }
 import domain.model.audioplay.AudioPlay
+import domain.model.audioplay.translation.AudioPlayTranslation
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.{
   AudioPlayTranslationCursor,
@@ -30,7 +33,6 @@ import domain.repositories.AudioPlayTranslationRepository.{
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.pagination.PaginationParamsParser
 import org.aulune.commons.service.auth.User
@@ -103,7 +105,7 @@ private final class AudioPlayTranslationServiceImpl[F[
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.translationNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
-      response = AudioPlayTranslationMapper.toResponse(elem)
+      response = AudioPlayTranslationMapper.makeResource(elem)
     yield response).value.handleErrorWith(handleInternal)
 
   override def list(
@@ -138,7 +140,7 @@ private final class AudioPlayTranslationServiceImpl[F[
           .fromEither(makeAudioPlayTranslation(request, id))
           .leftSemiflatTap(_ => warn"Request to create bad element: $request.")
         persisted <- EitherT.liftF(repo.persist(translation))
-        response = AudioPlayTranslationMapper.toResponse(persisted)
+        response = AudioPlayTranslationMapper.makeResource(persisted)
       yield response).value
     }.handleErrorWith(handleInternal)
 
@@ -149,6 +151,23 @@ private final class AudioPlayTranslationServiceImpl[F[
     val uuid = Uuid[AudioPlayTranslation](request.name)
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
+
+  override def getLocation(
+      user: User,
+      request: GetAudioPlayTranslationLocationRequest,
+  ): F[Either[ErrorResponse, AudioPlayTranslationLocationResource]] =
+    requirePermissionOrDeny(SeeSelfHostedLocation, user) {
+      val uuid = Uuid[AudioPlayTranslation](request.name)
+      (for
+        _ <- eitherTLogger.info(s"Get location request: $request.")
+        elem <- EitherT
+          .fromOptionF(repo.get(uuid), ErrorResponses.translationNotFound)
+          .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
+        link <- EitherT
+          .fromOption(elem.selfHostedLocation, ErrorResponses.notSelfHosted)
+        response = AudioPlayTranslationLocationResource(link)
+      yield response).value.handleErrorWith(handleInternal)
+    }
 
   /** Converts [[AudioPlayNotFound]] response to original not found. Other
    *  responses are left as is.

@@ -48,27 +48,10 @@ private[postgres] object AudioPlayMetas:
   given audioPlaySeriesNumberMeta: Meta[AudioPlaySeriesNumber] =
     Meta[Int].imap(AudioPlaySeriesNumber.unsafe)(identity)
 
-  private val resourceTypeToInt = ExternalResourceType.values.map {
-    case t @ ExternalResourceType.Purchase  => t -> 1
-    case t @ ExternalResourceType.Streaming => t -> 2
-    case t @ ExternalResourceType.Download  => t -> 3
-    case t @ ExternalResourceType.Other     => t -> 4
-    case t @ ExternalResourceType.Private   => t -> 5
-  }.toMap
-  private val resourceTypeFromInt = resourceTypeToInt.map(_.swap)
-
-  given externalResourceTypeMeta: Meta[ExternalResourceType] = Meta[Int]
-    .imap(resourceTypeFromInt.apply)(resourceTypeToInt.apply)
-
   given castMemberMeta: Meta[CastMember] = jsonbMeta.imap(json =>
     json.as[CastMember].fold(throw _, identity))(_.asJson)
   given castMembersMeta: Meta[List[CastMember]] = jsonbMeta.imap(json =>
     json.as[List[CastMember]].fold(throw _, identity))(_.asJson)
-
-  given externalResourceMeta: Meta[ExternalResource] = jsonbMeta.imap(json =>
-    json.as[ExternalResource].fold(throw _, identity))(_.asJson)
-  given externalResourcesMeta: Meta[List[ExternalResource]] = jsonbMeta.imap(
-    json => json.as[List[ExternalResource]].fold(throw _, identity))(_.asJson)
 
   given writersMeta: Meta[List[Uuid[Person]]] = jsonbMeta.imap(json =>
     json.as[List[Uuid[Person]]].fold(throw _, identity))(_.asJson)
@@ -78,11 +61,5 @@ private[postgres] object AudioPlayMetas:
   private given [A]: Encoder[Uuid[A]] = Encoder.encodeUUID.contramap(identity)
   private given Decoder[ActorRole] = Decoder.decodeString.map(ActorRole.unsafe)
   private given Encoder[ActorRole] = Encoder.encodeString.contramap(identity)
-  private given Decoder[ExternalResourceType] =
-    Decoder.decodeInt.map(resourceTypeFromInt)
-  private given Encoder[ExternalResourceType] =
-    Encoder.encodeInt.contramap(resourceTypeToInt)
   private given Decoder[CastMember] = deriveConfiguredDecoder
   private given Encoder[CastMember] = deriveConfiguredEncoder
-  private given Decoder[ExternalResource] = deriveConfiguredDecoder
-  private given Encoder[ExternalResource] = deriveConfiguredEncoder

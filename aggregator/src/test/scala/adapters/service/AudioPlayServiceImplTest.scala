@@ -235,7 +235,7 @@ final class AudioPlayServiceImplTest
       seriesId = audioPlay.seriesId,
       seriesSeason = audioPlay.seriesSeason,
       seriesNumber = audioPlay.seriesNumber,
-      selfHostLink = audioPlay.selfHostedLocation,
+      selfHostedLocation = audioPlay.selfHostedLocation,
       externalResources = Nil,
     )
 

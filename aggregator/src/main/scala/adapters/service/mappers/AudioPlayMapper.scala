@@ -45,7 +45,7 @@ private[service] object AudioPlayMapper:
     season <- request.seriesSeason.map(AudioPlaySeason.apply)
     number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
     seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
-    download <- request.selfHostLink.map(SelfHostedLocation.apply)
+    download <- request.selfHostedLocation.map(SelfHostedLocation.apply)
     resources = request.externalResources.map(ExternalResourceMapper.toDomain)
   yield AudioPlay(
     id = Uuid[AudioPlay](id),

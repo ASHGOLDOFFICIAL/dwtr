@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package api.http.tapir.audioplay
 
 
+import api.http.tapir.SharedSchemas.given
 import api.http.tapir.audioplay.series.AudioPlaySeriesSchemas.given
 import api.http.tapir.person.PersonSchemas.given
 import api.mappers.ExternalResourceTypeMapper
@@ -31,12 +32,5 @@ object AudioPlaySchemas:
   given Schema[SearchAudioPlaysResponse] = Schema.derived
   given Schema[AudioPlayLocationResource] = Schema.derived
 
-  private given Schema[URI] = Schema.string[URI]
   private given Schema[CastMemberDTO] = Schema.derived
   private given Schema[CastMemberResource] = Schema.derived
-  private given Schema[ExternalResourceDTO] = Schema.derived
-  private given Schema[ExternalResourceTypeDTO] = Schema.string
-    .validate(
-      Validator
-        .enumeration(ExternalResourceTypeDTO.values.toList)
-        .encode(ExternalResourceTypeMapper.toString))

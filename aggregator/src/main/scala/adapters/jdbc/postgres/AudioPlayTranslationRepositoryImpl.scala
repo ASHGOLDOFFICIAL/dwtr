@@ -2,9 +2,21 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
+import adapters.jdbc.postgres.metas.SharedMetas.given
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 import domain.model.audioplay.AudioPlay
+import domain.model.audioplay.translation.{
+  AudioPlayTranslation,
+  AudioPlayTranslationType,
+}
+import domain.model.shared.{
+  ExternalResource,
+  Language,
+  SelfHostedLocation,
+  TranslatedTitle,
+}
+import domain.repositories.AudioPlayTranslationRepository
+import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
 import cats.MonadThrow
 import cats.data.NonEmptyList
@@ -17,13 +29,7 @@ import doobie.{ConnectionIO, Meta, Transactor}
 import io.circe.Encoder
 import io.circe.parser.decode
 import io.circe.syntax.given
-import org.aulune.aggregator.domain.model.audioplay.translation.{
-  AudioPlayTranslation,
-  AudioPlayTranslationType,
-}
-import org.aulune.aggregator.domain.model.shared.{Language, TranslatedTitle}
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
-import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
+import org.aulune.commons.adapters.doobie.postgres.Metas.{uuidMeta, jsonbMeta}
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
@@ -49,12 +55,13 @@ object AudioPlayTranslationRepositoryImpl:
 
   private val createTranslationsTable = sql"""
     |CREATE TABLE IF NOT EXISTS translations (
-    |  original_id UUID    NOT NULL,
-    |  id          UUID    NOT NULL PRIMARY KEY,
-    |  title       TEXT    NOT NULL,
-    |  type        INTEGER NOT NULL,
-    |  language    TEXT    NOT NULL,
-    |  links       TEXT    NOT NULL
+    |  original_id   UUID    NOT NULL,
+    |  id            UUID    NOT NULL PRIMARY KEY,
+    |  title         TEXT    NOT NULL,
+    |  type          INTEGER NOT NULL,
+    |  language      TEXT    NOT NULL,
+    |  self_host_uri TEXT,
+    |  resources     JSONB   NOT NULL
     |)""".stripMargin.update.run
 
 
@@ -76,13 +83,13 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[AudioPlayTranslation] = sql"""
     |INSERT INTO translations (
     |  original_id, id,
-    |  title, type,
-    |  language, links
+    |  title, type, language,
+    |  self_host_uri, resources
     |)
     |VALUES (
     |  ${elem.originalId}, ${elem.id},
-    |  ${elem.title}, ${elem.translationType},
-    |  ${elem.language}, ${elem.links}
+    |  ${elem.title}, ${elem.translationType}, ${elem.language},
+    |  ${elem.selfHostedLocation}, ${elem.externalResources}
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
@@ -104,11 +111,12 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[AudioPlayTranslation] =
     val query = sql"""
       |UPDATE translations
-      |SET original_id = ${elem.originalId},
-      |    title       = ${elem.title},
-      |    type        = ${elem.translationType},
-      |    language    = ${elem.language},
-      |    links       = ${elem.links}
+      |SET original_id   = ${elem.originalId},
+      |    title         = ${elem.title},
+      |    type          = ${elem.translationType},
+      |    language      = ${elem.language},
+      |    self_host_uri = ${elem.selfHostedLocation},
+      |    resources     = ${elem.externalResources}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
 
@@ -151,14 +159,15 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       TranslatedTitle,
       AudioPlayTranslationType,
       Language,
-      NonEmptyList[URI],
+      Option[SelfHostedLocation],
+      List[ExternalResource],
   )
 
   private val selectBase = fr"""
     |SELECT 
     |  original_id, id,
-    |  title, type,
-    |  language, links
+    |  title, type, language,
+    |  self_host_uri, resources
     |FROM translations""".stripMargin
 
   /** Makes translation from given data. */
@@ -168,14 +177,16 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       title: TranslatedTitle,
       translationType: AudioPlayTranslationType,
       language: Language,
-      links: NonEmptyList[URI],
+      selfHostLocation: Option[SelfHostedLocation],
+      resources: List[ExternalResource],
   ): AudioPlayTranslation = AudioPlayTranslation.unsafe(
     originalId = originalId,
     id = id,
     title = title,
     translationType = translationType,
     language = language,
-    links = links,
+    selfHostedLocation = selfHostLocation,
+    externalResources = resources,
   )
 
   /** Converts caught errors to [[RepositoryError]]. */
@@ -184,11 +195,3 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     case e: SQLException    => e.getSQLState match
         case sqlstate.class23.UNIQUE_VIOLATION.value =>
           AlreadyExists.raiseError[F, A]
-
-  /* It should only be used here, since other repositories
-  may want to encode list of URIs differently. */
-  private given Meta[NonEmptyList[URI]] = Meta[String].tiemap { str =>
-    decode[NonEmptyList[URI]](str).leftMap { err =>
-      s"Failed to decode NonEmptyList[URI] from: $str. Error: ${err.getMessage}"
-    }
-  }(uris => uris.asJson.noSpaces)
