@@ -5,10 +5,15 @@ package domain.model.audioplay.translation
 import domain.errors.TranslationValidationError
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.translation.AudioPlayTranslation.ValidationResult
+import domain.model.shared.{
+  ExternalResource,
+  Language,
+  SelfHostedLocation,
+  TranslatedTitle,
+}
 
 import cats.data.{NonEmptyList, Validated, ValidatedNec}
 import cats.syntax.all.given
-import org.aulune.aggregator.domain.model.shared.{Language, TranslatedTitle}
 import org.aulune.commons.types.Uuid
 
 import java.net.URI
@@ -20,7 +25,9 @@ import java.net.URI
  *  @param title translated title.
  *  @param translationType translation type.
  *  @param language translation language.
- *  @param links publication links.
+ *  @param selfHostedLocation link to self-hosted place where this translation
+ *    can be consumed.
+ *  @param externalResources links to different resources.
  */
 final case class AudioPlayTranslation private (
     originalId: Uuid[AudioPlay],
@@ -28,7 +35,8 @@ final case class AudioPlayTranslation private (
     title: TranslatedTitle,
     translationType: AudioPlayTranslationType,
     language: Language,
-    links: NonEmptyList[URI],
+    selfHostedLocation: Option[SelfHostedLocation],
+    externalResources: List[ExternalResource],
 ):
 
   /** Copies with validation.
@@ -40,14 +48,16 @@ final case class AudioPlayTranslation private (
       title: TranslatedTitle = title,
       translationType: AudioPlayTranslationType = translationType,
       language: Language = language,
-      links: NonEmptyList[URI] = links,
+      selfHostedLocation: Option[SelfHostedLocation] = selfHostedLocation,
+      externalResources: List[ExternalResource] = externalResources,
   ): ValidationResult[AudioPlayTranslation] = AudioPlayTranslation(
     originalId = originalId,
     id = id,
     title = title,
     translationType = translationType,
     language = language,
-    links = links,
+    selfHostedLocation = selfHostedLocation,
+    externalResources = externalResources,
   )
 
 
@@ -60,7 +70,9 @@ object AudioPlayTranslation:
    *  @param title translated title.
    *  @param translationType translation type.
    *  @param language translation language.
-   *  @param links publications.
+   *  @param selfHostedLocation link to self-hosted place where this translation
+   *    can be consumed.
+   *  @param externalResources links to different resources.
    *  @return translation validation result.
    */
   def apply(
@@ -69,7 +81,8 @@ object AudioPlayTranslation:
       title: TranslatedTitle,
       translationType: AudioPlayTranslationType,
       language: Language,
-      links: NonEmptyList[URI],
+      selfHostedLocation: Option[SelfHostedLocation],
+      externalResources: List[ExternalResource],
   ): ValidationResult[AudioPlayTranslation] = validateState(
     new AudioPlayTranslation(
       originalId = originalId,
@@ -77,7 +90,8 @@ object AudioPlayTranslation:
       title = title,
       translationType = translationType,
       language = language,
-      links = links,
+      selfHostedLocation = selfHostedLocation,
+      externalResources = externalResources,
     ))
 
   /** Unsafe constructor to use only inside always-valid boundary.
@@ -89,14 +103,16 @@ object AudioPlayTranslation:
       title: TranslatedTitle,
       translationType: AudioPlayTranslationType,
       language: Language,
-      links: NonEmptyList[URI],
+      selfHostedLocation: Option[SelfHostedLocation],
+      externalResources: List[ExternalResource],
   ): AudioPlayTranslation = AudioPlayTranslation(
     originalId = originalId,
     id = id,
     title = title,
     translationType = translationType,
     language = language,
-    links = links,
+    selfHostedLocation = selfHostedLocation,
+    externalResources = externalResources,
   ) match
     case Validated.Valid(a)   => a
     case Validated.Invalid(e) => throw e.head

@@ -18,5 +18,8 @@ enum TranslationServiceError(val reason: String) extends ErrorReason(reason):
   case TranslationNotFound
       extends TranslationServiceError("TRANSLATION_NOT_FOUND")
 
+  /** Translation is not self-hosted. */
+  case NotSelfHosted extends TranslationServiceError("NOT_SELF_HOSTED")
+
   /** Given translation is not valid translation. */
   case InvalidTranslation extends TranslationServiceError("INVALID_TRANSLATION")

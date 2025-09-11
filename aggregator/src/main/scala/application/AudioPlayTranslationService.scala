@@ -3,25 +3,25 @@ package application
 
 
 import application.AggregatorPermission.Modify
-import application.dto.audioplay.DeleteAudioPlayRequest
 import application.dto.audioplay.translation.{
+  AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
   DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationLocationRequest,
   GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
 import application.errors.TranslationServiceError.{
   InvalidTranslation,
+  NotSelfHosted,
   OriginalNotFound,
   TranslationNotFound,
 }
 
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.service.auth.User
-
-import java.util.UUID
 
 
 /** Service managing translations.
@@ -76,3 +76,20 @@ trait AudioPlayTranslationService[F[_]]:
       user: User,
       request: DeleteAudioPlayTranslationRequest,
   ): F[Either[ErrorResponse, Unit]]
+
+  /** Gets translation self-hosted location.
+   *
+   *  Domain errors:
+   *    - [[TranslationNotFound]] will be returned if translation is not found.
+   *    - [[NotSelfHosted]] will be returned if translation is not self-hosted.
+   *
+   *  @param user user who performs this action.
+   *  @param request request information.
+   *  @return response with URI if everything is OK, otherwise error.
+   *  @note user must have [[AggregatorPermission.SeeSelfHostedLocation]]
+   *    permission.
+   */
+  def getLocation(
+      user: User,
+      request: GetAudioPlayTranslationLocationRequest,
+  ): F[Either[ErrorResponse, AudioPlayTranslationLocationResource]]

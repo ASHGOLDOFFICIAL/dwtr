@@ -2,12 +2,26 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres.metas
 
 
-import domain.model.shared.{ImageUri, ReleaseDate, SelfHostedLocation, Synopsis}
+import domain.model.shared.{
+  ExternalResource,
+  ExternalResourceType,
+  ImageUri,
+  ReleaseDate,
+  SelfHostedLocation,
+  Synopsis,
+}
 
 import cats.Show
 import doobie.Meta
 import doobie.postgres.implicits.JavaLocalDateMeta
-import org.aulune.commons.adapters.doobie.postgres.Metas.uriMeta
+import io.circe.generic.extras.semiauto.{
+  deriveConfiguredDecoder,
+  deriveConfiguredEncoder,
+}
+import io.circe.syntax.given
+import io.circe.{Decoder, Encoder}
+import org.aulune.commons.adapters.circe.CirceUtils.config
+import org.aulune.commons.adapters.doobie.postgres.Metas.{jsonbMeta, uriMeta}
 
 import java.net.URI
 import java.time.LocalDate
@@ -27,3 +41,26 @@ private[postgres] object SharedMetas:
     .imap(ReleaseDate.unsafe)(identity)
   given synopsisMeta: Meta[Synopsis] = Meta[String]
     .imap(Synopsis.unsafe)(identity)
+
+  given externalResourceTypeMeta: Meta[ExternalResourceType] = Meta[Int]
+    .imap(resourceTypeFromInt.apply)(resourceTypeToInt.apply)
+  given externalResourceMeta: Meta[ExternalResource] = jsonbMeta.imap(json =>
+    json.as[ExternalResource].fold(throw _, identity))(_.asJson)
+  given externalResourcesMeta: Meta[List[ExternalResource]] = jsonbMeta.imap(
+    json => json.as[List[ExternalResource]].fold(throw _, identity))(_.asJson)
+
+  private val resourceTypeToInt = ExternalResourceType.values.map {
+    case t @ ExternalResourceType.Purchase  => t -> 1
+    case t @ ExternalResourceType.Streaming => t -> 2
+    case t @ ExternalResourceType.Download  => t -> 3
+    case t @ ExternalResourceType.Other     => t -> 4
+    case t @ ExternalResourceType.Private   => t -> 5
+  }.toMap
+  private val resourceTypeFromInt = resourceTypeToInt.map(_.swap)
+
+  private given Decoder[ExternalResourceType] =
+    Decoder.decodeInt.map(resourceTypeFromInt)
+  private given Encoder[ExternalResourceType] =
+    Encoder.encodeInt.contramap(resourceTypeToInt)
+  private given Decoder[ExternalResource] = deriveConfiguredDecoder
+  private given Encoder[ExternalResource] = deriveConfiguredEncoder

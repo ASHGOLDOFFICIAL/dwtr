@@ -224,7 +224,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
       coverUrl: Option[ImageUri],
-      downloadLink: Option[SelfHostedLocation],
+      selfHostLocation: Option[SelfHostedLocation],
       resources: List[ExternalResource],
   ): AudioPlay = AudioPlay.unsafe(
     id = uuid,
@@ -237,7 +237,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     seriesSeason = season,
     seriesNumber = number,
     coverUrl = coverUrl,
-    selfHostedLocation = downloadLink,
+    selfHostedLocation = selfHostLocation,
     externalResources = resources,
   )
 

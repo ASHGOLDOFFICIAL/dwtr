@@ -125,7 +125,7 @@ object AudioPlayExamples:
     seriesId = Some(AudioPlaySeriesExamples.Resource.id),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
-    selfHostLink = Some(selfHostedLocationExample),
+    selfHostedLocation = Some(selfHostedLocationExample),
     externalResources = externalResourcesExample,
   )
 

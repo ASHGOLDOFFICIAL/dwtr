@@ -2,16 +2,16 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
+import adapters.service.AudioPlayTranslations
 import domain.model.audioplay.AudioPlay
+import domain.model.audioplay.translation.AudioPlayTranslation
+import domain.model.shared.TranslatedTitle
+import domain.repositories.AudioPlayTranslationRepository
+import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
 import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
-import org.aulune.aggregator.adapters.service.AudioPlayTranslations
-import org.aulune.aggregator.domain.model.audioplay.translation.AudioPlayTranslation
-import org.aulune.aggregator.domain.model.shared.TranslatedTitle
-import org.aulune.aggregator.domain.repositories.AudioPlayTranslationRepository
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
   FailedPrecondition,
@@ -41,7 +41,6 @@ final class AudioPlayTranslationRepositoryImplTest
   private val updatedTranslationTest = translationTest
     .update(
       title = TranslatedTitle.unsafe("Updated"),
-      links = NonEmptyList(URI.create("https://testing.org"), Nil),
     )
     .getOrElse(throw new IllegalStateException())
 
