@@ -8,6 +8,6 @@ Requires project environment variables to be in scope
 
 ## Features
 
-Making admin users based on given username and Google ID.
+Making admin users based on given username and password.
 It's recommended to use it for initial admin user only.
 Prefer project API to add new ones.
