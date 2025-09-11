@@ -5,10 +5,7 @@ package adapters.circe
 import adapters.circe.CirceUtils.config
 import errors.{ErrorDetails, ErrorInfo, ErrorReason, ErrorResponse, ErrorStatus}
 
-import io.circe.generic.extras.semiauto.{
-  deriveConfiguredDecoder,
-  deriveConfiguredEncoder,
-}
+import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Decoder, Encoder}
 
 import scala.util.Failure
@@ -22,7 +19,7 @@ object ErrorResponseCodecs:
 
   private given Decoder[ErrorStatus] = Decoder.decodeString
     .emapTry(_ => Failure(new UnsupportedOperationException()))
-  private given Encoder[ErrorStatus] = deriveConfiguredEncoder
+  private given Encoder[ErrorStatus] = Encoder.encodeInt.contramap(_.value)
 
   private given Decoder[ErrorDetails] = Decoder.decodeString
     .emapTry(_ => Failure(new UnsupportedOperationException()))

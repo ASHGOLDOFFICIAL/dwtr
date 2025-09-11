@@ -2,7 +2,6 @@ package org.aulune.auth
 package api.http.circe
 
 
-import api.http.AuthenticationController
 import api.mappers.OAuth2ProviderMapper
 import application.dto.AuthenticateUserRequest.OAuth2Authentication
 import application.dto.{

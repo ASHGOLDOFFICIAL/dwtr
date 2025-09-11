@@ -17,19 +17,17 @@ import application.dto.{
   AuthenticateUserResponse,
   CreateUserRequest,
 }
-import application.errors.AuthenticationServiceError
 
 import cats.Functor
-import cats.data.NonEmptyChain
 import cats.syntax.all.given
 import org.aulune.commons.adapters.circe.ErrorResponseCodecs.given
-import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.adapters.tapir.ErrorResponseSchemas.given
 import org.aulune.commons.adapters.tapir.ErrorStatusCodeMapper
+import org.aulune.commons.errors.ErrorResponse
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.{endpoint, statusCode, stringBody, stringToPath}
+import sttp.tapir.{endpoint, statusCode, stringToPath}
 
 
 /** Controller with Tapir endpoints for authentication.
