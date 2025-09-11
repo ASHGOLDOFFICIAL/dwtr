@@ -7,6 +7,7 @@ import adapters.jdbc.postgres.{
   AudioPlayTranslationRepositoryImpl,
   PersonRepositoryImpl,
 }
+import adapters.s3.MinIOObjectUploader
 import adapters.service.{
   AudioPlaySeriesServiceImpl,
   AudioPlayServiceImpl,
@@ -20,11 +21,11 @@ import api.http.{
   PersonsController,
 }
 
-import cats.effect.Clock
-import cats.effect.kernel.MonadCancelThrow
+import cats.effect.Sync
 import cats.effect.std.SecureRandom
 import cats.syntax.all.given
 import doobie.Transactor
+import io.minio.MinioClient
 import org.aulune.commons.instances.UUIDv7Gen.uuidv7Instance
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.permission.PermissionClientService
@@ -46,11 +47,12 @@ object AggregatorApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: MonadCancelThrow: Clock: SecureRandom: LoggerFactory](
+  def build[F[_]: Sync: SecureRandom: LoggerFactory](
       config: AggregatorConfig,
       authServ: AuthenticationClientService[F],
       permissionServ: PermissionClientService[F],
       transactor: Transactor[F],
+      minioClient: MinioClient,
   ): F[AggregatorApp[F]] =
     given SortableUUIDGen[F] = uuidv7Instance
     for
@@ -76,12 +78,18 @@ object AggregatorApp:
         seriesServ,
         authServ).endpoints
 
+      coverStorage <- MinIOObjectUploader.build[F](
+        minioClient,
+        config.coverStorage.endpoint,
+        config.coverStorage.bucket,
+      )
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ <- AudioPlayServiceImpl
         .build[F](
           config.pagination,
           config.search,
           audioRepo,
+          coverStorage,
           seriesServ,
           personServ,
           permissionServ)

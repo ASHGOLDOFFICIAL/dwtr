@@ -21,6 +21,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+  UploadAudioPlayCoverRequest,
 }
 import application.dto.person.{BatchGetPersonsRequest, PersonResource}
 import application.errors.{AudioPlaySeriesServiceError, PersonServiceError}
@@ -28,11 +29,13 @@ import application.{
   AggregatorPermission,
   AudioPlaySeriesService,
   AudioPlayService,
+  ObjectUploader,
   PersonService,
 }
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
+import domain.model.shared.ImageUri
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 
@@ -72,6 +75,7 @@ object AudioPlayServiceImpl:
       pagination: AggregatorConfig.PaginationParams,
       search: AggregatorConfig.SearchParams,
       repo: AudioPlayRepository[F],
+      uploader: ObjectUploader[F],
       seriesService: AudioPlaySeriesService[F],
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
@@ -96,6 +100,7 @@ object AudioPlayServiceImpl:
       paginationParser,
       searchParser,
       repo,
+      uploader,
       seriesService,
       personService,
       permissionService,
@@ -110,6 +115,7 @@ private final class AudioPlayServiceImpl[F[
     paginationParser: PaginationParamsParser[AudioPlayCursor],
     searchParser: SearchParamsParser,
     repo: AudioPlayRepository[F],
+    uploader: ObjectUploader[F],
     seriesService: AudioPlaySeriesService[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
@@ -127,10 +133,7 @@ private final class AudioPlayServiceImpl[F[
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
-      series <- EitherT(getSeries(elem.seriesId))
-      allPersonIds = (elem.writers ++ elem.cast.map(_.actor)).distinct
-      persons <- EitherT(getPersons(allPersonIds))
-      response = AudioPlayMapper.makeResource(elem, series, persons)
+      response <- makeResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
 
   override def list(
@@ -199,6 +202,26 @@ private final class AudioPlayServiceImpl[F[
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
 
+  override def uploadCover(
+      user: User,
+      request: UploadAudioPlayCoverRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]] =
+    requirePermissionOrDeny(Modify, user) {
+      val id = Uuid[AudioPlay](request.name)
+      (for
+        _ <- eitherTLogger.info(s"Upload cover request for $id from $user")
+        elem <- EitherT
+          .fromOptionF(repo.get(id), ErrorResponses.audioPlayNotFound)
+        uri <- EitherT.liftF(uploader.upload(request.cover, None))
+        coverUri = ImageUri(uri)
+        updated <- EitherT
+          .fromEither(elem.update(coverUrl = coverUri).toEither)
+          .leftMap(ErrorResponses.invalidAudioPlay)
+        persisted <- EitherT.liftF(repo.persist(updated))
+        response <- makeResponse(persisted)
+      yield response).value
+    }.handleErrorWith(handleInternal)
+
   override def getLocation(
       user: User,
       request: GetAudioPlayLocationRequest,
@@ -213,8 +236,21 @@ private final class AudioPlayServiceImpl[F[
         link <- EitherT
           .fromOption(elem.selfHostedLocation, ErrorResponses.notSelfHosted)
         response = AudioPlayLocationResource(link)
-      yield response).value.handleErrorWith(handleInternal)
-    }
+      yield response).value
+    }.handleErrorWith(handleInternal)
+
+  /** Populates audio play with resources retrieved from respective services.
+   *  @param element audio play to use as base.
+   */
+  private def makeResponse(
+      element: AudioPlay,
+  ): EitherT[F, ErrorResponse, AudioPlayResource] =
+    for
+      series <- EitherT(getSeries(element.seriesId))
+      allPersonIds = (element.writers ++ element.cast.map(_.actor)).distinct
+      persons <- EitherT(getPersons(allPersonIds))
+      response = AudioPlayMapper.makeResource(element, series, persons)
+    yield response
 
   /** Retrieves person resources for a list of audio plays. */
   private def batchGetPersons(

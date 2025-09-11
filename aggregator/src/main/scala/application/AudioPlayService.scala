@@ -13,6 +13,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+  UploadAudioPlayCoverRequest,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
@@ -85,6 +86,17 @@ trait AudioPlayService[F[_]]:
       user: User,
       request: DeleteAudioPlayRequest,
   ): F[Either[ErrorResponse, Unit]]
+
+  /** Uploads image as cover for audio play and attaches it to audio play.
+   *  @param user user who performs this action.
+   *  @param request request to upload cover.
+   *  @return changed resource if success, otherwise error.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
+   */
+  def uploadCover(
+      user: User,
+      request: UploadAudioPlayCoverRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Gets audio play self-hosted location.
    *

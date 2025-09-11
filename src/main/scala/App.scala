@@ -10,6 +10,7 @@ import cats.effect.{Async, IO, IOApp}
 import cats.syntax.all.given
 import doobie.Transactor
 import fs2.io.net.Network
+import io.minio.MinioClient
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import org.http4s.{HttpRoutes, server}
@@ -36,6 +37,11 @@ object App extends IOApp.Simple:
     password = config.postgres.password,
     logHandler = None,
   )
+  private val minio = MinioClient
+    .builder()
+    .endpoint(config.minio.endpoint)
+    .credentials(config.minio.accessKey, config.minio.secretKey)
+    .build()
 
   override def run: IO[Unit] =
     for
@@ -45,7 +51,8 @@ object App extends IOApp.Simple:
         config.aggregator,
         authApp.clientAuthentication,
         permissionApp.clientService,
-        transactor)
+        transactor,
+        minio)
       endpoints = aggregatorApp.endpoints ++ authApp.endpoints
       _ <- makeServer[IO](endpoints).use(_ => IO.never)
     yield ()

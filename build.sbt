@@ -107,10 +107,12 @@ lazy val aggregator = (project in file("aggregator"))
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core" % log4catsVersion,
+      minioDep
     ),
   )
 
 
+val minioVersion = "8.5.17"
 val argon2Version = "2.12"
 val catsEffectTestingVersion = "1.6.0"
 val catsEffectVersion = "3.6.3"
@@ -167,6 +169,9 @@ val doobieDeps = Seq(
   "org.tpolecat" %% "doobie-postgres",
   "org.tpolecat" %% "doobie-postgres-circe",
 ).map(_ % doobieVersion)
+
+
+val minioDep = "io.minio" % "minio" % minioVersion
 
 
 val testDeps = Seq(

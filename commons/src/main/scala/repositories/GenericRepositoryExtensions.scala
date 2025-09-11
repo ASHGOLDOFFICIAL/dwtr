@@ -16,7 +16,7 @@ extension [M[_]: Monad, E, Id](repo: GenericRepository[M, E, Id])
    *  @param f pure function to transform the existing entity.
    *  @return updated element if element existed.
    */
-  def transform(id: Id)(f: E => E): M[Option[E]] =
+  def transform[A](id: Id)(f: E => E): M[Option[E]] =
     for
       elemOpt <- repo.get(id)
       result <- elemOpt.traverse { elem =>
