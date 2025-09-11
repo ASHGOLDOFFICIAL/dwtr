@@ -5,12 +5,13 @@ package api.http.tapir.audioplay.translation
 import api.http.tapir.SharedSchemas.given
 import api.http.tapir.audioplay.AudioPlayExamples
 import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
-  listResponseExample,
-  requestExample,
-  responseExample,
+  ListResponse,
+  CreateRequest,
+  Resource,
 }
 import api.mappers.{AudioPlayTranslationTypeMapper, LanguageMapper}
 import application.dto.audioplay.translation.{
+  AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
   AudioPlayTranslationTypeDTO,
   CreateAudioPlayTranslationRequest,
@@ -30,7 +31,7 @@ object AudioPlayTranslationSchemas:
   given Schema[AudioPlayTranslationResource] = Schema
     .derived[AudioPlayTranslationResource]
     .modify(_.id) {
-      _.encodedExample(responseExample.id.asJson.toString)
+      _.encodedExample(Resource.id.asJson.toString)
         .description(idDescription)
     }
     .modify(_.originalId) {
@@ -38,14 +39,14 @@ object AudioPlayTranslationSchemas:
         .description(originalIdDescription)
     }
     .modify(_.title) {
-      _.encodedExample(responseExample.title.asJson.toString)
+      _.encodedExample(Resource.title.asJson.toString)
         .description(titleDescription)
     }
 
   given Schema[CreateAudioPlayTranslationRequest] = Schema
     .derived[CreateAudioPlayTranslationRequest]
     .modify(_.title) {
-      _.encodedExample(requestExample.title.asJson.toString)
+      _.encodedExample(CreateRequest.title.asJson.toString)
         .description(titleDescription)
     }
 
@@ -61,9 +62,11 @@ object AudioPlayTranslationSchemas:
   given Schema[ListAudioPlayTranslationsResponse] = Schema
     .derived[ListAudioPlayTranslationsResponse]
     .modify(_.nextPageToken) {
-      _.encodedExample(listResponseExample.nextPageToken)
+      _.encodedExample(ListResponse.nextPageToken)
         .description(nextPageDescription)
     }
+
+  given Schema[AudioPlayTranslationLocationResource] = Schema.derived
 
   private val idDescription = "UUID of the translation."
   private val originalIdDescription =
@@ -83,7 +86,7 @@ object AudioPlayTranslationSchemas:
         .encode(AudioPlayTranslationTypeMapper.toString))
     .encodedExample(
       AudioPlayTranslationTypeMapper
-        .toString(responseExample.translationType)
+        .toString(Resource.translationType)
         .asJson
         .toString)
     .description(translationTypeDescription)

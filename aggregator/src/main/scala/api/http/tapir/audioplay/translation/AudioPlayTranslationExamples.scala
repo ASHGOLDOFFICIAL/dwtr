@@ -5,6 +5,7 @@ package api.http.tapir.audioplay.translation
 import api.http.tapir.audioplay.AudioPlayExamples
 import application.dto.audioplay.translation.AudioPlayTranslationTypeDTO.Subtitles
 import application.dto.audioplay.translation.{
+  AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
@@ -29,10 +30,13 @@ object AudioPlayTranslationExamples:
         "https://www.opensubtitles.com/ru/subtitles/though-scoundrels-are-discovered"),
     ),
   )
+  private val selfHostedLocationExample = URI.create(
+    "https://selfhosted.org:8096/stable/web/#/details?id=c846c7456e0f40978b726fea454b6a7c",
+  )
   private val nextTokenExample =
     Some(Base64.getEncoder.encodeToString(titleExample.getBytes))
 
-  val requestExample: CreateAudioPlayTranslationRequest =
+  val CreateRequest: CreateAudioPlayTranslationRequest =
     CreateAudioPlayTranslationRequest(
       originalId = AudioPlayExamples.Resource.id,
       title = titleExample,
@@ -42,18 +46,22 @@ object AudioPlayTranslationExamples:
       externalResources = externalResourcesExample,
     )
 
-  val responseExample: AudioPlayTranslationResource =
-    AudioPlayTranslationResource(
-      originalId = AudioPlayExamples.Resource.id,
-      id = UUID.fromString("8f7c586f-7043-4e47-9021-45e41a9e6f9c"),
-      title = titleExample,
-      translationType = translationTypeExample,
-      language = languageExample,
-      externalResources = externalResourcesExample,
+  val Resource: AudioPlayTranslationResource = AudioPlayTranslationResource(
+    originalId = AudioPlayExamples.Resource.id,
+    id = UUID.fromString("8f7c586f-7043-4e47-9021-45e41a9e6f9c"),
+    title = titleExample,
+    translationType = translationTypeExample,
+    language = languageExample,
+    externalResources = externalResourcesExample,
+  )
+
+  val ListResponse: ListAudioPlayTranslationsResponse =
+    ListAudioPlayTranslationsResponse(
+      translations = List(Resource),
+      nextPageToken = nextTokenExample,
     )
 
-  val listResponseExample: ListAudioPlayTranslationsResponse =
-    ListAudioPlayTranslationsResponse(
-      translations = List(responseExample),
-      nextPageToken = nextTokenExample,
+  val GetSelfHostedLocationResponse: AudioPlayTranslationLocationResource =
+    AudioPlayTranslationLocationResource(
+      uri = selfHostedLocationExample,
     )

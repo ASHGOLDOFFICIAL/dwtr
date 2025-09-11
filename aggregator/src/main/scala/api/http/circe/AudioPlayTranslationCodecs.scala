@@ -8,7 +8,9 @@ import api.mappers.{
   ExternalResourceTypeMapper,
   LanguageMapper,
 }
+import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.translation.{
+  AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
   AudioPlayTranslationTypeDTO,
   CreateAudioPlayTranslationRequest,
@@ -31,7 +33,6 @@ import io.circe.generic.extras.semiauto.{
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
 import java.net.{URI, URL}
@@ -60,3 +61,6 @@ private[api] object AudioPlayTranslationCodecs:
     }
   private given Encoder[AudioPlayTranslationTypeDTO] =
     Encoder.encodeString.contramap(AudioPlayTranslationTypeMapper.toString)
+
+  given Encoder[AudioPlayTranslationLocationResource] = deriveConfiguredEncoder
+  given Decoder[AudioPlayTranslationLocationResource] = deriveConfiguredDecoder

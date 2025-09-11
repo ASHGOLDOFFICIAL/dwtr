@@ -4,16 +4,19 @@ package api.http
 
 import api.http.circe.AudioPlayTranslationCodecs.given
 import api.http.tapir.audioplay.translation.AudioPlayTranslationExamples.{
-  listResponseExample,
-  requestExample,
-  responseExample,
+  CreateRequest,
+  GetSelfHostedLocationResponse,
+  ListResponse,
+  Resource,
 }
 import api.http.tapir.audioplay.translation.AudioPlayTranslationSchemas.given
 import application.AudioPlayTranslationService
 import application.dto.audioplay.translation.{
+  AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
   CreateAudioPlayTranslationRequest,
   DeleteAudioPlayTranslationRequest,
+  GetAudioPlayTranslationLocationRequest,
   GetAudioPlayTranslationRequest,
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
@@ -63,7 +66,7 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .in(elementPath)
     .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayTranslationResource]
       .description("Requested audio play translation if found.")
-      .example(responseExample)))
+      .example(Resource)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("GetTranslation")
@@ -81,7 +84,7 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .out(
       statusCode(StatusCode.Ok).and(jsonBody[ListAudioPlayTranslationsResponse]
         .description("List of audio plays and a token to retrieve next page.")
-        .example(listResponseExample)))
+        .example(ListResponse)))
     .errorOut(statusCode.and(
       jsonBody[ErrorResponse].description("Description of error.")))
     .name("ListTranslations")
@@ -99,11 +102,11 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
     .in(collectionPath)
     .in(jsonBody[CreateAudioPlayTranslationRequest]
       .description("Translation to create")
-      .example(requestExample))
+      .example(CreateRequest))
     .out(
       statusCode(StatusCode.Created).and(jsonBody[AudioPlayTranslationResource]
         .description("Created translation.")
-        .example(responseExample)))
+        .example(Resource)))
     .name("CreateTranslation")
     .summary("Creates a new translation for parent resource and returns it.")
     .tag(tag)
@@ -124,12 +127,29 @@ final class AudioPlayTranslationsController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
+  private val getLocationEndpoint = securedEndpoint.get
+    .in(elementPath / "location")
+    .out(
+      statusCode(StatusCode.Ok).and(
+        jsonBody[AudioPlayTranslationLocationResource]
+          .description("Location of a self-hosted translation.")
+          .example(GetSelfHostedLocationResponse)))
+    .name("GetAudioPlayTranslationLocation")
+    .summary("Gets location of a self-hosted translation.")
+    .tag(tag)
+    .serverLogic { user => id =>
+      val request = GetAudioPlayTranslationLocationRequest(name = id)
+      for result <- service.getLocation(user, request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
   /** Returns Tapir endpoints for translations. */
   def endpoints: List[ServerEndpoint[Any, F]] = List(
     getEndpoint,
     listEndpoint,
     postEndpoint,
     deleteEndpoint,
+    getLocationEndpoint,
   )
 
 end AudioPlayTranslationsController
