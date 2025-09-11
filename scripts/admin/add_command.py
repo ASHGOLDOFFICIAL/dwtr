@@ -1,71 +1,62 @@
-import pathlib
-
-import os
 import uuid
 
-import argparse
 import psycopg
+import getpass
+
+from admin.postgres import Postgres
+from admin.user import User
+from admin.permission import Permission
+from argon2 import PasswordHasher, Type
 
 
-def command_handler(args: argparse.Namespace):
+def command_handler(
+        postgres: Postgres,
+        permission: Permission,
+        username: str):
     """
     Handles command for adding admins.
-    :param args: CLI arguments.
+    :param postgres PostgreSQL info.
+    :param permission admin permission.
+    :param username new admin user's username.
     """
-    host: str = args.host
-    assert host, "Host is either empty of None"
-
-    port: int = args.port
-    assert port, "Port is None"
-
-    user: str = os.getenv("POSTGRES_USER")
-    assert user, _missing_variable_message("POSTGRES_USER")
-
-    password: str = os.getenv("POSTGRES_PASSWORD")
-    assert password, _missing_variable_message("POSTGRES_PASSWORD")
-
-    db: str = os.getenv("POSTGRES_DB")
-    assert db, _missing_variable_message("POSTGRES_DB")
-
-    permission_namespace = os.getenv("ADMIN_PERMISSION_NAMESPACE")
-    assert permission_namespace, _missing_variable_message(
-        "ADMIN_PERMISSION_NAMESPACE")
-
-    permission_name = os.getenv("ADMIN_PERMISSION_NAME")
-    assert permission_name, _missing_variable_message(
-        "ADMIN_PERMISSION_NAME")
-    print(f"Admin permission is {permission_namespace}.{permission_name}.")
-
-    user_uuid = uuid.uuid4()
-    connection_url = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    connection_url = postgres.connection_url
     print(f"Connection URL is {connection_url}")
 
+    user_uuid = uuid.uuid4()
+    password = getpass.getpass("Password: ")
+    hashed = PasswordHasher(type=Type.I).hash(password)
+    user = User(user_uuid, username, hashed)
+    _commit_admin_user(connection_url, permission, user)
+
+
+def _commit_admin_user(
+        connection_url: str,
+        permission: Permission,
+        user: User):
+    """
+    Persists user to DB and grants them given admin permission.
+    :param connection_url: PostgreSQL connection URL.
+    :param permission: admin permission.
+    :param user: user that will become admin.
+    :return: nothing.
+    """
     with psycopg.connect(connection_url) as connection:
         connection.execute(
-            "INSERT INTO users (id, username, google_id) "
+            "INSERT INTO users (id, username, password) "
             "VALUES (%s, %s, %s)",
-            (user_uuid, args.username, args.google_id)
+            (user.id, user.username, user.hashed_password)
         )
 
         reference_id = connection.execute(
             "SELECT reference_id FROM permissions "
             "WHERE namespace = %s "
             "AND name = %s",
-            (permission_namespace, permission_name)
+            (permission.namespace, permission.name)
         ).fetchone()[0]
         assert reference_id, "Couldn't find admin permission in DB."
 
         connection.execute(
             "INSERT INTO user_permissions (user_id, permission) "
             "VALUES (%s, %s)",
-            (user_uuid, reference_id)
+            (user.id, reference_id)
         )
-
-
-def _missing_variable_message(variable: str) -> str:
-    """
-    Makes "VARIABLE is empty, check your variables." message.
-    :param variable: variable name.
-    :return: message string.
-    """
-    return f"{variable} is empty, check your variables."
