@@ -7,6 +7,7 @@ import adapters.jdbc.postgres.{
   AudioPlayTranslationRepositoryImpl,
   PersonRepositoryImpl,
 }
+import adapters.s3.CoverImageStorageImpl
 import adapters.service.{
   AudioPlaySeriesServiceImpl,
   AudioPlayServiceImpl,
@@ -20,15 +21,16 @@ import api.http.{
   PersonsController,
 }
 
-import cats.effect.Clock
-import cats.effect.kernel.MonadCancelThrow
+import cats.effect.Async
 import cats.effect.std.SecureRandom
 import cats.syntax.all.given
 import doobie.Transactor
+import io.minio.MinioClient
 import org.aulune.commons.instances.UUIDv7Gen.uuidv7Instance
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.typeclasses.SortableUUIDGen
+import org.aulune.commons.utils.imaging.ImageConverter
 import org.typelevel.log4cats.LoggerFactory
 import sttp.tapir.server.ServerEndpoint
 
@@ -46,11 +48,12 @@ object AggregatorApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: MonadCancelThrow: Clock: SecureRandom: LoggerFactory](
+  def build[F[_]: Async: SecureRandom: LoggerFactory](
       config: AggregatorConfig,
       authServ: AuthenticationClientService[F],
       permissionServ: PermissionClientService[F],
       transactor: Transactor[F],
+      minioClient: MinioClient,
   ): F[AggregatorApp[F]] =
     given SortableUUIDGen[F] = uuidv7Instance
     for
@@ -76,15 +79,24 @@ object AggregatorApp:
         seriesServ,
         authServ).endpoints
 
+      coverStorage <- CoverImageStorageImpl.build[F](
+        minioClient,
+        config.coverStorage.publicUrl,
+        config.coverStorage.bucket,
+        config.coverStorage.partSize,
+      )
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ <- AudioPlayServiceImpl
         .build[F](
           config.pagination,
           config.search,
+          config.coverLimits,
           audioRepo,
+          coverStorage,
           seriesServ,
           personServ,
-          permissionServ)
+          permissionServ,
+          ImageConverter[F])
       audioEndpoints = new AudioPlaysController[F](
         config.pagination,
         audioServ,

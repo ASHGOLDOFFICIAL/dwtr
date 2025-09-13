@@ -5,7 +5,9 @@ package adapters.service.errors
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
+  CoverTooBig,
   InvalidAudioPlay,
+  InvalidCoverImage,
   NotSelfHosted,
   PersonNotFound,
 }
@@ -64,6 +66,31 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
     details = ErrorDetails(
       info = ErrorInfo(
         reason = NotSelfHosted,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  val invalidCoverImage: ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = "Invalid cover image.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = InvalidCoverImage,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  /** Cover image is too big.
+   *  @param max maximum allowed size.
+   */
+  def coverTooBigImage(max: Long): ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = s"Image size exceeds maximum allowed: $max bytes",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = CoverTooBig,
         domain = domain,
       ).some,
     ),

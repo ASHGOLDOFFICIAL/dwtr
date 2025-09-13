@@ -13,6 +13,7 @@ import pureconfig.error.ExceptionThrown
 
 case class Config(
     app: Config.App,
+    minio: Config.MinIO,
     postgres: Config.Postgres,
     auth: AuthConfig,
     permissions: PermissionConfig,
@@ -28,6 +29,7 @@ object Config:
       port: Port,
   )
 
+  case class MinIO(endpoint: String, accessKey: String, secretKey: String)
   case class Postgres(uri: String, user: String, password: String)
 
   given ConfigReader[Uri] = ConfigReader.fromString { str =>

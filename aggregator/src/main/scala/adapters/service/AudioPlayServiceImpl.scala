@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.service
 
 
+import adapters.service.AudioPlayServiceImpl.{PngExtension, PngMimeType}
 import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
@@ -21,6 +22,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+  UploadAudioPlayCoverRequest,
 }
 import application.dto.person.{BatchGetPersonsRequest, PersonResource}
 import application.errors.{AudioPlaySeriesServiceError, PersonServiceError}
@@ -33,12 +35,16 @@ import application.{
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
-import domain.repositories.AudioPlayRepository
+import domain.model.shared.ImageUri
 import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
+import domain.repositories.{AudioPlayRepository, CoverImageStorage}
 
 import cats.MonadThrow
 import cats.data.EitherT
+import cats.effect.Async
+import cats.effect.std.UUIDGen
 import cats.syntax.all.given
+import fs2.Stream
 import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
 import org.aulune.commons.pagination.{CursorEncoder, PaginationParamsParser}
 import org.aulune.commons.search.SearchParamsParser
@@ -46,11 +52,14 @@ import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import org.aulune.commons.typeclasses.SortableUUIDGen
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
+import org.aulune.commons.utils.imaging.ImageFormat.PNG
+import org.aulune.commons.utils.imaging.{ImageConversionError, ImageConverter}
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
 import org.typelevel.log4cats.{Logger, LoggerFactory}
 
+import java.net.URI
 import java.util.UUID
 
 
@@ -68,13 +77,16 @@ object AudioPlayServiceImpl:
    *  @tparam F effect type.
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
-  def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
+  def build[F[_]: Async: SortableUUIDGen: LoggerFactory](
       pagination: AggregatorConfig.PaginationParams,
       search: AggregatorConfig.SearchParams,
+      imageLimits: AggregatorConfig.ImageLimits,
       repo: AudioPlayRepository[F],
+      coverStorage: CoverImageStorage[F],
       seriesService: AudioPlaySeriesService[F],
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
+      imageConverter: ImageConverter[F],
   ): F[AudioPlayService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
     val paginationParserO = PaginationParamsParser
@@ -95,26 +107,36 @@ object AudioPlayServiceImpl:
     yield new AudioPlayServiceImpl[F](
       paginationParser,
       searchParser,
+      imageLimits,
       repo,
+      coverStorage,
       seriesService,
       personService,
       permissionService,
+      imageConverter,
     )
+
+  private val PngExtension = NonEmptyString.unsafe("png")
+  private val PngMimeType = NonEmptyString.unsafe("image/png")
 
 end AudioPlayServiceImpl
 
 
 private final class AudioPlayServiceImpl[F[
     _,
-]: MonadThrow: SortableUUIDGen: LoggerFactory](
+]: Async: SortableUUIDGen: LoggerFactory](
     paginationParser: PaginationParamsParser[AudioPlayCursor],
     searchParser: SearchParamsParser,
+    imageLimits: AggregatorConfig.ImageLimits,
     repo: AudioPlayRepository[F],
+    coverStorage: CoverImageStorage[F],
     seriesService: AudioPlaySeriesService[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
+    imageConverter: ImageConverter[F],
 ) extends AudioPlayService[F]:
 
+  private val maximumImageSize = imageLimits.maxSize
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
@@ -127,10 +149,7 @@ private final class AudioPlayServiceImpl[F[
       elem <- EitherT
         .fromOptionF(repo.get(uuid), ErrorResponses.audioPlayNotFound)
         .leftSemiflatTap(_ => warn"Couldn't find element with ID: $request")
-      series <- EitherT(getSeries(elem.seriesId))
-      allPersonIds = (elem.writers ++ elem.cast.map(_.actor)).distinct
-      persons <- EitherT(getPersons(allPersonIds))
-      response = AudioPlayMapper.makeResource(elem, series, persons)
+      response <- makeResponse(elem)
     yield response).value.handleErrorWith(handleInternal)
 
   override def list(
@@ -199,6 +218,27 @@ private final class AudioPlayServiceImpl[F[
     info"Delete request $request from $user" >> repo.delete(uuid).map(_.asRight)
   }.handleErrorWith(handleInternal)
 
+  override def uploadCover(
+      user: User,
+      request: UploadAudioPlayCoverRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]] =
+    requirePermissionOrDeny(Modify, user) {
+      val id = Uuid[AudioPlay](request.name)
+      (for
+        _ <- eitherTLogger.info(s"Upload cover request for $id from $user")
+        elem <- EitherT
+          .fromOptionF(repo.get(id), ErrorResponses.audioPlayNotFound)
+        uri <- uploadImage(request.cover)
+        coverUri = ImageUri(uri)
+        _ <- eitherTLogger.info(s"Cover URI: $coverUri")
+        updated <- EitherT
+          .fromEither(elem.update(coverUrl = coverUri).toEither)
+          .leftMap(ErrorResponses.invalidAudioPlay)
+        persisted <- EitherT.liftF(repo.update(updated))
+        response <- makeResponse(persisted)
+      yield response).value
+    }.handleErrorWith(handleInternal)
+
   override def getLocation(
       user: User,
       request: GetAudioPlayLocationRequest,
@@ -213,8 +253,51 @@ private final class AudioPlayServiceImpl[F[
         link <- EitherT
           .fromOption(elem.selfHostedLocation, ErrorResponses.notSelfHosted)
         response = AudioPlayLocationResource(link)
-      yield response).value.handleErrorWith(handleInternal)
-    }
+      yield response).value
+    }.handleErrorWith(handleInternal)
+
+  /** Upload image to external service with conversion to PNG.
+   *  @param imageBytes image as bytes.
+   *  @return URI of uploaded image.
+   */
+  private def uploadImage(
+      imageBytes: IArray[Byte],
+  ): EitherT[F, ErrorResponse, URI] =
+    for
+      imageStream <- EitherT.cond(
+        imageBytes.length <= maximumImageSize,
+        Stream.emits[F, Byte](imageBytes),
+        ErrorResponses.coverTooBigImage(maximumImageSize))
+      convertF = imageConverter.convert(imageStream, PNG)
+      image <- EitherT(convertF).leftSemiflatMap {
+        case ImageConversionError.UnknownFormat =>
+          ErrorResponses.invalidCoverImage.pure[F]
+        case e => MonadThrow[F].raiseError(e)
+      }
+      convertedStream = Stream.emits(image)
+      objectId <- EitherT.liftF(UUIDGen.randomUUID[F])
+      name = NonEmptyString.unsafe(s"$objectId.$PngExtension")
+      _ <- EitherT
+        .liftF(coverStorage.put(convertedStream, name, PngMimeType.some))
+      uri <- EitherT.liftF(coverStorage.issueURI(name)).semiflatMap {
+        case Some(value) => value.pure[F]
+        case None        => MonadThrow[F].raiseError(new IllegalStateException(
+            "Couldn't issue URI for just added object."))
+      }
+    yield uri
+
+  /** Populates audio play with resources retrieved from respective services.
+   *  @param element audio play to use as base.
+   */
+  private def makeResponse(
+      element: AudioPlay,
+  ): EitherT[F, ErrorResponse, AudioPlayResource] =
+    for
+      series <- EitherT(getSeries(element.seriesId))
+      allPersonIds = (element.writers ++ element.cast.map(_.actor)).distinct
+      persons <- EitherT(getPersons(allPersonIds))
+      response = AudioPlayMapper.makeResource(element, series, persons)
+    yield response
 
   /** Retrieves person resources for a list of audio plays. */
   private def batchGetPersons(

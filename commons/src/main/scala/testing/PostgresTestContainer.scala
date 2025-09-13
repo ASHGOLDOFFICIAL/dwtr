@@ -26,7 +26,7 @@ trait PostgresTestContainer extends AsyncFreeSpec with TestContainerForEach:
    *  @return function that returns [[Assertion]] from after performing actions
    *    with service of type [[A]].
    */
-  def makeStand[A](init: Init[A]): TestCase[A] => IO[Assertion] =
+  protected def makeStand[A](init: Init[A]): TestCase[A] => IO[Assertion] =
     (app: TestCase[A]) =>
       withContainers { container =>
         val config = new HikariConfig()

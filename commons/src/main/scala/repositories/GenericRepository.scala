@@ -1,14 +1,17 @@
 package org.aulune.commons
 package repositories
 
+
 import repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import storages.GenericStorage
 
 
-/** Repository with basic CRUD operations.
+/** Repository with basic CRUD operations for structured data.
  *
  *  @tparam F effect type.
  *  @tparam E element type.
  *  @tparam Id element identity type.
+ *  @note For unstructured data use [[GenericStorage]].
  */
 trait GenericRepository[F[_], E, Id]:
   /** Check if element exists in repository.

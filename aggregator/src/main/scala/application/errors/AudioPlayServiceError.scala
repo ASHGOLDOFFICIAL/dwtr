@@ -26,3 +26,9 @@ enum AudioPlayServiceError(val reason: String) extends ErrorReason(reason):
 
   /** Given audio play is not valid audio play. */
   case InvalidAudioPlay extends AudioPlayServiceError("INVALID_AUDIO_PLAY")
+
+  /** Given image exceeds restrictions for cover size. */
+  case CoverTooBig extends AudioPlayServiceError("COVER_IS_TOO_BIG")
+
+  /** Given cover image is invalid. */
+  case InvalidCoverImage extends AudioPlayServiceError("INVALID_COVER_IMAGE")

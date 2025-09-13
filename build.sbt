@@ -58,6 +58,7 @@ lazy val commons = (project in file("commons")).settings(
   idePackagePrefix := Some("org.aulune.commons"),
   libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
     "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion,
+    "com.dimafeng" %% "testcontainers-scala-minio"      % testcontainersVersion,
     "com.dimafeng" %% "testcontainers-scala-scalatest"  % testcontainersVersion,
     "org.postgresql" % "postgresql" % postgresqlVersion,
     "org.scalamock" %% "scalamock"  % scalamockVersion,
@@ -65,6 +66,8 @@ lazy val commons = (project in file("commons")).settings(
     "org.typelevel" %% "cats-core"  % catsVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
+    "co.fs2" %% "fs2-core" % fs2Version,
+    minioDep,
   ),
 )
 
@@ -81,6 +84,7 @@ lazy val auth = (project in file("auth"))
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core"   % log4catsVersion,
       "com.nimbusds"   % "nimbus-jose-jwt" % nimbusJoseJwt,
+      http4sClient,
     ),
   )
 
@@ -103,11 +107,13 @@ lazy val aggregator = (project in file("aggregator"))
   .settings(
     name := "aggregator",
     idePackagePrefix := Some("org.aulune.aggregator"),
-    libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+    libraryDependencies ++= tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core" % log4catsVersion,
-    ),
+      "co.fs2"        %% "fs2-core"      % fs2Version,
+      minioDep,
+    ) ++ testDeps :+ (http4sClient % Test),
   )
 
 
@@ -118,10 +124,12 @@ val catsVersion = "2.13.0"
 val circeGenericExtras = "0.14.5-RC1"
 val circeVersion = "0.14.14"
 val doobieVersion = "1.0.0-RC9"
+val fs2Version = "3.12.2"
 val http4sVersion = "0.23.30"
 val jwtVersion = "11.0.2"
 val log4catsVersion = "2.7.1"
 val logbackVersion = "1.5.18"
+val minioVersion = "8.5.17"
 val nimbusJoseJwt = "10.4.2"
 val postgresqlVersion = "42.7.7"
 val pureconfigVersion = "0.17.9"
@@ -133,9 +141,10 @@ val testcontainersVersion = "0.43.0"
 
 resolvers += Resolver.sonatypeCentralSnapshots
 
+val http4sClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
+
 
 val http4sDeps = Seq(
-  "org.http4s" %% "http4s-ember-client",
   "org.http4s" %% "http4s-ember-server",
   "org.http4s" %% "http4s-dsl",
   "org.http4s" %% "http4s-circe",
@@ -167,6 +176,9 @@ val doobieDeps = Seq(
   "org.tpolecat" %% "doobie-postgres",
   "org.tpolecat" %% "doobie-postgres-circe",
 ).map(_ % doobieVersion)
+
+
+val minioDep = "io.minio" % "minio" % minioVersion
 
 
 val testDeps = Seq(

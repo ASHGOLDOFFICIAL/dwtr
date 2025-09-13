@@ -13,11 +13,14 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+  UploadAudioPlayCoverRequest,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
+  CoverTooBig,
   InvalidAudioPlay,
+  InvalidCoverImage,
   NotSelfHosted,
 }
 
@@ -85,6 +88,27 @@ trait AudioPlayService[F[_]]:
       user: User,
       request: DeleteAudioPlayRequest,
   ): F[Either[ErrorResponse, Unit]]
+
+  /** Uploads image as cover for audio play and attaches it to audio play.
+   *
+   *  Domain errors:
+   *    - [[AudioPlayNotFound]] will be returned if audio play is not found.
+   *    - [[CoverTooBig]] will be returned if cover image exceeds maximum
+   *      allowed restrictions.
+   *    - [[InvalidCoverImage]] will be returned when trying to upload invalid
+   *      image.
+   *    - [[InvalidAudioPlay]] will be returned when result of the operation
+   *      leads to invalid audio play.
+   *
+   *  @param user user who performs this action.
+   *  @param request request to upload cover.
+   *  @return changed resource if success, otherwise error.
+   *  @note user must have [[AggregatorPermission.Modify]] permission.
+   */
+  def uploadCover(
+      user: User,
+      request: UploadAudioPlayCoverRequest,
+  ): F[Either[ErrorResponse, AudioPlayResource]]
 
   /** Gets audio play self-hosted location.
    *
