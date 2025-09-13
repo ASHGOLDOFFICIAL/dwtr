@@ -5,7 +5,7 @@ import adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   AudioPlaySeriesRepositoryImpl,
   AudioPlayTranslationRepositoryImpl,
-  PersonRepositoryImpl,
+  PersonRepositoryImpl
 }
 import adapters.s3.MinIOObjectUploader
 import adapters.service.{
@@ -21,7 +21,7 @@ import api.http.{
   PersonsController,
 }
 
-import cats.effect.Sync
+import cats.effect.Async
 import cats.effect.std.SecureRandom
 import cats.syntax.all.given
 import doobie.Transactor
@@ -47,7 +47,7 @@ object AggregatorApp:
    *  @param transactor transactor for DB.
    *  @tparam F effect type.
    */
-  def build[F[_]: Sync: SecureRandom: LoggerFactory](
+  def build[F[_]: Async: SecureRandom: LoggerFactory](
       config: AggregatorConfig,
       authServ: AuthenticationClientService[F],
       permissionServ: PermissionClientService[F],
@@ -80,14 +80,16 @@ object AggregatorApp:
 
       coverStorage <- MinIOObjectUploader.build[F](
         minioClient,
-        config.coverStorage.endpoint,
+        config.coverStorage.publicUrl,
         config.coverStorage.bucket,
+        config.coverStorage.partSize,
       )
       audioRepo <- AudioPlayRepositoryImpl.build[F](transactor)
       audioServ <- AudioPlayServiceImpl
         .build[F](
           config.pagination,
           config.search,
+          config.coverLimits,
           audioRepo,
           coverStorage,
           seriesServ,

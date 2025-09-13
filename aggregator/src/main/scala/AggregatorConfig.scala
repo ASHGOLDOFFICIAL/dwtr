@@ -2,6 +2,7 @@ package org.aulune.aggregator
 
 
 /** Config for aggregator app.
+ *
  *  @param maxBatchGet max allowed elements for batch get.
  *  @param pagination pagination parameters.
  *  @param search search parameters.
@@ -11,6 +12,7 @@ final case class AggregatorConfig(
     maxBatchGet: Int,
     pagination: AggregatorConfig.PaginationParams,
     search: AggregatorConfig.SearchParams,
+    coverLimits: AggregatorConfig.ImageLimits,
     coverStorage: AggregatorConfig.CoverStorage,
 )
 
@@ -20,4 +22,12 @@ object AggregatorConfig:
 
   final case class SearchParams(max: Int, default: Int)
 
-  final case class CoverStorage(endpoint: String, bucket: String)
+  final case class ImageLimits(
+      maxSize: Long,
+  )
+
+  final case class CoverStorage(
+      publicUrl: String,
+      bucket: String,
+      partSize: Long,
+  )

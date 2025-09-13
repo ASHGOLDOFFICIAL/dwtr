@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.service
 
 
+import adapters.service.AudioPlayServiceImpl.{PngExtension, PngMimeType}
 import adapters.service.errors.AudioPlayServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayMapper
 import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
@@ -41,7 +42,9 @@ import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
 
 import cats.MonadThrow
 import cats.data.EitherT
+import cats.effect.Async
 import cats.syntax.all.given
+import fs2.Stream
 import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
 import org.aulune.commons.pagination.{CursorEncoder, PaginationParamsParser}
 import org.aulune.commons.search.SearchParamsParser
@@ -49,11 +52,14 @@ import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
 import org.aulune.commons.typeclasses.SortableUUIDGen
-import org.aulune.commons.types.Uuid
+import org.aulune.commons.types.{NonEmptyString, Uuid}
+import org.aulune.commons.utils.imaging.ImageFormat.PNG
+import org.aulune.commons.utils.imaging.{ImageConversionError, ImageConverter}
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
 import org.typelevel.log4cats.{Logger, LoggerFactory}
 
+import java.net.URI
 import java.util.UUID
 
 
@@ -71,9 +77,10 @@ object AudioPlayServiceImpl:
    *  @tparam F effect type.
    *  @throws IllegalArgumentException if pagination params are invalid.
    */
-  def build[F[_]: MonadThrow: SortableUUIDGen: LoggerFactory](
+  def build[F[_]: Async: SortableUUIDGen: LoggerFactory](
       pagination: AggregatorConfig.PaginationParams,
       search: AggregatorConfig.SearchParams,
+      imageLimits: AggregatorConfig.ImageLimits,
       repo: AudioPlayRepository[F],
       uploader: ObjectUploader[F],
       seriesService: AudioPlaySeriesService[F],
@@ -99,6 +106,7 @@ object AudioPlayServiceImpl:
     yield new AudioPlayServiceImpl[F](
       paginationParser,
       searchParser,
+      imageLimits,
       repo,
       uploader,
       seriesService,
@@ -106,14 +114,18 @@ object AudioPlayServiceImpl:
       permissionService,
     )
 
+  private val PngExtension = NonEmptyString.unsafe("png")
+  private val PngMimeType = NonEmptyString.unsafe("image/png")
+
 end AudioPlayServiceImpl
 
 
 private final class AudioPlayServiceImpl[F[
     _,
-]: MonadThrow: SortableUUIDGen: LoggerFactory](
+]: Async: SortableUUIDGen: LoggerFactory](
     paginationParser: PaginationParamsParser[AudioPlayCursor],
     searchParser: SearchParamsParser,
+    imageLimits: AggregatorConfig.ImageLimits,
     repo: AudioPlayRepository[F],
     uploader: ObjectUploader[F],
     seriesService: AudioPlaySeriesService[F],
@@ -121,6 +133,7 @@ private final class AudioPlayServiceImpl[F[
     permissionService: PermissionClientService[F],
 ) extends AudioPlayService[F]:
 
+  private val maximumImageSize = imageLimits.maxSize
   private given Logger[F] = LoggerFactory[F].getLogger
   private given PermissionClientService[F] = permissionService
 
@@ -212,12 +225,13 @@ private final class AudioPlayServiceImpl[F[
         _ <- eitherTLogger.info(s"Upload cover request for $id from $user")
         elem <- EitherT
           .fromOptionF(repo.get(id), ErrorResponses.audioPlayNotFound)
-        uri <- EitherT.liftF(uploader.upload(request.cover, None))
+        uri <- uploadImage(request.cover)
         coverUri = ImageUri(uri)
+        _ <- eitherTLogger.info(s"Cover URI: $coverUri")
         updated <- EitherT
           .fromEither(elem.update(coverUrl = coverUri).toEither)
           .leftMap(ErrorResponses.invalidAudioPlay)
-        persisted <- EitherT.liftF(repo.persist(updated))
+        persisted <- EitherT.liftF(repo.update(updated))
         response <- makeResponse(persisted)
       yield response).value
     }.handleErrorWith(handleInternal)
@@ -238,6 +252,30 @@ private final class AudioPlayServiceImpl[F[
         response = AudioPlayLocationResource(link)
       yield response).value
     }.handleErrorWith(handleInternal)
+
+  /** Upload image to external service with conversion to PNG.
+   *  @param imageBytes image as bytes.
+   *  @return URI of uploaded image.
+   */
+  private def uploadImage(
+      imageBytes: Array[Byte],
+  ): EitherT[F, ErrorResponse, URI] =
+    for
+      imageStream <- EitherT.cond(
+        imageBytes.length <= maximumImageSize,
+        Stream.emits(imageBytes),
+        ErrorResponses.coverTooBigImage(maximumImageSize))
+      convertF = ImageConverter.convert(imageStream, PNG)
+      image <- EitherT(convertF).leftMap {
+        case ImageConversionError.UnknownFormat =>
+          ErrorResponses.invalidCoverImage
+        case _ => ErrorResponses.internal
+      }
+      convertedStream = Stream.emits(image)
+      uploadF = uploader
+        .upload(convertedStream, PngMimeType.some, PngExtension.some)
+      uri <- EitherT.liftF(uploadF)
+    yield uri
 
   /** Populates audio play with resources retrieved from respective services.
    *  @param element audio play to use as base.

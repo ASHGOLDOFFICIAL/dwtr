@@ -65,6 +65,7 @@ lazy val commons = (project in file("commons")).settings(
     "org.typelevel" %% "cats-core"  % catsVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
+    "co.fs2" %% "fs2-core" % fs2Version,
   ),
 )
 
@@ -107,12 +108,12 @@ lazy val aggregator = (project in file("aggregator"))
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core" % log4catsVersion,
-      minioDep
+      minioDep,
+      "co.fs2" %% "fs2-core" % fs2Version,
     ),
   )
 
 
-val minioVersion = "8.5.17"
 val argon2Version = "2.12"
 val catsEffectTestingVersion = "1.6.0"
 val catsEffectVersion = "3.6.3"
@@ -120,10 +121,12 @@ val catsVersion = "2.13.0"
 val circeGenericExtras = "0.14.5-RC1"
 val circeVersion = "0.14.14"
 val doobieVersion = "1.0.0-RC9"
+val fs2Version = "3.12.2"
 val http4sVersion = "0.23.30"
 val jwtVersion = "11.0.2"
 val log4catsVersion = "2.7.1"
 val logbackVersion = "1.5.18"
+val minioVersion = "8.5.17"
 val nimbusJoseJwt = "10.4.2"
 val postgresqlVersion = "42.7.7"
 val pureconfigVersion = "0.17.9"

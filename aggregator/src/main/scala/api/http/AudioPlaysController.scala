@@ -23,6 +23,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+  UploadAudioPlayCoverRequest,
 }
 
 import cats.Applicative
@@ -39,7 +40,7 @@ import org.aulune.commons.service.auth.AuthenticationClientService
 import sttp.model.StatusCode
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.{endpoint, path, statusCode, stringToPath}
+import sttp.tapir.{byteArrayBody, endpoint, path, statusCode, stringToPath}
 
 import java.util.UUID
 
@@ -144,6 +145,21 @@ final class AudioPlaysController[F[_]: Applicative](
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
 
+  private val uploadCoverEndpoint = securedEndpoint.post
+    .in(elementPath / ":uploadCover")
+    .in(byteArrayBody)
+    .out(statusCode(StatusCode.Ok).and(jsonBody[AudioPlayResource]
+      .description("Updated audio play if found.")
+      .example(Resource)))
+    .name("UploadAudioPlayCover")
+    .summary("Uploads cover to given audio play.")
+    .tag(tag)
+    .serverLogic { user => (id, bytes) =>
+      val request = UploadAudioPlayCoverRequest(id, bytes)
+      for result <- service.uploadCover(user, request)
+      yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
+    }
+
   private val getLocationEndpoint = securedEndpoint.get
     .in(elementPath / "location")
     .out(
@@ -166,5 +182,6 @@ final class AudioPlaysController[F[_]: Applicative](
     searchEndpoint,
     postEndpoint,
     deleteEndpoint,
+    uploadCoverEndpoint,
     getLocationEndpoint,
   )

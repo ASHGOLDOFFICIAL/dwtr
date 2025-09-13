@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package application
 
 
+import fs2.Stream
 import org.aulune.commons.types.NonEmptyString
 
 import java.net.URI
@@ -11,9 +12,14 @@ import java.net.URI
  *  @tparam F effect type.
  */
 trait ObjectUploader[F[_]]:
-  /** Uploads object given as bytes to some location.
-   *  @param bytes object as array of bytes.
+  /** Uploads object given in stream to some location.
+   *  @param stream stream which contains an object.
+   *  @param contentType object content type, i.e. "text/plain".
    *  @param extension optional extension to use.
    *  @return URI of uploaded object.
    */
-  def upload(bytes: Array[Byte], extension: Option[NonEmptyString]): F[URI]
+  def upload(
+      stream: Stream[F, Byte],
+      contentType: Option[NonEmptyString],
+      extension: Option[NonEmptyString] = None,
+  ): F[URI]
