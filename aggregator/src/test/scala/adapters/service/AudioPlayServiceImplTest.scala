@@ -12,8 +12,8 @@ import application.dto.audioplay.{
   CastMemberDTO,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
-  GetAudioPlayRequest,
   GetAudioPlayLocationRequest,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -26,8 +26,8 @@ import application.errors.AudioPlayServiceError.{
 }
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
-import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
+import domain.repositories.{AudioPlayRepository, CoverImageStorage}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
@@ -67,6 +67,7 @@ final class AudioPlayServiceImplTest
   private given LoggerFactory[IO] = Slf4jFactory.create
 
   private val mockRepo = mock[AudioPlayRepository[IO]]
+  private val mockCoverStorage = mock[CoverImageStorage[IO]]
   private val mockSeries = AudioPlaySeriesStubs.service[IO]
   private val mockPerson = Persons.service[IO]
   private val mockPermissions = mock[PermissionClientService[IO]]
@@ -90,10 +91,13 @@ final class AudioPlayServiceImplTest
       .build(
         AggregatorConfig.PaginationParams(2, 1),
         AggregatorConfig.SearchParams(2, 1),
+        AggregatorConfig.ImageLimits(5),
         mockRepo,
+        mockCoverStorage,
         mockSeries,
         mockPerson,
-        mockPermissions)
+        mockPermissions,
+      )
       .flatMap(testCase)
   end stand
 

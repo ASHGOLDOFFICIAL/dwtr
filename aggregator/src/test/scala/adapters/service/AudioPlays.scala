@@ -6,16 +6,17 @@ import adapters.service.errors.AudioPlayServiceErrorResponses
 import adapters.service.mappers.AudioPlayMapper
 import application.AudioPlayService
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CreateAudioPlayRequest,
   DeleteAudioPlayRequest,
-  GetAudioPlayRequest,
   GetAudioPlayLocationRequest,
-  AudioPlayLocationResource,
+  GetAudioPlayRequest,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
+  UploadAudioPlayCoverRequest,
 }
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.audioplay.{
@@ -195,6 +196,12 @@ private[aggregator] object AudioPlays:
         user: User,
         request: DeleteAudioPlayRequest,
     ): F[Either[ErrorResponse, Unit]] =
+      throw new UnsupportedOperationException()
+
+    override def uploadCover(
+        user: User,
+        request: UploadAudioPlayCoverRequest,
+    ): F[Either[ErrorResponse, AudioPlayResource]] =
       throw new UnsupportedOperationException()
 
     override def getLocation(

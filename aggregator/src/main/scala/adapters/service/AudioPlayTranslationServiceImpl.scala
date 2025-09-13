@@ -5,6 +5,7 @@ package adapters.service
 import adapters.service.errors.AudioPlayTranslationServiceErrorResponses as ErrorResponses
 import adapters.service.mappers.AudioPlayTranslationMapper
 import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
+import application.dto.audioplay.GetAudioPlayRequest
 import application.dto.audioplay.translation.{
   AudioPlayTranslationLocationResource,
   AudioPlayTranslationResource,
@@ -15,7 +16,6 @@ import application.dto.audioplay.translation.{
   ListAudioPlayTranslationsRequest,
   ListAudioPlayTranslationsResponse,
 }
-import application.dto.audioplay.{DeleteAudioPlayRequest, GetAudioPlayRequest}
 import application.errors.AudioPlayServiceError.AudioPlayNotFound
 import application.{
   AggregatorPermission,
@@ -43,8 +43,6 @@ import org.aulune.commons.types.Uuid
 import org.typelevel.log4cats.Logger.eitherTLogger
 import org.typelevel.log4cats.syntax.LoggerInterpolator
 import org.typelevel.log4cats.{Logger, LoggerFactory}
-
-import java.util.UUID
 
 
 /** [[AudioPlayTranslationService]] implementation. */

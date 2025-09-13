@@ -3,6 +3,7 @@ package storages
 
 
 import repositories.GenericRepository
+import storages.StorageError.AlreadyExists
 import types.NonEmptyString
 
 import fs2.Stream
@@ -20,6 +21,10 @@ trait GenericStorage[F[_]]:
   def contains(name: NonEmptyString): F[Boolean]
 
   /** Puts object given in stream to storage.
+   *
+   *  If object with given name already exists, [[AlreadyExists]] will be
+   *  thrown.
+   *
    *  @param stream stream which contains an object.
    *  @param name name to use for the object.
    *  @param contentType MIME type of object.
@@ -38,5 +43,6 @@ trait GenericStorage[F[_]]:
 
   /** Deletes object in storage if exists.
    *  @param name name of an object.
+   *  @note This method is idempotent.
    */
   def delete(name: NonEmptyString): F[Unit]

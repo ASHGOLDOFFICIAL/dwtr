@@ -2,31 +2,36 @@ package org.aulune.aggregator
 package adapters.s3
 
 
+import adapters.s3.CoverImageStorageImpl.{
+  DefaultContentType,
+  IfNoneMatchHeader,
+  NoSuchKey,
+  PreconditionFailed,
+}
 import domain.model.shared.ImageUri
 import domain.repositories.CoverImageStorage
 
 import cats.MonadThrow
-import cats.effect.std.UUIDGen
 import cats.effect.{Async, Sync}
 import cats.syntax.all.given
 import fs2.Stream
 import fs2.io.{readInputStream, toInputStreamResource}
 import io.minio.errors.ErrorResponseException
 import io.minio.{
-  BucketExistsArgs,
   GetObjectArgs,
+  MakeBucketArgs,
   MinioClient,
   PutObjectArgs,
   RemoveObjectArgs,
   StatObjectArgs,
 }
+import org.aulune.commons.storages.StorageError
 import org.aulune.commons.types.NonEmptyString
 import org.typelevel.log4cats.syntax.given
 import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import java.io.InputStream
 import java.net.URI
-import scala.util.{Failure, Success, Try}
 
 
 object CoverImageStorageImpl:
@@ -48,36 +53,40 @@ object CoverImageStorageImpl:
   ): F[CoverImageStorage[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
     for
-      exist <- checkIfBucketExists(client, bucketName)
       _ <- MonadThrow[F]
         .raiseWhen(partSize < MinPartSize || partSize > MaxPartSize)(
           new IllegalArgumentException())
         .onError(_ => error"Invalid part size is given.")
-      _ <- MonadThrow[F]
-        .raiseUnless(exist)(new IllegalStateException())
-        .onError(_ => error"Bucket $bucketName doesn't exists.")
+      _ <- createBucketIfNoneExists(client, bucketName)
       normalized =
         if publicUrl.endsWith("/") then publicUrl else publicUrl + "/"
     yield CoverImageStorageImpl(client, normalized, bucketName, partSize)
 
-  /** Checks if MinIO bucket exists.
+  /** Creates MinIO bucket if none exists.
    *  @param client MinIO client.
    *  @param bucket bucket name.
    *  @tparam F effect type.
-   *  @return `true` if bucket exists, otherwise `false`.
    */
-  private def checkIfBucketExists[F[_]: Sync](
+  private def createBucketIfNoneExists[F[_]: Sync](
       client: MinioClient,
       bucket: String,
-  ): F[Boolean] =
-    val bucketArgs = BucketExistsArgs.builder.bucket(bucket).build
-    Sync[F].blocking(client.bucketExists(bucketArgs))
+  ): F[Unit] =
+    val makeArgs = MakeBucketArgs.builder.bucket(bucket).build
+    Sync[F].blocking(client.makeBucket(makeArgs)).recover {
+      case e: ErrorResponseException
+           if e.errorResponse.code == "BucketAlreadyOwnedByYou" => ()
+    }
 
   /** Minimum allowed part size: 5MiB. */
   val MinPartSize: Int = 5 * 1024 * 1024
 
   /** Maximum allowed part size: 5GiB. */
   val MaxPartSize: Long = 5L * 1024 * 1024 * 1024
+
+  private val IfNoneMatchHeader = java.util.Map.of("If-None-Match", "*")
+  private val DefaultContentType = "application/octet-stream"
+  private val NoSuchKey = "NoSuchKey"
+  private val PreconditionFailed = "PreconditionFailed"
 
 end CoverImageStorageImpl
 
@@ -96,8 +105,6 @@ private final class CoverImageStorageImpl[F[_]: Async](
     partSize: Long,
 ) extends CoverImageStorage[F]:
 
-  private val defaultContentType = "application/octet-stream"
-
   override def contains(name: NonEmptyString): F[Boolean] =
     val args = StatObjectArgs.builder
       .bucket(bucketName)
@@ -105,13 +112,13 @@ private final class CoverImageStorageImpl[F[_]: Async](
       .build
 
     Sync[F]
-      .blocking(Try(client.statObject(args)))
-      .flatMap {
-        case Failure(e: ErrorResponseException)
-             if e.errorResponse.code == "NoSuchKey" => false.pure[F]
-        case Failure(e)     => MonadThrow[F].raiseError(e)
-        case Success(value) => true.pure[F]
+      .blocking(client.statObject(args))
+      .as(true)
+      .recover {
+        case e: ErrorResponseException if e.errorResponse.code == NoSuchKey =>
+          false
       }
+      .handleErrorWith(toInternalError)
   end contains
 
   override def put(
@@ -120,12 +127,22 @@ private final class CoverImageStorageImpl[F[_]: Async](
       contentType: Option[NonEmptyString],
   ): F[Unit] = toInputStreamResource(stream).use { is =>
     val args = PutObjectArgs.builder
-      .contentType(contentType.getOrElse(defaultContentType))
+      .contentType(contentType.getOrElse(DefaultContentType))
       .bucket(bucketName)
       .`object`(name)
       .stream(is, -1, partSize)
+      .headers(IfNoneMatchHeader)
       .build
-    Sync[F].blocking(client.putObject(args))
+
+    Sync[F]
+      .blocking(client.putObject(args))
+      .void
+      .handleErrorWith {
+        case e: ErrorResponseException
+             if e.errorResponse.code == PreconditionFailed =>
+          StorageError.AlreadyExists.raiseError
+        case e => StorageError.Internal(e).raiseError
+      }
   }
 
   override def get(name: NonEmptyString): F[Option[Stream[F, Byte]]] =
@@ -135,14 +152,13 @@ private final class CoverImageStorageImpl[F[_]: Async](
       .build
 
     Sync[F]
-      .blocking(Try(client.getObject(args)))
-      .flatMap {
-        case Failure(e: ErrorResponseException)
-             if e.errorResponse.code == "NoSuchKey" => None.pure[F]
-        case Failure(e)     => MonadThrow[F].raiseError[Option[InputStream]](e)
-        case Success(value) => value.some.pure[F]
+      .blocking(client.getObject(args))
+      .map(stream => convertStream(stream).some)
+      .recover {
+        case e: ErrorResponseException if e.errorResponse.code == NoSuchKey =>
+          None
       }
-      .map(_.map(convertStream))
+      .handleErrorWith(toInternalError)
   end get
 
   override def delete(name: NonEmptyString): F[Unit] =
@@ -150,16 +166,27 @@ private final class CoverImageStorageImpl[F[_]: Async](
       .bucket(bucketName)
       .`object`(name)
       .build
-    Sync[F].blocking(client.removeObject(args))
+    Sync[F]
+      .blocking(client.removeObject(args))
+      .handleErrorWith(toInternalError)
 
   override def issueURI(name: NonEmptyString): F[Option[ImageUri]] = contains(
-    name).map { exists =>
-    Option.when(exists)(
-      ImageUri.unsafe(URI.create(s"$publicUrl$bucketName/$name")))
-  }
+    name)
+    .map { exists =>
+      Option.when(exists)(
+        ImageUri.unsafe(URI.create(s"$publicUrl$bucketName/$name")))
+    }
+    .handleErrorWith(toInternalError)
 
   /** Converts [[InputStream]] to [[Stream]].
    *  @param is input stream to convert.
    */
   private def convertStream(is: InputStream) =
     readInputStream(is.pure[F], chunkSize = 100, closeAfterUse = true)
+
+  /** Packs all errors to [[StorageError.Internal]]
+   *  @param e error to pack.
+   *  @tparam A needed return type.
+   */
+  private def toInternalError[A](e: Throwable) =
+    StorageError.Internal(e).raiseError[F, A]
