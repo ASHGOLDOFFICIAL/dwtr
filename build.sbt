@@ -84,6 +84,7 @@ lazy val auth = (project in file("auth"))
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core"   % log4catsVersion,
       "com.nimbusds"   % "nimbus-jose-jwt" % nimbusJoseJwt,
+      http4sClient,
     ),
   )
 
@@ -106,13 +107,13 @@ lazy val aggregator = (project in file("aggregator"))
   .settings(
     name := "aggregator",
     idePackagePrefix := Some("org.aulune.aggregator"),
-    libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
+    libraryDependencies ++= tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core" % log4catsVersion,
       "co.fs2"        %% "fs2-core"      % fs2Version,
       minioDep,
-    ),
+    ) ++ testDeps :+ (http4sClient % Test),
   )
 
 
@@ -140,9 +141,10 @@ val testcontainersVersion = "0.43.0"
 
 resolvers += Resolver.sonatypeCentralSnapshots
 
+val http4sClient = "org.http4s" %% "http4s-ember-client" % http4sVersion
+
 
 val http4sDeps = Seq(
-  "org.http4s" %% "http4s-ember-client",
   "org.http4s" %% "http4s-ember-server",
   "org.http4s" %% "http4s-dsl",
   "org.http4s" %% "http4s-circe",

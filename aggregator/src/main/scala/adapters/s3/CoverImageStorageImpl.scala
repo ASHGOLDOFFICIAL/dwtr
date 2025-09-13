@@ -23,6 +23,7 @@ import io.minio.{
   MinioClient,
   PutObjectArgs,
   RemoveObjectArgs,
+  SetBucketPolicyArgs,
   StatObjectArgs,
 }
 import org.aulune.commons.storages.StorageError
@@ -58,6 +59,9 @@ object CoverImageStorageImpl:
           new IllegalArgumentException())
         .onError(_ => error"Invalid part size is given.")
       _ <- createBucketIfNoneExists(client, bucketName)
+        .onError(_ => error"Couldn't create bucket $bucketName.")
+      _ <- makeBucketPublic(client, bucketName)
+        .onError(_ => error"Couldn't make bucket $bucketName public.")
       normalized =
         if publicUrl.endsWith("/") then publicUrl else publicUrl + "/"
     yield CoverImageStorageImpl(client, normalized, bucketName, partSize)
@@ -71,11 +75,42 @@ object CoverImageStorageImpl:
       client: MinioClient,
       bucket: String,
   ): F[Unit] =
-    val makeArgs = MakeBucketArgs.builder.bucket(bucket).build
-    Sync[F].blocking(client.makeBucket(makeArgs)).recover {
+    val args = MakeBucketArgs.builder.bucket(bucket).build
+    Sync[F].blocking(client.makeBucket(args)).recover {
       case e: ErrorResponseException
-           if e.errorResponse.code == "BucketAlreadyOwnedByYou" => ()
+           if e.errorResponse.code == BucketAlreadyOwnedByYou => ()
     }
+
+  /** Sets bucket policy to public.
+   *  @param client MinIO client.
+   *  @param bucket bucket to make public.
+   *  @tparam F effect type.
+   */
+  private def makeBucketPublic[F[_]: Sync](
+      client: MinioClient,
+      bucket: String,
+  ): F[Unit] =
+    val args = SetBucketPolicyArgs.builder
+      .bucket(bucket)
+      .config(makePublicPolicy(bucket))
+      .build
+    Sync[F].blocking(client.setBucketPolicy(args))
+
+  private def makePublicPolicy(bucket: String) = s"""
+    |{
+    |  "Version": "2012-10-17",
+    |  "Statement": [
+    |    {
+    |      "Action": [ "s3:GetObject" ],
+    |      "Effect": "Allow",
+    |      "Principal": { "AWS": [ "*" ] },
+    |      "Resource": [
+    |        "arn:aws:s3:::$bucket/*"
+    |      ],
+    |      "Sid": ""
+    |    }
+    |  ]
+    |}""".stripMargin
 
   /** Minimum allowed part size: 5MiB. */
   val MinPartSize: Int = 5 * 1024 * 1024
@@ -87,6 +122,7 @@ object CoverImageStorageImpl:
   private val DefaultContentType = "application/octet-stream"
   private val NoSuchKey = "NoSuchKey"
   private val PreconditionFailed = "PreconditionFailed"
+  private val BucketAlreadyOwnedByYou = "BucketAlreadyOwnedByYou"
 
 end CoverImageStorageImpl
 

@@ -23,10 +23,11 @@ trait MinIOTestContainer extends AsyncFreeSpec with TestContainerForEach:
     password = secretKey,
   )
 
-  private type Init[A] = MinioClient => IO[A]
+  private type Init[A] = (MinioClient, String) => IO[A]
   private type TestCase[A] = A => IO[Assertion]
 
-  /** @param init function that returns a service given [[MinIOClient]].
+  /** @param init function that returns a service given [[MinIOClient]] and its
+   *    endpoint.
    *  @tparam A service type.
    *  @return function that returns [[Assertion]] from after performing actions
    *    with service of type [[A]].
@@ -45,7 +46,7 @@ trait MinIOTestContainer extends AsyncFreeSpec with TestContainerForEach:
           .build()
 
         for
-          service <- init(client)
+          service <- init(client, endpoint)
           result <- app(service)
         yield result
       }

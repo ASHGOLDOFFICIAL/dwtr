@@ -2,12 +2,19 @@ package org.aulune.aggregator
 package adapters.s3
 
 
+import domain.model.shared.ImageUri
+
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
+import cats.syntax.all.given
 import fs2.Stream
 import org.aulune.commons.storages.StorageError
 import org.aulune.commons.testing.MinIOTestContainer
 import org.aulune.commons.types.NonEmptyString
+import org.http4s.Method.HEAD
+import org.http4s.client.Client
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.{Request, Uri}
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.LoggerFactory
@@ -23,10 +30,10 @@ final class CoverImageStorageImplTest
 
   private given LoggerFactory[IO] = Slf4jFactory.create
 
-  private def stand = makeStand { client =>
+  private def stand = makeStand { (client, endpoint) =>
     CoverImageStorageImpl.build[IO](
       client = client,
-      publicUrl = "http://example.org/",
+      publicUrl = endpoint,
       bucketName = "objects",
       partSize = CoverImageStorageImpl.MinPartSize,
     )
@@ -100,6 +107,41 @@ final class CoverImageStorageImplTest
           _ <- storage.delete(name)
           result <- storage.get(name)
         yield result shouldBe None
+      }
+    }
+  }
+
+  "issueURI method " - {
+    val clientResource = EmberClientBuilder.default[IO].build
+
+    /** Makes HEAD request to given URI and returns status code. */
+    def makeHeadRequest(client: Client[IO], uri: ImageUri) =
+      val http4sUri = Uri
+        .fromString(uri.toString)
+        .getOrElse(fail("Invalid URI."))
+      client.run(Request[IO](HEAD, http4sUri)).use {
+        _.status.code.pure
+      }
+
+    "should " - {
+      "return a URI that points to existing resource" in stand { storage =>
+        clientResource
+          .use { client =>
+            for
+              _ <- storage.put(stream, name, None)
+              uriO <- storage.issueURI(name)
+              uri = uriO.getOrElse(fail("URI was expected."))
+              response <- makeHeadRequest(client, uri)
+            yield response shouldBe 200
+          }
+      }
+
+      "return nothing if objects doesn't exist" in stand { storage =>
+        clientResource
+          .use { client =>
+            for result <- storage.issueURI(name)
+            yield result shouldBe None
+          }
       }
     }
   }
