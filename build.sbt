@@ -58,6 +58,7 @@ lazy val commons = (project in file("commons")).settings(
   idePackagePrefix := Some("org.aulune.commons"),
   libraryDependencies ++= testDeps ++ tapirDeps ++ circeDeps ++ doobieDeps ++ Seq(
     "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersVersion,
+    "com.dimafeng" %% "testcontainers-scala-minio"      % testcontainersVersion,
     "com.dimafeng" %% "testcontainers-scala-scalatest"  % testcontainersVersion,
     "org.postgresql" % "postgresql" % postgresqlVersion,
     "org.scalamock" %% "scalamock"  % scalamockVersion,
@@ -66,6 +67,7 @@ lazy val commons = (project in file("commons")).settings(
     "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
     "org.typelevel" %% "cats-effect-testing-scalatest" % catsEffectTestingVersion,
     "co.fs2" %% "fs2-core" % fs2Version,
+    minioDep,
   ),
 )
 
@@ -108,8 +110,8 @@ lazy val aggregator = (project in file("aggregator"))
       "org.typelevel" %% "cats-core" % catsVersion withSources () withJavadoc (),
       "org.typelevel" %% "cats-effect" % catsEffectVersion withSources () withJavadoc (),
       "org.typelevel" %% "log4cats-core" % log4catsVersion,
+      "co.fs2"        %% "fs2-core"      % fs2Version,
       minioDep,
-      "co.fs2" %% "fs2-core" % fs2Version,
     ),
   )
 
