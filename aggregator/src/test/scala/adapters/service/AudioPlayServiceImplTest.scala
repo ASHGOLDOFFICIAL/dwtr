@@ -17,21 +17,26 @@ import application.dto.audioplay.{
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
+  UploadAudioPlayCoverRequest,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
+  CoverTooBig,
   InvalidAudioPlay,
+  InvalidCoverImage,
   NotSelfHosted,
 }
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
+import domain.model.shared.ImageUri
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 import domain.repositories.{AudioPlayRepository, CoverImageStorage}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
+import fs2.Stream
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
 import org.aulune.commons.service.auth.User
@@ -47,6 +52,11 @@ import org.aulune.commons.testing.ErrorAssertions.{
 import org.aulune.commons.testing.instances.UUIDGenInstances.makeFixedUuidGen
 import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.{NonEmptyString, Uuid}
+import org.aulune.commons.utils.imaging.{
+  ImageConversionError,
+  ImageConverter,
+  ImageFormat,
+}
 import org.scalamock.scalatest.AsyncMockFactory
 import org.scalatest.Assertion
 import org.scalatest.freespec.AsyncFreeSpec
@@ -54,6 +64,7 @@ import org.scalatest.matchers.should.Matchers
 import org.typelevel.log4cats.LoggerFactory
 import org.typelevel.log4cats.slf4j.Slf4jFactory
 
+import java.net.URI
 import java.util.UUID
 
 
@@ -71,6 +82,7 @@ final class AudioPlayServiceImplTest
   private val mockSeries = AudioPlaySeriesStubs.service[IO]
   private val mockPerson = Persons.service[IO]
   private val mockPermissions = mock[PermissionClientService[IO]]
+  private val mockConverter = mock[ImageConverter[IO]]
 
   private val uuid = UUID.fromString("00000000-0000-0000-0000-000000000001")
   private given SortableUUIDGen[IO] = makeFixedUuidGen(uuid)
@@ -91,12 +103,13 @@ final class AudioPlayServiceImplTest
       .build(
         AggregatorConfig.PaginationParams(2, 1),
         AggregatorConfig.SearchParams(2, 1),
-        AggregatorConfig.ImageLimits(5),
+        AggregatorConfig.ImageLimits(3),
         mockRepo,
         mockCoverStorage,
         mockSeries,
         mockPerson,
         mockPermissions,
+        mockConverter,
       )
       .flatMap(testCase)
   end stand
@@ -325,6 +338,82 @@ final class AudioPlayServiceImplTest
     }
   }
 
+  "uploadCover method " - {
+    val request = UploadAudioPlayCoverRequest(
+      name = audioPlay.id,
+      cover = IArray[Byte](1, 2, 3),
+    )
+    val name = NonEmptyString.unsafe(s"$uuid.png")
+    val pngMime = NonEmptyString.unsafe("image/png")
+    val uri = ImageUri.unsafe(URI.create("http://new.test.org/"))
+    val updated = audioPlay
+      .update(coverUrl = uri.some)
+      .getOrElse(throw new IllegalStateException())
+
+    "should " - {
+      "upload covers" in stand { service =>
+        val _ = mockHasPermission(Modify, true.asRight.pure)
+        val _ = mockGet(audioPlay.some.pure)
+
+        val _ = (mockConverter.convert _)
+          .expects(*, ImageFormat.PNG, None)
+          .onCall { (s, f, size) =>
+            s.compile.toVector.map(IArray.from(_).asRight[ImageConversionError])
+          }
+
+        val _ = (mockCoverStorage.put _)
+          .expects(*, name, pngMime.some)
+          .returning(().pure)
+        val _ = (mockCoverStorage.issueURI _)
+          .expects(name)
+          .returning(uri.some.pure)
+
+        val _ = (mockRepo.update _)
+          .expects(updated)
+          .returning(updated.pure)
+
+        for result <- service.uploadCover(user, request)
+        yield result shouldBe resource.copy(coverUri = uri.some).asRight
+      }
+
+      "result in AudioPlayNotFound if audio play is not found" in stand {
+        service =>
+          val _ = mockHasPermission(Modify, true.asRight.pure)
+          val _ = mockGet(None.pure)
+          val result = service.uploadCover(user, request)
+          assertDomainError(result)(AudioPlayNotFound)
+      }
+
+      "result in CoverTooBig if image size exceeds maximum allowed" in stand {
+        service =>
+          val bigRequest = request.copy(cover = IArray(1, 2, 3, 4, 5))
+          val _ = mockHasPermission(Modify, true.asRight.pure)
+          val _ = mockGet(audioPlay.some.pure)
+          val result = service.uploadCover(user, bigRequest)
+          assertDomainError(result)(CoverTooBig)
+      }
+
+      "result in InvalidCoverImage when given not an image" in stand {
+        service =>
+          val _ = mockHasPermission(Modify, true.asRight.pure)
+          val _ = mockGet(audioPlay.some.pure)
+
+          val _ = (mockConverter.convert _)
+            .expects(*, *, *)
+            .returning(ImageConversionError.UnknownFormat.asLeft.pure)
+
+          val result = service.uploadCover(user, request)
+          assertDomainError(result)(InvalidCoverImage)
+      }
+
+      "result in PermissionDenied for unauthorized users" in stand { service =>
+        val _ = mockHasPermission(Modify, false.asRight.pure)
+        val result = service.uploadCover(user, request)
+        assertErrorStatus(result)(PermissionDenied)
+      }
+    }
+  }
+
   "getLocation method " - {
     val request = GetAudioPlayLocationRequest(audioPlay.id)
 
@@ -362,8 +451,8 @@ final class AudioPlayServiceImplTest
 
       "result in PermissionDenied for unauthorized users" in stand { service =>
         val _ = mockHasPermission(SeeSelfHostedLocation, false.asRight.pure)
-        val delete = service.getLocation(user, request)
-        assertErrorStatus(delete)(PermissionDenied)
+        val result = service.getLocation(user, request)
+        assertErrorStatus(result)(PermissionDenied)
       }
     }
   }

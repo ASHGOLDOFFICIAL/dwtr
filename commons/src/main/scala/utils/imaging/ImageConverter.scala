@@ -15,27 +15,37 @@ import javax.imageio.ImageIO
 import scala.util.{Failure, Success, Try}
 
 
-/** Object with tools to covert images. */
-object ImageConverter:
+/** Converts images to different formats. */
+trait ImageConverter[F[_]]:
   /** Converts image received in given stream to a new format.
    *  @param stream stream with image.
    *  @param format desired format.
    *  @param size optional size (width, height) of image after conversion. If
    *    `None`, then current size will be used.
-   *  @tparam F effect type.
    *  @return converted image as an array of bytes, or error.
    */
-  def convert[F[_]: Async](
+  def convert(
       stream: Stream[F, Byte],
       format: ImageFormat,
       size: Option[(Int, Int)] = None,
-  ): F[Either[ImageConversionError, Array[Byte]]] = (for
-    originalImage <- EitherT(readImage(stream))
-    resized <- size match
-      case Some(dimensions) => EitherT(resizeImage(originalImage, dimensions))
-      case None => EitherT.pure[F, ImageConversionError](originalImage)
-    converted <- EitherT(writeImage(resized, format))
-  yield converted).value
+  ): F[Either[ImageConversionError, IArray[Byte]]]
+
+
+/** Object with tools to covert images. */
+object ImageConverter:
+  /** Default implementation of converter via awt and ImageIO.
+   *  @tparam F effect type.
+   */
+  def apply[F[_]: Async]: ImageConverter[F] =
+    (stream: Stream[F, Byte], format: ImageFormat, size: Option[(Int, Int)]) =>
+      (for
+        originalImage <- EitherT(readImage(stream))
+        resized <- size match
+          case Some(dimensions) =>
+            EitherT(resizeImage(originalImage, dimensions))
+          case None => EitherT.pure[F, ImageConversionError](originalImage)
+        converted <- EitherT(writeImage(resized, format))
+      yield IArray.unsafeFromArray(converted)).value
 
   /** Reads buffered image from stream.
    *  @param stream image stream.

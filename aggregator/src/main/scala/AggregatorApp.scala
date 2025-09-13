@@ -30,6 +30,7 @@ import org.aulune.commons.instances.UUIDv7Gen.uuidv7Instance
 import org.aulune.commons.service.auth.AuthenticationClientService
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.typeclasses.SortableUUIDGen
+import org.aulune.commons.utils.imaging.ImageConverter
 import org.typelevel.log4cats.LoggerFactory
 import sttp.tapir.server.ServerEndpoint
 
@@ -94,7 +95,8 @@ object AggregatorApp:
           coverStorage,
           seriesServ,
           personServ,
-          permissionServ)
+          permissionServ,
+          ImageConverter[F])
       audioEndpoints = new AudioPlaysController[F](
         config.pagination,
         audioServ,

@@ -51,7 +51,6 @@ import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
-import org.aulune.commons.storages.GenericStorage
 import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.aulune.commons.utils.imaging.ImageFormat.PNG
@@ -87,6 +86,7 @@ object AudioPlayServiceImpl:
       seriesService: AudioPlaySeriesService[F],
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
+      imageConverter: ImageConverter[F],
   ): F[AudioPlayService[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
     val paginationParserO = PaginationParamsParser
@@ -113,6 +113,7 @@ object AudioPlayServiceImpl:
       seriesService,
       personService,
       permissionService,
+      imageConverter,
     )
 
   private val PngExtension = NonEmptyString.unsafe("png")
@@ -132,6 +133,7 @@ private final class AudioPlayServiceImpl[F[
     seriesService: AudioPlaySeriesService[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
+    imageConverter: ImageConverter[F],
 ) extends AudioPlayService[F]:
 
   private val maximumImageSize = imageLimits.maxSize
@@ -259,26 +261,29 @@ private final class AudioPlayServiceImpl[F[
    *  @return URI of uploaded image.
    */
   private def uploadImage(
-      imageBytes: Array[Byte],
+      imageBytes: IArray[Byte],
   ): EitherT[F, ErrorResponse, URI] =
     for
       imageStream <- EitherT.cond(
         imageBytes.length <= maximumImageSize,
-        Stream.emits(imageBytes),
+        Stream.emits[F, Byte](imageBytes),
         ErrorResponses.coverTooBigImage(maximumImageSize))
-      convertF = ImageConverter.convert(imageStream, PNG)
-      image <- EitherT(convertF).leftMap {
+      convertF = imageConverter.convert(imageStream, PNG)
+      image <- EitherT(convertF).leftSemiflatMap {
         case ImageConversionError.UnknownFormat =>
-          ErrorResponses.invalidCoverImage
-        case _ => ErrorResponses.internal
+          ErrorResponses.invalidCoverImage.pure[F]
+        case e => MonadThrow[F].raiseError(e)
       }
       convertedStream = Stream.emits(image)
       objectId <- EitherT.liftF(UUIDGen.randomUUID[F])
-      name = NonEmptyString.unsafe(objectId.toString + PngExtension)
+      name = NonEmptyString.unsafe(s"$objectId.$PngExtension")
       _ <- EitherT
         .liftF(coverStorage.put(convertedStream, name, PngMimeType.some))
-      uri <- EitherT
-        .fromOptionF(coverStorage.issueURI(name), ErrorResponses.internal)
+      uri <- EitherT.liftF(coverStorage.issueURI(name)).semiflatMap {
+        case Some(value) => value.pure[F]
+        case None        => MonadThrow[F].raiseError(new IllegalStateException(
+            "Couldn't issue URI for just added object."))
+      }
     yield uri
 
   /** Populates audio play with resources retrieved from respective services.

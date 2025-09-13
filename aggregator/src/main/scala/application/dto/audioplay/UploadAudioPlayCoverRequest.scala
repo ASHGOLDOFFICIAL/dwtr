@@ -10,5 +10,5 @@ import java.util.UUID
  */
 final case class UploadAudioPlayCoverRequest(
     name: UUID,
-    cover: Array[Byte],
+    cover: IArray[Byte],
 )

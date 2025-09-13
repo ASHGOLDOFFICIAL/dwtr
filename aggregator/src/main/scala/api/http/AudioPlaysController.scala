@@ -155,7 +155,8 @@ final class AudioPlaysController[F[_]: Applicative](
     .summary("Uploads cover to given audio play.")
     .tag(tag)
     .serverLogic { user => (id, bytes) =>
-      val request = UploadAudioPlayCoverRequest(id, bytes)
+      val ibytes = IArray.unsafeFromArray(bytes)
+      val request = UploadAudioPlayCoverRequest(id, ibytes)
       for result <- service.uploadCover(user, request)
       yield result.leftMap(ErrorStatusCodeMapper.toApiResponse)
     }
