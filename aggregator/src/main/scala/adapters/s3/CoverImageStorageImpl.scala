@@ -2,25 +2,35 @@ package org.aulune.aggregator
 package adapters.s3
 
 
-import application.ObjectUploader
+import domain.model.shared.ImageUri
+import domain.repositories.CoverImageStorage
 
 import cats.MonadThrow
 import cats.effect.std.UUIDGen
 import cats.effect.{Async, Sync}
 import cats.syntax.all.given
 import fs2.Stream
-import fs2.io.toInputStreamResource
-import io.minio.{BucketExistsArgs, MinioClient, PutObjectArgs}
+import fs2.io.{readInputStream, toInputStreamResource}
+import io.minio.errors.ErrorResponseException
+import io.minio.{
+  BucketExistsArgs,
+  GetObjectArgs,
+  MinioClient,
+  PutObjectArgs,
+  RemoveObjectArgs,
+  StatObjectArgs,
+}
 import org.aulune.commons.types.NonEmptyString
 import org.typelevel.log4cats.syntax.given
 import org.typelevel.log4cats.{Logger, LoggerFactory}
 
 import java.io.InputStream
 import java.net.URI
+import scala.util.{Failure, Success, Try}
 
 
-object MinIOObjectUploader:
-  /** Builds MinIO file uploader.
+object CoverImageStorageImpl:
+  /** Builds cover image storage.
    *  @param client MinIO client.
    *  @param publicUrl MinIO endpoint to make URIs.
    *  @param bucketName name of bucket to use. Should already exist.
@@ -30,12 +40,12 @@ object MinIOObjectUploader:
    *  @throws IllegalArgumentException when given incorrect part size.
    *  @throws IllegalStateException if bucket doesn't exist.
    */
-  def build[F[_]: Async: UUIDGen: LoggerFactory](
+  def build[F[_]: Async: LoggerFactory](
       client: MinioClient,
       publicUrl: String,
       bucketName: String,
       partSize: Long,
-  ): F[ObjectUploader[F]] =
+  ): F[CoverImageStorage[F]] =
     given Logger[F] = LoggerFactory[F].getLogger
     for
       exist <- checkIfBucketExists(client, bucketName)
@@ -48,7 +58,7 @@ object MinIOObjectUploader:
         .onError(_ => error"Bucket $bucketName doesn't exists.")
       normalized =
         if publicUrl.endsWith("/") then publicUrl else publicUrl + "/"
-    yield MinIOObjectUploader(client, normalized, bucketName, partSize)
+    yield CoverImageStorageImpl(client, normalized, bucketName, partSize)
 
   /** Checks if MinIO bucket exists.
    *  @param client MinIO client.
@@ -69,7 +79,7 @@ object MinIOObjectUploader:
   /** Maximum allowed part size: 5GiB. */
   val MaxPartSize: Long = 5L * 1024 * 1024 * 1024
 
-end MinIOObjectUploader
+end CoverImageStorageImpl
 
 
 /** Object uploader implementation via MinIO.
@@ -79,47 +89,77 @@ end MinIOObjectUploader
  *  @param partSize part size for object.
  *  @tparam F effect type.
  */
-private final class MinIOObjectUploader[F[_]: Async: UUIDGen: LoggerFactory](
+private final class CoverImageStorageImpl[F[_]: Async](
     client: MinioClient,
     publicUrl: String,
     bucketName: String,
     partSize: Long,
-) extends ObjectUploader[F]:
+) extends CoverImageStorage[F]:
 
   private val defaultContentType = "application/octet-stream"
-  private given Logger[F] = LoggerFactory[F].getLogger
 
-  override def upload(
+  override def contains(name: NonEmptyString): F[Boolean] =
+    val args = StatObjectArgs.builder
+      .bucket(bucketName)
+      .`object`(name)
+      .build
+
+    Sync[F]
+      .blocking(Try(client.statObject(args)))
+      .flatMap {
+        case Failure(e: ErrorResponseException)
+             if e.errorResponse.code == "NoSuchKey" => false.pure[F]
+        case Failure(e)     => MonadThrow[F].raiseError(e)
+        case Success(value) => true.pure[F]
+      }
+  end contains
+
+  override def put(
       stream: Stream[F, Byte],
+      name: NonEmptyString,
       contentType: Option[NonEmptyString],
-      extension: Option[NonEmptyString] = None,
-  ): F[URI] =
-    for
-      id <- UUIDGen.randomUUID[F]
-      name = extension.map(ext => s"$id.$ext").getOrElse(id.toString)
-      _ <- toInputStreamResource(stream).use(uploadObject(_, name, contentType))
-    yield URI.create(s"$publicUrl$bucketName/$name")
-
-  /** Uploads object received from stream to MinIO.
-   *  @param is input stream with object.
-   *  @param name desired name.
-   *  @param contentType object content type.
-   */
-  private def uploadObject(
-      is: InputStream,
-      name: String,
-      contentType: Option[NonEmptyString],
-  ): F[Unit] =
-    val putArgs = PutObjectArgs.builder
+  ): F[Unit] = toInputStreamResource(stream).use { is =>
+    val args = PutObjectArgs.builder
       .contentType(contentType.getOrElse(defaultContentType))
       .bucket(bucketName)
       .`object`(name)
       .stream(is, -1, partSize)
       .build
-    for
-      _ <- info"Uploading object with name $name to bucker $bucketName."
-      _ <- Sync[F]
-        .blocking(client.putObject(putArgs))
-        .onError(e =>
-          Logger[F].error(e)("Error while uploading object to MinIO."))
-    yield ()
+    Sync[F].blocking(client.putObject(args))
+  }
+
+  override def get(name: NonEmptyString): F[Option[Stream[F, Byte]]] =
+    val args = GetObjectArgs.builder
+      .bucket(bucketName)
+      .`object`(name)
+      .build
+
+    Sync[F]
+      .blocking(Try(client.getObject(args)))
+      .flatMap {
+        case Failure(e: ErrorResponseException)
+             if e.errorResponse.code == "NoSuchKey" => None.pure[F]
+        case Failure(e)     => MonadThrow[F].raiseError[Option[InputStream]](e)
+        case Success(value) => value.some.pure[F]
+      }
+      .map(_.map(convertStream))
+  end get
+
+  override def delete(name: NonEmptyString): F[Unit] =
+    val args = RemoveObjectArgs.builder
+      .bucket(bucketName)
+      .`object`(name)
+      .build
+    Sync[F].blocking(client.removeObject(args))
+
+  override def issueURI(name: NonEmptyString): F[Option[ImageUri]] = contains(
+    name).map { exists =>
+    Option.when(exists)(
+      ImageUri.unsafe(URI.create(s"$publicUrl$bucketName/$name")))
+  }
+
+  /** Converts [[InputStream]] to [[Stream]].
+   *  @param is input stream to convert.
+   */
+  private def convertStream(is: InputStream) =
+    readInputStream(is.pure[F], chunkSize = 100, closeAfterUse = true)

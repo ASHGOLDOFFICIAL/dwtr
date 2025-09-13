@@ -30,19 +30,19 @@ import application.{
   AggregatorPermission,
   AudioPlaySeriesService,
   AudioPlayService,
-  ObjectUploader,
   PersonService,
 }
 import domain.errors.AudioPlayValidationError
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.shared.ImageUri
-import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.{AudioPlayCursor, given}
+import domain.repositories.{AudioPlayRepository, CoverImageStorage}
 
 import cats.MonadThrow
 import cats.data.EitherT
 import cats.effect.Async
+import cats.effect.std.UUIDGen
 import cats.syntax.all.given
 import fs2.Stream
 import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
@@ -51,6 +51,7 @@ import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
 import org.aulune.commons.service.permission.PermissionClientService.requirePermissionOrDeny
+import org.aulune.commons.storages.GenericStorage
 import org.aulune.commons.typeclasses.SortableUUIDGen
 import org.aulune.commons.types.{NonEmptyString, Uuid}
 import org.aulune.commons.utils.imaging.ImageFormat.PNG
@@ -82,7 +83,7 @@ object AudioPlayServiceImpl:
       search: AggregatorConfig.SearchParams,
       imageLimits: AggregatorConfig.ImageLimits,
       repo: AudioPlayRepository[F],
-      uploader: ObjectUploader[F],
+      coverStorage: CoverImageStorage[F],
       seriesService: AudioPlaySeriesService[F],
       personService: PersonService[F],
       permissionService: PermissionClientService[F],
@@ -108,7 +109,7 @@ object AudioPlayServiceImpl:
       searchParser,
       imageLimits,
       repo,
-      uploader,
+      coverStorage,
       seriesService,
       personService,
       permissionService,
@@ -127,7 +128,7 @@ private final class AudioPlayServiceImpl[F[
     searchParser: SearchParamsParser,
     imageLimits: AggregatorConfig.ImageLimits,
     repo: AudioPlayRepository[F],
-    uploader: ObjectUploader[F],
+    coverStorage: CoverImageStorage[F],
     seriesService: AudioPlaySeriesService[F],
     personService: PersonService[F],
     permissionService: PermissionClientService[F],
@@ -272,9 +273,12 @@ private final class AudioPlayServiceImpl[F[
         case _ => ErrorResponses.internal
       }
       convertedStream = Stream.emits(image)
-      uploadF = uploader
-        .upload(convertedStream, PngMimeType.some, PngExtension.some)
-      uri <- EitherT.liftF(uploadF)
+      objectId <- EitherT.liftF(UUIDGen.randomUUID[F])
+      name = NonEmptyString.unsafe(objectId.toString + PngExtension)
+      _ <- EitherT
+        .liftF(coverStorage.put(convertedStream, name, PngMimeType.some))
+      uri <- EitherT
+        .fromOptionF(coverStorage.issueURI(name), ErrorResponses.internal)
     yield uri
 
   /** Populates audio play with resources retrieved from respective services.

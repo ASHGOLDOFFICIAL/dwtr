@@ -17,4 +17,3 @@ enum ImageConversionError extends NoStackTrace:
 
   /** Width or height is not positive. */
   case InvalidSize
-

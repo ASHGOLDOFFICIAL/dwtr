@@ -5,9 +5,9 @@ import adapters.jdbc.postgres.{
   AudioPlayRepositoryImpl,
   AudioPlaySeriesRepositoryImpl,
   AudioPlayTranslationRepositoryImpl,
-  PersonRepositoryImpl
+  PersonRepositoryImpl,
 }
-import adapters.s3.MinIOObjectUploader
+import adapters.s3.CoverImageStorageImpl
 import adapters.service.{
   AudioPlaySeriesServiceImpl,
   AudioPlayServiceImpl,
@@ -78,7 +78,7 @@ object AggregatorApp:
         seriesServ,
         authServ).endpoints
 
-      coverStorage <- MinIOObjectUploader.build[F](
+      coverStorage <- CoverImageStorageImpl.build[F](
         minioClient,
         config.coverStorage.publicUrl,
         config.coverStorage.bucket,

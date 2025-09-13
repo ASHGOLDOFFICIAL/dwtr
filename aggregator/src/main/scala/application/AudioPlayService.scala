@@ -13,7 +13,7 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
-  UploadAudioPlayCoverRequest
+  UploadAudioPlayCoverRequest,
 }
 import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,

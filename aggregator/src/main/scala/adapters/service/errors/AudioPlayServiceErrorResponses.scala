@@ -9,7 +9,7 @@ import application.errors.AudioPlayServiceError.{
   InvalidAudioPlay,
   InvalidCoverImage,
   NotSelfHosted,
-  PersonNotFound
+  PersonNotFound,
 }
 import domain.errors.AudioPlayValidationError
 
