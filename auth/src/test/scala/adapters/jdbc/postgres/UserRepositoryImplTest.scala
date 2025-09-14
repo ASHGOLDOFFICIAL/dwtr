@@ -2,13 +2,14 @@ package org.aulune.auth
 package adapters.jdbc.postgres
 
 
+import domain.errors.UserConstraint
 import domain.model.{ExternalId, User, Username}
 
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
 }
 import org.aulune.commons.testing.PostgresTestContainer
@@ -23,6 +24,7 @@ final class UserRepositoryImplTest
     with AsyncIOSpec
     with Matchers
     with PostgresTestContainer:
+
   private def stand = makeStand(UserRepositoryImpl.build[IO])
 
   private val testUser = User.unsafe(
@@ -77,25 +79,47 @@ final class UserRepositoryImplTest
         for
           _ <- repo.persist(testUser)
           result <- repo.persist(updatedTestUser).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(ConstraintViolation(UserConstraint.UniqueId))
       }
 
-      "throw error when adding user with taken Google ID" in stand { repo =>
-        val another = User.unsafe(
-          id = Uuid.unsafe("eab28102-2ecd-4ff2-8572-58143fbe920d"),
-          username = Username.unsafe("another_username"),
-          hashedPassword = None,
-          googleId = testUser.googleId,
-        )
+      "throw error when adding user with taken username" in stand { repo =>
+        val another = testUser
+          .update(
+            id = Uuid.unsafe("eab28102-2ecd-4ff2-8572-58143fbe920d"),
+          )
+          .getOrElse(throw new IllegalStateException())
         for
           _ <- repo.persist(testUser)
           result <- repo.persist(another).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(
+          ConstraintViolation(UserConstraint.UniqueUsername))
+      }
+
+      "throw error when adding user with taken Google ID" in stand { repo =>
+        val another = testUser
+          .update(
+            id = Uuid.unsafe("eab28102-2ecd-4ff2-8572-58143fbe920d"),
+            username = Username.unsafe("another_username"),
+            googleId = testUser.googleId,
+          )
+          .getOrElse(throw new IllegalStateException())
+        for
+          _ <- repo.persist(testUser)
+          result <- repo.persist(another).attempt
+        yield result shouldBe Left(
+          ConstraintViolation(UserConstraint.UniqueGoogleId))
       }
     }
   }
 
   "update method" - {
+    val another = User.unsafe(
+      id = Uuid.unsafe("98d69db3-3975-4431-8979-4b39dc9c01f7"),
+      username = Username.unsafe("another_username"),
+      hashedPassword = None,
+      googleId = None,
+    )
+
     "should " - {
       "update users" in stand { repo =>
         for
@@ -107,6 +131,32 @@ final class UserRepositoryImplTest
       "throw error for non-existent users" in stand { repo =>
         for updated <- repo.update(testUser).attempt
         yield updated shouldBe Left(FailedPrecondition)
+      }
+
+      "throw error when updating user with taken username" in stand { repo =>
+        val updated = another
+          .update(username = testUser.username)
+          .getOrElse(throw new IllegalStateException())
+
+        for
+          _ <- repo.persist(testUser)
+          _ <- repo.persist(another)
+          result <- repo.update(updated).attempt
+        yield result shouldBe Left(
+          ConstraintViolation(UserConstraint.UniqueUsername))
+      }
+
+      "throw error when updating user with taken Google ID" in stand { repo =>
+        val updated = another
+          .update(googleId = testUser.googleId)
+          .getOrElse(throw new IllegalStateException())
+
+        for
+          _ <- repo.persist(testUser)
+          _ <- repo.persist(another)
+          result <- repo.update(updated).attempt
+        yield result shouldBe Left(
+          ConstraintViolation(UserConstraint.UniqueGoogleId))
       }
 
       "be idempotent" in stand { repo =>

@@ -6,8 +6,16 @@ import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
 import domain.errors.TranslationConstraint
 import domain.model.audioplay.AudioPlay
-import domain.model.audioplay.translation.{AudioPlayTranslation, AudioPlayTranslationType}
-import domain.model.shared.{ExternalResource, Language, SelfHostedLocation, TranslatedTitle}
+import domain.model.audioplay.translation.{
+  AudioPlayTranslation,
+  AudioPlayTranslationType,
+}
+import domain.model.shared.{
+  ExternalResource,
+  Language,
+  SelfHostedLocation,
+  TranslatedTitle,
+}
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
@@ -18,7 +26,12 @@ import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
 import doobie.syntax.all.given
 import org.aulune.aggregator.adapters.jdbc.postgres.AudioPlayTranslationRepositoryImpl.handleConstraintViolation
-import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{checkIfPositive, checkIfUpdated, makeConstraintViolationConverter, toInternalError}
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfPositive,
+  checkIfUpdated,
+  makeConstraintViolationConverter,
+  toInternalError,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.types.Uuid
 
