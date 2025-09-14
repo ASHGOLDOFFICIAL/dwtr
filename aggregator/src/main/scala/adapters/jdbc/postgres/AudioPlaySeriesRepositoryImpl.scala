@@ -44,11 +44,11 @@ object AudioPlaySeriesRepositoryImpl:
     |CREATE TABLE IF NOT EXISTS audio_play_series (
     |  id   UUID         PRIMARY KEY,
     |  name VARCHAR(255) NOT NULL,
-    |  CONSTRAINT unique_id UNIQUE (id)
+    |  CONSTRAINT audio_play_series_unique_id UNIQUE (id)
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
-    "unique_id" -> AudioPlaySeriesConstraint.UniqueId,
+    "audio_play_series_unique_id" -> AudioPlaySeriesConstraint.UniqueId,
   )
 
   /** Converts constraint violations. */

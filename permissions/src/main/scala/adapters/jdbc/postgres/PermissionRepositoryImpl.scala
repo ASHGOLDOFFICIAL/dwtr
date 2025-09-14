@@ -52,7 +52,7 @@ object PermissionRepositoryImpl:
     |  name         VARCHAR(1024) NOT NULL,
     |  description  TEXT          NOT NULL,
     |  reference_id SERIAL        NOT NULL UNIQUE,
-    |  CONSTRAINT unique_id PRIMARY KEY (name, namespace)
+    |  CONSTRAINT permissions_unique_id PRIMARY KEY (name, namespace)
     |)""".stripMargin.update.run
 
   private val createUserPermissionsTable = sql"""
@@ -65,7 +65,7 @@ object PermissionRepositoryImpl:
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
-    "unique_id" -> PermissionConstraint.UniqueId,
+    "permissions_unique_id" -> PermissionConstraint.UniqueId,
   )
 
   /** Converts constraint violations. */

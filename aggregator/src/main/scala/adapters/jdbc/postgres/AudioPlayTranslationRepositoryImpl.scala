@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
+import adapters.jdbc.postgres.AudioPlayTranslationRepositoryImpl.handleConstraintViolation
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
 import domain.errors.TranslationConstraint
@@ -25,7 +26,6 @@ import cats.syntax.all.given
 import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
 import doobie.syntax.all.given
-import org.aulune.aggregator.adapters.jdbc.postgres.AudioPlayTranslationRepositoryImpl.handleConstraintViolation
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfPositive,
   checkIfUpdated,
@@ -49,7 +49,7 @@ object AudioPlayTranslationRepositoryImpl:
     yield AudioPlayTranslationRepositoryImpl[F](transactor)
 
   private val createTranslationsTable = sql"""
-    |CREATE TABLE IF NOT EXISTS translations (
+    |CREATE TABLE IF NOT EXISTS audio_play_translations (
     |  original_id   UUID    NOT NULL,
     |  id            UUID    NOT NULL PRIMARY KEY,
     |  title         TEXT    NOT NULL,
@@ -57,11 +57,11 @@ object AudioPlayTranslationRepositoryImpl:
     |  language      TEXT    NOT NULL,
     |  self_host_uri TEXT,
     |  resources     JSONB   NOT NULL,
-    |  CONSTRAINT unique_id UNIQUE (id)
+    |  CONSTRAINT audio_play_translations_unique_id UNIQUE (id)
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
-    "unique_id" -> TranslationConstraint.UniqueId,
+    "audio_play_translations_unique_id" -> TranslationConstraint.UniqueId,
   )
 
   /** Converts constraint violations. */
@@ -79,7 +79,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def contains(id: Uuid[AudioPlayTranslation]): F[Boolean] = sql"""
     |SELECT EXISTS (
-    |  SELECT 1 FROM translations
+    |  SELECT 1 FROM audio_play_translations
     |  WHERE id = $id
     |)""".stripMargin
     .query[Boolean]
@@ -90,7 +90,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
   override def persist(
       elem: AudioPlayTranslation,
   ): F[AudioPlayTranslation] = sql"""
-    |INSERT INTO translations (
+    |INSERT INTO audio_play_translations (
     |  original_id, id,
     |  title, type, language,
     |  self_host_uri, resources
@@ -119,7 +119,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
   override def update(
       elem: AudioPlayTranslation,
   ): F[AudioPlayTranslation] = sql"""
-      |UPDATE translations
+      |UPDATE audio_play_translations
       |SET original_id   = ${elem.originalId},
       |    title         = ${elem.title},
       |    type          = ${elem.translationType},
@@ -136,9 +136,10 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def delete(
       id: Uuid[AudioPlayTranslation],
-  ): F[Unit] = sql"DELETE FROM translations WHERE id = $id".update.run.void
-    .transact(transactor)
-    .handleErrorWith(toInternalError)
+  ): F[Unit] =
+    sql"DELETE FROM audio_play_translations WHERE id = $id".update.run.void
+      .transact(transactor)
+      .handleErrorWith(toInternalError)
 
   override def list(
       cursor: Option[AudioPlayTranslationCursor],
@@ -172,7 +173,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     |  original_id, id,
     |  title, type, language,
     |  self_host_uri, resources
-    |FROM translations""".stripMargin
+    |FROM audio_play_translations""".stripMargin
 
   /** Makes translation from given data. */
   private def toTranslation(
