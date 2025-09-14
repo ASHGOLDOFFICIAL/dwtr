@@ -2,26 +2,22 @@ package org.aulune.auth
 package adapters.jdbc.postgres
 
 
-import UserMetas.given
+import adapters.jdbc.postgres.UserMetas.given
 import domain.model.{ExternalId, User, Username}
 import domain.repositories.UserRepository
 
-import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
+import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
-import doobie.postgres.sqlstate
 import doobie.syntax.all.given
-import doobie.{ConnectionIO, Transactor}
-import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
-import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfUpdated,
+  toAlreadyExists,
+  toInternalError,
 }
+import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.types.Uuid
-
-import java.sql.SQLException
 
 
 /** [[UserRepository]] implementation via PostgreSQL. */
@@ -43,17 +39,19 @@ object UserRepositoryImpl:
     |  password  TEXT,
     |  google_id TEXT UNIQUE
     |)""".stripMargin.update.run
+end UserRepositoryImpl
 
 
 private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     transactor: Transactor[F],
 ) extends UserRepository[F]:
+
   override def contains(id: Uuid[User]): F[Boolean] =
     sql"SELECT EXISTS (SELECT 1 FROM users WHERE id = $id)"
       .query[Boolean]
       .unique
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def persist(elem: User): F[User] = sql"""
       |INSERT INTO users (id, username, password, google_id)
@@ -65,7 +63,8 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[User]): F[Option[User]] = sql"""
       |SELECT id, username, password, google_id
@@ -75,34 +74,26 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .map(toUser)
     .option
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
-  override def update(elem: User): F[User] =
-    val updateQuery = sql"""
+  override def update(elem: User): F[User] = sql"""
       |UPDATE users
       |SET username  = ${elem.username},
       |    password  = ${elem.hashedPassword},
       |    google_id = ${elem.googleId}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
-
-    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
-
-    val transaction =
-      for
-        rows <- updateQuery
-        _ <- checkIfAny(rows)
-      yield elem
-
-    transaction.transact(transactor).handleErrorWith(toRepositoryError)
-  end update
+    .flatMap(checkIfUpdated)
+    .as(elem)
+    .transact(transactor)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[User]): F[Unit] =
     sql"DELETE FROM users WHERE id = $id".update.run
       .transact(transactor)
       .void
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def getByUsername(username: Username): F[Option[User]] = sql"""
     |SELECT id, username, password, google_id
@@ -112,7 +103,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .map(toUser)
     .option
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   override def getByGoogleId(id: String): F[Option[User]] = sql"""
       |SELECT id, username, password, google_id
@@ -122,7 +113,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .map(toUser)
     .option
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   private type SelectResult = (
       Uuid[User],
@@ -142,12 +133,3 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     username = username,
     hashedPassword = password,
     googleId = googleId)
-
-  /** Converts caught errors to [[RepositoryError]]. */
-  private def toRepositoryError[A](err: Throwable) =
-    println(err)
-    err match
-      case e: RepositoryError => e.raiseError[F, A]
-      case e: SQLException    => e.getSQLState match
-          case sqlstate.class23.UNIQUE_VIOLATION.value =>
-            AlreadyExists.raiseError[F, A]
