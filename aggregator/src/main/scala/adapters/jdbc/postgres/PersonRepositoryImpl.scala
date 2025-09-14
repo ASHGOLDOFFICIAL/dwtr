@@ -3,19 +3,22 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.metas.PersonMetas.given
+import domain.errors.PersonConstraint
 import domain.model.person.{FullName, Person}
 import domain.repositories.PersonRepository
 
+import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
 import doobie.syntax.all.given
+import org.aulune.aggregator.adapters.jdbc.postgres.PersonRepositoryImpl.handleConstraintViolation
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfPositive,
   checkIfUpdated,
-  toAlreadyExists,
+  makeConstraintViolationConverter,
   toInternalError,
 }
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
@@ -41,8 +44,21 @@ object PersonRepositoryImpl:
   private val createPersonTable = sql"""
     |CREATE TABLE IF NOT EXISTS persons (
     |  id   UUID         PRIMARY KEY,
-    |  name VARCHAR(255) NOT NULL
+    |  name VARCHAR(255) NOT NULL,
+    |  CONSTRAINT unique_id UNIQUE (id)
     |)""".stripMargin.update.run
+
+  private val constraintMap = Map(
+    "unique_id" -> PersonConstraint.UniqueId,
+  )
+
+  /** Converts constraint violations. */
+  private def handleConstraintViolation[F[_]: MonadThrow, A] =
+    makeConstraintViolationConverter[F, A, PersonConstraint](
+      constraintMap,
+    )
+
+end PersonRepositoryImpl
 
 
 private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
@@ -61,7 +77,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       |VALUES (${elem.id}, ${elem.name})""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[Person]): F[Option[Person]] =
@@ -81,7 +97,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
     .flatMap(checkIfUpdated)
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[Person]): F[Unit] =

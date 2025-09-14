@@ -3,6 +3,7 @@ package adapters.jdbc.postgres
 
 
 import adapters.service.Persons
+import domain.errors.PersonConstraint
 import domain.model.person.{FullName, Person}
 import domain.repositories.PersonRepository
 
@@ -11,7 +12,7 @@ import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
   InvalidArgument,
 }
@@ -80,7 +81,8 @@ final class PersonRepositoryImplTest
         for
           _ <- repo.persist(person)
           result <- repo.persist(updatedPerson).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(
+          ConstraintViolation(PersonConstraint.UniqueId))
       }
     }
   }
