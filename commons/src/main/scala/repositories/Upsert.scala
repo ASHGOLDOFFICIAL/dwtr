@@ -1,6 +1,8 @@
 package org.aulune.commons
 package repositories
 
+import repositories.RepositoryError.ConstraintViolation
+
 
 /** Upsert operation for repository.
  *
@@ -10,6 +12,9 @@ package repositories
 trait Upsert[F[_], E]:
   /** Persist element in repository if it is not persisted already, otherwise
    *  updates it.
+   *
+   *  [[ConstraintViolation]] will be returned on any conflict.
+   *
    *  @param elem element to persist.
    *  @return element if success, otherwise error.
    */
