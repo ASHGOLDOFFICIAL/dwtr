@@ -10,6 +10,7 @@ import application.errors.AuthenticationServiceError.{
   InvalidUser,
   UserAlreadyExists,
   UserNotFound,
+  UsernameAlreadyTaken,
 }
 import domain.errors.UserValidationError
 
@@ -108,6 +109,17 @@ object AuthenticationServiceErrorResponses:
     details = ErrorDetails(
       info = ErrorInfo(
         reason = UserAlreadyExists,
+        domain = authDomain,
+      ).some,
+    ),
+  )
+
+  val usernameTaken: ErrorResponse = ErrorResponse(
+    status = AlreadyExists,
+    message = "Account with given username already exists.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = UsernameAlreadyTaken,
         domain = authDomain,
       ).some,
     ),

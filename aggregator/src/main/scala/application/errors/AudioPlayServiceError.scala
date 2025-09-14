@@ -24,6 +24,12 @@ enum AudioPlayServiceError(val reason: String) extends ErrorReason(reason):
   /** Audio play is not self-hosted. */
   case NotSelfHosted extends AudioPlayServiceError("NOT_SELF_HOSTED")
 
+  /** Combination of series, season and series number is already taken by
+   *  another audio play.
+   */
+  case DuplicateSeriesInfo
+      extends AudioPlayServiceError("DUPLICATE_SERIES_INFO")
+
   /** Given audio play is not valid audio play. */
   case InvalidAudioPlay extends AudioPlayServiceError("INVALID_AUDIO_PLAY")
 

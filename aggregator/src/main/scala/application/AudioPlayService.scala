@@ -19,6 +19,7 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   CoverTooBig,
+  DuplicateSeriesInfo,
   InvalidAudioPlay,
   InvalidCoverImage,
   NotSelfHosted,
@@ -65,6 +66,8 @@ trait AudioPlayService[F[_]]:
    *  Domain errors:
    *    - [[InvalidAudioPlay]] will be returned when trying to create invalid
    *      audio play.
+   *    - [[DuplicateSeriesInfo]] will be returned when adding audio play with
+   *      already used series info.
    *    - [[AudioPlaySeriesNotFound]] will be returned when trying to create
    *      audio play with ID of non-existent series.
    *

@@ -13,7 +13,6 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
   ConstraintViolation,
   FailedPrecondition,
   InvalidArgument,

@@ -9,8 +9,6 @@ enum RepositoryError extends NoStackTrace:
   /** The client specified an invalid argument. */
   case InvalidArgument
 
-  case AlreadyExists
-
   /** Client attempted to create or update an entity that violates some unique
    *  constraint.
    *  @param constraint violated constraint.

@@ -6,6 +6,7 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   CoverTooBig,
+  DuplicateSeriesInfo,
   InvalidAudioPlay,
   InvalidCoverImage,
   NotSelfHosted,
@@ -77,6 +78,18 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
     details = ErrorDetails(
       info = ErrorInfo(
         reason = InvalidCoverImage,
+        domain = domain,
+      ).some,
+    ),
+  )
+
+  val duplicateSeriesInfo: ErrorResponse = ErrorResponse(
+    status = InvalidArgument,
+    message = "Combination of series, season and series number " +
+      "is already taken by another audio play.",
+    details = ErrorDetails(
+      info = ErrorInfo(
+        reason = DuplicateSeriesInfo,
         domain = domain,
       ).some,
     ),

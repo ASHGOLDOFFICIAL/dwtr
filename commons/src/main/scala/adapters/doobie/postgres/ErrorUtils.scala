@@ -6,7 +6,6 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate.class23.UNIQUE_VIOLATION
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
   ConstraintViolation,
   FailedPrecondition,
   Internal,
@@ -54,13 +53,6 @@ object ErrorUtils:
       map.get(constraint) match
         case Some(value) => ConstraintViolation[C](value).raiseError[F, A]
         case None        => e.raiseError[F, A]
-
-  /** Converts unique violation exceptions to [[AlreadyExists]].
-   *  @tparam A needed return type.
-   */
-  def toAlreadyExists[F[_]: MonadThrow, A]: PartialFunction[Throwable, F[A]] =
-    case e: SQLException if e.getSQLState == UNIQUE_VIOLATION.value =>
-      AlreadyExists.raiseError
 
   /** Packs all errors except [[RepositoryError]]s inside [[Internal]].
    *  @param e error to pack.

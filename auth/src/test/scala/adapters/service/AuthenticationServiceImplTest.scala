@@ -19,8 +19,9 @@ import application.errors.AuthenticationServiceError.{
   InvalidOAuthCode,
   UserAlreadyExists,
   UserNotFound,
+  UsernameAlreadyTaken,
 }
-import domain.errors.OAuthError
+import domain.errors.{OAuthError, UserConstraint}
 import domain.model.{
   AuthorizationCode,
   ExternalId,
@@ -297,13 +298,24 @@ final class AuthenticationServiceImplTest
           assertDomainError(register)(UserAlreadyExists)
       }
 
-      "result in UserAlreadyExists if user's already persisted" in stand {
+      "result in UsernameAlreadyTaken if user's already persisted" in stand {
         service =>
           val _ =
             mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
-          val _ = mockPersist(IO.raiseError(RepositoryError.AlreadyExists))
+          val _ = mockPersist(IO.raiseError(
+            RepositoryError.ConstraintViolation(UserConstraint.UniqueGoogleId)))
           val register = service.register(createUserRequest)
           assertDomainError(register)(UserAlreadyExists)
+      }
+
+      "result in UserAlreadyExists if username's already taken" in stand {
+        service =>
+          val _ =
+            mockOAuthAuthenticate(OAuthError.NotRegistered(oid).asLeft.pure)
+          val _ = mockPersist(IO.raiseError(
+            RepositoryError.ConstraintViolation(UserConstraint.UniqueUsername)))
+          val register = service.register(createUserRequest)
+          assertDomainError(register)(UsernameAlreadyTaken)
       }
 
       "handle exceptions from getId gracefully" in stand { service =>
