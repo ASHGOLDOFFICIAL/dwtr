@@ -23,25 +23,21 @@ import domain.model.shared.{
 import domain.repositories.AudioPlayRepository
 import domain.repositories.AudioPlayRepository.AudioPlayCursor
 
-import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
-import doobie.postgres.sqlstate
+import doobie.Transactor
 import doobie.syntax.all.given
-import doobie.{ConnectionIO, Transactor}
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfPositive,
+  checkIfUpdated,
+  toAlreadyExists,
+  toInternalError,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
   nonEmptyStringMeta,
   uuidMeta,
 }
-import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-  InvalidArgument,
-}
 import org.aulune.commons.types.{NonEmptyString, Uuid}
-
-import java.sql.SQLException
 
 
 /** [[AudioPlayRepository]] implementation for PostgreSQL. */
@@ -82,7 +78,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .query[Boolean]
       .unique
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def persist(elem: AudioPlay): F[AudioPlay] = sql"""
       |INSERT INTO audio_plays (
@@ -99,7 +95,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[AudioPlay]): F[Option[AudioPlay]] =
     val getAudioPlays = selectBase ++ sql"WHERE ap.id = $id"
@@ -108,10 +105,9 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toAudioPlay)
       .option
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
-  override def update(elem: AudioPlay): F[AudioPlay] =
-    val updateAudioPlay = sql"""
+  override def update(elem: AudioPlay): F[AudioPlay] = sql"""
       |UPDATE audio_plays
       |SET title         = ${elem.title},
       |    synopsis      = ${elem.synopsis},
@@ -126,24 +122,17 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |    resources     = ${elem.externalResources}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
-
-    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
-
-    val transaction =
-      for
-        rows <- updateAudioPlay
-        _ <- checkIfAny(rows)
-      yield elem
-
-    transaction.transact(transactor).handleErrorWith(toRepositoryError)
-  end update
+    .flatMap(checkIfUpdated)
+    .as(elem)
+    .transact(transactor)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[AudioPlay]): F[Unit] =
     sql"DELETE FROM audio_plays WHERE id = $id".update.run
       .transact(transactor)
       .void
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def list(
       cursor: Option[AudioPlayCursor],
@@ -154,19 +143,16 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       case Some(t) => selectBase ++ fr"WHERE ap.id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
-    val query = full.stripMargin
+    checkIfPositive(count) >> full.stripMargin
       .query[SelectResult]
       .map(toAudioPlay)
       .to[List]
-
-    (for
-      _ <- MonadThrow[F].raiseWhen(count <= 0)(InvalidArgument)
-      result <- query.transact(transactor)
-    yield result).handleErrorWith(toRepositoryError)
+      .transact(transactor)
+      .handleErrorWith(toInternalError)
   end list
 
   override def search(query: NonEmptyString, limit: Int): F[List[AudioPlay]] =
-    val select = (selectBase ++ fr0"""
+    checkIfPositive(limit) >> (selectBase ++ fr0"""
       |WHERE TO_TSVECTOR(ap.title) @@ PLAINTO_TSQUERY($query)
       |ORDER BY TS_RANK(TO_TSVECTOR(ap.title), PLAINTO_TSQUERY($query)) DESC
       |LIMIT $limit
@@ -174,12 +160,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       .query[SelectResult]
       .map(toAudioPlay)
       .to[List]
-
-    (for
-      _ <- MonadThrow[F].raiseWhen(limit <= 0)(InvalidArgument)
-      result <- select.transact(transactor)
-    yield result).handleErrorWith(toRepositoryError)
-  end search
+      .transact(transactor)
+      .handleErrorWith(toInternalError)
 
   private type SelectResult = (
       Uuid[AudioPlay],
@@ -240,10 +222,3 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     selfHostedLocation = selfHostLocation,
     externalResources = resources,
   )
-
-  /** Converts caught errors to [[RepositoryError]]. */
-  private def toRepositoryError[A](err: Throwable) = err match
-    case e: RepositoryError => e.raiseError[F, A]
-    case e: SQLException    => e.getSQLState match
-        case sqlstate.class23.UNIQUE_VIOLATION.value =>
-          AlreadyExists.raiseError[F, A]

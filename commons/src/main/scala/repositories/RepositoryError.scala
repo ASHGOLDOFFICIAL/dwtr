@@ -22,5 +22,6 @@ enum RepositoryError extends NoStackTrace:
 
   /** Internal errors. This means that some invariants expected by the
    *  underlying system have been broken.
+   *  @param cause cause of internal error.
    */
-  case Internal
+  case Internal(cause: Throwable)

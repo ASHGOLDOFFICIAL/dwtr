@@ -6,28 +6,24 @@ import adapters.jdbc.postgres.metas.PersonMetas.given
 import domain.model.person.{FullName, Person}
 import domain.repositories.PersonRepository
 
-import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
+import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
-import doobie.postgres.sqlstate
 import doobie.syntax.all.given
-import doobie.{ConnectionIO, Transactor}
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfPositive,
+  checkIfUpdated,
+  toAlreadyExists,
+  toInternalError,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
   nonEmptyStringMeta,
   uuidMeta,
   uuidsMeta,
 }
-import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-  InvalidArgument,
-}
 import org.aulune.commons.types.{NonEmptyString, Uuid}
-
-import java.sql.SQLException
 
 
 /** [[PersonRepository]] implementation for PostgreSQL. */
@@ -58,14 +54,15 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .query[Boolean]
       .unique
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def persist(elem: Person): F[Person] = sql"""
       |INSERT INTO persons (id, name)
       |VALUES (${elem.id}, ${elem.name})""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[Person]): F[Option[Person]] =
     val query = selectBase ++ sql"WHERE id = $id"
@@ -74,30 +71,24 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toPerson)
       .option
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
-  override def update(elem: Person): F[Person] =
-    val query = sql"""
+  override def update(elem: Person): F[Person] = sql"""
       |UPDATE persons
       |SET name = ${elem.name}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
-
-    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
-
-    query
-      .flatMap(rows => checkIfAny(rows))
-      .as(elem)
-      .transact(transactor)
-      .handleErrorWith(toRepositoryError)
-  end update
+    .flatMap(checkIfUpdated)
+    .as(elem)
+    .transact(transactor)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[Person]): F[Unit] =
     sql"DELETE FROM persons WHERE id = $id".update.run
       .transact(transactor)
       .void
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def batchGet(ids: NonEmptyList[Uuid[Person]]): F[List[Person]] =
     sql"""
@@ -110,7 +101,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toPerson)
       .to[List]
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def list(
       cursor: Option[PersonRepository.Cursor],
@@ -121,19 +112,16 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       case Some(t) => selectBase ++ fr"WHERE id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
-    val query = full.stripMargin
+    checkIfPositive(count) >> full.stripMargin
       .query[SelectType]
       .map(toPerson)
       .to[List]
-
-    (for
-      _ <- MonadThrow[F].raiseWhen(count <= 0)(InvalidArgument)
-      result <- query.transact(transactor)
-    yield result).handleErrorWith(toRepositoryError)
+      .transact(transactor)
+      .handleErrorWith(toInternalError)
   end list
 
   override def search(query: NonEmptyString, limit: Int): F[List[Person]] =
-    val select = (selectBase ++ fr0"""
+    checkIfPositive(limit) >> (selectBase ++ fr0"""
       |WHERE TO_TSVECTOR(name) @@ PLAINTO_TSQUERY($query)
       |ORDER BY TS_RANK(TO_TSVECTOR(name), PLAINTO_TSQUERY($query)) DESC
       |LIMIT $limit
@@ -141,12 +129,8 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .query[SelectType]
       .map(toPerson)
       .to[List]
-
-    (for
-      _ <- MonadThrow[F].raiseWhen(limit <= 0)(InvalidArgument)
-      result <- select.transact(transactor)
-    yield result).handleErrorWith(toRepositoryError)
-  end search
+      .transact(transactor)
+      .handleErrorWith(toInternalError)
 
   private type SelectType = (Uuid[Person], FullName)
 
@@ -155,10 +139,3 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
   /** Makes person from given data. */
   private def toPerson(uuid: Uuid[Person], name: FullName): Person =
     Person.unsafe(id = uuid, name = name)
-
-  /** Converts caught errors to [[RepositoryError]]. */
-  private def toRepositoryError[A](err: Throwable) = err match
-    case e: RepositoryError => e.raiseError[F, A]
-    case e: SQLException    => e.getSQLState match
-        case sqlstate.class23.UNIQUE_VIOLATION.value =>
-          AlreadyExists.raiseError[F, A]
