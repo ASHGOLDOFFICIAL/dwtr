@@ -69,13 +69,14 @@ object AudioPlayRepositoryImpl:
     |  cover_url     TEXT,
     |  self_host_uri TEXT,
     |  resources     JSONB        NOT NULL,
-    |  CONSTRAINT unique_id UNIQUE (id),
-    |  CONSTRAINT unique_series_info UNIQUE (series_id, series_season, series_number)
+    |  CONSTRAINT audio_plays_unique_id UNIQUE (id),
+    |  CONSTRAINT audio_plays_unique_series_info
+    |    UNIQUE (series_id, series_season, series_number)
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
-    "unique_id" -> AudioPlayConstraint.UniqueId,
-    "unique_series_info" -> AudioPlayConstraint.UniqueSeriesInfo,
+    "audio_plays_unique_id" -> AudioPlayConstraint.UniqueId,
+    "audio_plays_unique_series_info" -> AudioPlayConstraint.UniqueSeriesInfo,
   )
 
   /** Converts constraint violations. */

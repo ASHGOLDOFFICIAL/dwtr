@@ -41,15 +41,15 @@ object UserRepositoryImpl:
     |  username  TEXT NOT NULL UNIQUE,
     |  password  TEXT,
     |  google_id TEXT UNIQUE,
-    |  CONSTRAINT unique_id UNIQUE (id),
-    |  CONSTRAINT unique_username UNIQUE (username),
-    |  CONSTRAINT unique_google_id UNIQUE (google_id)
+    |  CONSTRAINT users_unique_id UNIQUE (id),
+    |  CONSTRAINT users_unique_username UNIQUE (username),
+    |  CONSTRAINT users_unique_google_id UNIQUE (google_id)
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
-    "unique_id" -> UserConstraint.UniqueId,
-    "unique_username" -> UserConstraint.UniqueUsername,
-    "unique_google_id" -> UserConstraint.UniqueGoogleId,
+    "users_unique_id" -> UserConstraint.UniqueId,
+    "users_unique_username" -> UserConstraint.UniqueUsername,
+    "users_unique_google_id" -> UserConstraint.UniqueGoogleId,
   )
 
   /** Converts constraint violations. */

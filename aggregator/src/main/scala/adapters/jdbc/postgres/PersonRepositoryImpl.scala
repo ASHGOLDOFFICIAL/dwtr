@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
+import adapters.jdbc.postgres.PersonRepositoryImpl.handleConstraintViolation
 import adapters.jdbc.postgres.metas.PersonMetas.given
 import domain.errors.PersonConstraint
 import domain.model.person.{FullName, Person}
@@ -14,7 +15,6 @@ import cats.syntax.all.given
 import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
 import doobie.syntax.all.given
-import org.aulune.aggregator.adapters.jdbc.postgres.PersonRepositoryImpl.handleConstraintViolation
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfPositive,
   checkIfUpdated,
@@ -42,14 +42,14 @@ object PersonRepositoryImpl:
     .as(new PersonRepositoryImpl[F](transactor))
 
   private val createPersonTable = sql"""
-    |CREATE TABLE IF NOT EXISTS persons (
+    |CREATE TABLE IF NOT EXISTS people (
     |  id   UUID         PRIMARY KEY,
     |  name VARCHAR(255) NOT NULL,
-    |  CONSTRAINT unique_id UNIQUE (id)
+    |  CONSTRAINT people_unique_id UNIQUE (id)
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
-    "unique_id" -> PersonConstraint.UniqueId,
+    "people_unique_id" -> PersonConstraint.UniqueId,
   )
 
   /** Converts constraint violations. */
@@ -66,14 +66,14 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
 ) extends PersonRepository[F]:
 
   override def contains(id: Uuid[Person]): F[Boolean] =
-    sql"SELECT EXISTS (SELECT 1 FROM persons WHERE id = $id)"
+    sql"SELECT EXISTS (SELECT 1 FROM people WHERE id = $id)"
       .query[Boolean]
       .unique
       .transact(transactor)
       .handleErrorWith(toInternalError)
 
   override def persist(elem: Person): F[Person] = sql"""
-      |INSERT INTO persons (id, name)
+      |INSERT INTO people (id, name)
       |VALUES (${elem.id}, ${elem.name})""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
@@ -90,7 +90,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
       .handleErrorWith(toInternalError)
 
   override def update(elem: Person): F[Person] = sql"""
-      |UPDATE persons
+      |UPDATE people
       |SET name = ${elem.name}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
@@ -101,7 +101,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
     .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[Person]): F[Unit] =
-    sql"DELETE FROM persons WHERE id = $id".update.run
+    sql"DELETE FROM people WHERE id = $id".update.run
       .transact(transactor)
       .void
       .handleErrorWith(toInternalError)
@@ -110,7 +110,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
     sql"""
     |SELECT p.id, p.name
     |FROM UNNEST(${ids.toList.toArray}) WITH ORDINALITY AS t(id, ord)
-    |JOIN persons p ON p.id = t.id
+    |JOIN people p ON p.id = t.id
     |ORDER BY t.ord
     """.stripMargin
       .query[SelectType]
@@ -150,7 +150,7 @@ private final class PersonRepositoryImpl[F[_]: MonadCancelThrow](
 
   private type SelectType = (Uuid[Person], FullName)
 
-  private val selectBase = fr"SELECT id, name FROM persons"
+  private val selectBase = fr"SELECT id, name FROM people"
 
   /** Makes person from given data. */
   private def toPerson(uuid: Uuid[Person], name: FullName): Person =
