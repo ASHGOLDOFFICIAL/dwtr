@@ -5,6 +5,7 @@ package adapters.jdbc.postgres
 import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{
   Permission,
+  PermissionConstraint,
   PermissionDescription,
   PermissionName,
   PermissionNamespace,
@@ -14,7 +15,7 @@ import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
 }
 import org.aulune.commons.service.auth.User
@@ -32,6 +33,7 @@ final class PermissionRepositoryImplTest
     with AsyncIOSpec
     with Matchers
     with PostgresTestContainer:
+
   private def stand = makeStand(PermissionRepositoryImpl.build[IO])
 
   private val testPermission = Permission.unsafe(
@@ -85,7 +87,8 @@ final class PermissionRepositoryImplTest
         for
           _ <- repo.persist(testPermission)
           result <- repo.persist(updatedTestPermission).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(
+          ConstraintViolation(PermissionConstraint.UniqueId))
       }
     }
   }
@@ -190,6 +193,15 @@ final class PermissionRepositoryImplTest
       "grant existing permissions" in stand { repo =>
         for
           _ <- repo.persist(testPermission)
+          _ <- repo.grantPermission(userId, testPermissionIdentity)
+          result <- repo.hasPermission(userId, testPermissionIdentity)
+        yield result shouldBe true
+      }
+
+      "be idempotent" in stand { repo =>
+        for
+          _ <- repo.persist(testPermission)
+          _ <- repo.grantPermission(userId, testPermissionIdentity)
           _ <- repo.grantPermission(userId, testPermissionIdentity)
           result <- repo.hasPermission(userId, testPermissionIdentity)
         yield result shouldBe true

@@ -3,15 +3,18 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.PermissionMetas.given
+import adapters.jdbc.postgres.PermissionRepositoryImpl.handleConstraintViolation
 import domain.repositories.PermissionRepository
 import domain.repositories.PermissionRepository.PermissionIdentity
 import domain.{
   Permission,
+  PermissionConstraint,
   PermissionDescription,
   PermissionName,
   PermissionNamespace,
 }
 
+import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
@@ -19,7 +22,7 @@ import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfUpdated,
-  toAlreadyExists,
+  makeConstraintViolationConverter,
   toInternalError,
 }
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
@@ -49,7 +52,7 @@ object PermissionRepositoryImpl:
     |  name         VARCHAR(1024) NOT NULL,
     |  description  TEXT          NOT NULL,
     |  reference_id SERIAL        NOT NULL UNIQUE,
-    |  PRIMARY KEY (namespace, name)
+    |  CONSTRAINT unique_id PRIMARY KEY (name, namespace)
     |)""".stripMargin.update.run
 
   private val createUserPermissionsTable = sql"""
@@ -58,8 +61,19 @@ object PermissionRepositoryImpl:
     |  permission INTEGER NOT NULL
     |             REFERENCES permissions(reference_id)
     |             ON DELETE CASCADE,
-    |  PRIMARY KEY (user_id, permission)
+    |  PRIMARY KEY (permission, user_id)
     |)""".stripMargin.update.run
+
+  private val constraintMap = Map(
+    "unique_id" -> PermissionConstraint.UniqueId,
+  )
+
+  /** Converts constraint violations. */
+  private def handleConstraintViolation[F[_]: MonadThrow, A] =
+    makeConstraintViolationConverter[F, A, PermissionConstraint](
+      constraintMap,
+    )
+
 end PermissionRepositoryImpl
 
 
@@ -70,8 +84,8 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   override def contains(id: PermissionIdentity): F[Boolean] = sql"""
     |SELECT EXISTS (
     |  SELECT 1 FROM permissions
-    |  WHERE namespace = ${id.namespace}
-    |  AND name = ${id.name}
+    |  WHERE name = ${id.name}
+    |  AND namespace = ${id.namespace}
     |)""".stripMargin
     .query[Boolean]
     .unique
@@ -87,7 +101,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def upsert(elem: Permission): F[Permission] = sql"""
@@ -101,13 +115,14 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |SET description = EXCLUDED.description""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def get(id: PermissionIdentity): F[Option[Permission]] = sql"""
     |SELECT namespace, name, description
     |FROM permissions
-    |WHERE namespace = ${id.namespace}
-    |AND name = ${id.name}""".stripMargin
+    |WHERE name = ${id.name}
+    |AND namespace = ${id.namespace}""".stripMargin
     .query[SelectType]
     .map(toPermission)
     .option
@@ -117,18 +132,18 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   override def update(elem: Permission): F[Permission] = sql"""
     |UPDATE permissions
     |SET description = ${elem.description}
-    |WHERE namespace = ${elem.namespace}
-    |AND name = ${elem.name}""".stripMargin.update.run
+    |WHERE name = ${elem.name}
+    |AND namespace = ${elem.namespace}""".stripMargin.update.run
     .flatMap(checkIfUpdated)
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def delete(id: PermissionIdentity): F[Unit] = sql"""
     |DELETE FROM permissions
-    |WHERE namespace = ${id.namespace}
-    |AND name = ${id.name}""".stripMargin.update.run.void
+    |WHERE name = ${id.name}
+    |AND namespace = ${id.namespace}""".stripMargin.update.run.void
     .transact(transactor)
     .handleErrorWith(toInternalError)
 
@@ -139,8 +154,8 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     def checkQuery(reference: Int) = sql"""
       |SELECT EXISTS (
       |  SELECT 1 FROM user_permissions
-      |  WHERE user_id = $user
-      |  AND permission = $reference
+      |  WHERE permission = $reference
+      |  AND user_id = $user
       |)""".stripMargin.query[Boolean].unique
 
     getPermissionId(permission)
@@ -155,7 +170,9 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[Unit] =
     def grantQuery(reference: Int) = sql"""
       |INSERT INTO user_permissions (user_id, permission)
-      |VALUES ($user, $reference)""".stripMargin.update.run.void
+      |VALUES ($user, $reference)
+      |ON CONFLICT (user_id, permission) DO NOTHING
+      |""".stripMargin.update.run.void
 
     getPermissionId(permission)
       .flatMap(grantQuery)
@@ -169,8 +186,8 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
   ): F[Unit] =
     def revokeQuery(reference: Int) = sql"""
       |DELETE FROM user_permissions
-      |WHERE user_id = $user
-      |AND permission = $reference""".stripMargin.update.run.void
+      |WHERE permission = $reference
+      |AND user_id = $user""".stripMargin.update.run.void
 
     getPermissionId(permission)
       .flatMap(revokeQuery)
@@ -187,11 +204,14 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
       permission: PermissionIdentity,
   ): ConnectionIO[Int] = sql"""
     |SELECT reference_id FROM permissions
-    |WHERE namespace = ${permission.namespace}
-    |AND name = ${permission.name}""".stripMargin.query[Int].option.flatMap {
-    case Some(reference) => reference.pure[ConnectionIO]
-    case None            => FailedPrecondition.raiseError[ConnectionIO, Int]
-  }
+    |WHERE name = ${permission.name}
+    |AND namespace = ${permission.namespace}""".stripMargin
+    .query[Int]
+    .option
+    .flatMap {
+      case Some(reference) => reference.pure[ConnectionIO]
+      case None            => FailedPrecondition.raiseError[ConnectionIO, Int]
+    }
 
   private type SelectType = (
       PermissionNamespace,
