@@ -12,25 +12,21 @@ import domain.{
   PermissionNamespace,
 }
 
-import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.implicits.toSqlInterpolator
-import doobie.postgres.sqlstate
-import doobie.postgres.sqlstate.class23.UNIQUE_VIOLATION
 import doobie.syntax.all.given
 import doobie.{ConnectionIO, Transactor}
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfUpdated,
+  toAlreadyExists,
+  toInternalError,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-}
+import org.aulune.commons.repositories.RepositoryError.FailedPrecondition
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.types.Uuid
-
-import java.sql.SQLException
-import scala.util.control.NonFatal
 
 
 /** [[PermissionRepository]] implementation via PostgreSQL. */
@@ -64,6 +60,7 @@ object PermissionRepositoryImpl:
     |             ON DELETE CASCADE,
     |  PRIMARY KEY (user_id, permission)
     |)""".stripMargin.update.run
+end PermissionRepositoryImpl
 
 
 private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
@@ -79,7 +76,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .query[Boolean]
     .unique
     .transact(transactor)
-    .adaptErr(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   override def persist(elem: Permission): F[Permission] = sql"""
     |INSERT INTO permissions (namespace, name, description)
@@ -90,7 +87,8 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .adaptErr(toRepositoryError)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def upsert(elem: Permission): F[Permission] = sql"""
     |INSERT INTO permissions (namespace, name, description)
@@ -103,7 +101,7 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     |SET description = EXCLUDED.description""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .adaptErr(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   override def get(id: PermissionIdentity): F[Option[Permission]] = sql"""
     |SELECT namespace, name, description
@@ -114,57 +112,41 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     .map(toPermission)
     .option
     .transact(transactor)
-    .adaptErr(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
-  override def update(elem: Permission): F[Permission] =
-    val updateQuery = sql"""
+  override def update(elem: Permission): F[Permission] = sql"""
     |UPDATE permissions
     |SET description = ${elem.description}
     |WHERE namespace = ${elem.namespace}
     |AND name = ${elem.name}""".stripMargin.update.run
-
-    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
-
-    val transaction =
-      for
-        rows <- updateQuery
-        _ <- checkIfAny(rows)
-      yield elem
-
-    transaction.transact(transactor).adaptErr(toRepositoryError)
-  end update
+    .flatMap(checkIfUpdated)
+    .as(elem)
+    .transact(transactor)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def delete(id: PermissionIdentity): F[Unit] = sql"""
     |DELETE FROM permissions
     |WHERE namespace = ${id.namespace}
     |AND name = ${id.name}""".stripMargin.update.run.void
     .transact(transactor)
-    .adaptErr(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   override def hasPermission(
       user: Uuid[User],
       permission: PermissionIdentity,
   ): F[Boolean] =
     def checkQuery(reference: Int) = sql"""
-    |SELECT EXISTS (
-    |  SELECT 1 FROM user_permissions
-    |  WHERE user_id = $user
-    |  AND permission = $reference
-    |)""".stripMargin.query[Boolean].unique
+      |SELECT EXISTS (
+      |  SELECT 1 FROM user_permissions
+      |  WHERE user_id = $user
+      |  AND permission = $reference
+      |)""".stripMargin.query[Boolean].unique
 
-    val transaction =
-      for
-        idOpt <- findPermissionId(permission)
-        id <- idOpt match
-          case Some(id) => id.pure[ConnectionIO]
-          case None     => FailedPrecondition.raiseError[ConnectionIO, Int]
-        result <- checkQuery(id)
-      yield result
-
-    transaction
+    getPermissionId(permission)
+      .flatMap(checkQuery)
       .transact(transactor)
-      .adaptErr(toRepositoryError)
+      .handleErrorWith(toInternalError)
   end hasPermission
 
   override def grantPermission(
@@ -172,21 +154,13 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
       permission: PermissionIdentity,
   ): F[Unit] =
     def grantQuery(reference: Int) = sql"""
-    |INSERT INTO user_permissions (user_id, permission)
-    |VALUES ($user, $reference)""".stripMargin.update.run.void
+      |INSERT INTO user_permissions (user_id, permission)
+      |VALUES ($user, $reference)""".stripMargin.update.run.void
 
-    val transaction =
-      for
-        idOpt <- findPermissionId(permission)
-        id <- idOpt match
-          case Some(id) => id.pure[ConnectionIO]
-          case None     => FailedPrecondition.raiseError[ConnectionIO, Int]
-        result <- grantQuery(id)
-      yield result
-
-    transaction
+    getPermissionId(permission)
+      .flatMap(grantQuery)
       .transact(transactor)
-      .adaptErr(toRepositoryError)
+      .handleErrorWith(toInternalError)
   end grantPermission
 
   override def revokePermission(
@@ -194,34 +168,30 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
       permission: PermissionIdentity,
   ): F[Unit] =
     def revokeQuery(reference: Int) = sql"""
-    |DELETE FROM user_permissions
-    |WHERE user_id = $user
-    |AND permission = $reference""".stripMargin.update.run.void
+      |DELETE FROM user_permissions
+      |WHERE user_id = $user
+      |AND permission = $reference""".stripMargin.update.run.void
 
-    val transaction =
-      for
-        idOpt <- findPermissionId(permission)
-        id <- idOpt match
-          case Some(id) => id.pure[ConnectionIO]
-          case None     => FailedPrecondition.raiseError[ConnectionIO, Int]
-        result <- revokeQuery(id)
-      yield result
-
-    transaction
+    getPermissionId(permission)
+      .flatMap(revokeQuery)
       .transact(transactor)
-      .adaptErr(toRepositoryError)
+      .handleErrorWith(toInternalError)
   end revokePermission
 
-  /** Finds permission's reference ID.
+  /** Gets permission's reference ID.
    *  @param permission permission whose reference ID is needed.
-   *  @return reference ID if found.
+   *  @return reference ID.
+   *  @throws FailedPrecondition if permission is not found.
    */
-  private def findPermissionId(
+  private def getPermissionId(
       permission: PermissionIdentity,
-  ): ConnectionIO[Option[Int]] = sql"""
+  ): ConnectionIO[Int] = sql"""
     |SELECT reference_id FROM permissions
     |WHERE namespace = ${permission.namespace}
-    |AND name = ${permission.name}""".stripMargin.query[Int].option
+    |AND name = ${permission.name}""".stripMargin.query[Int].option.flatMap {
+    case Some(reference) => reference.pure[ConnectionIO]
+    case None            => FailedPrecondition.raiseError[ConnectionIO, Int]
+  }
 
   private type SelectType = (
       PermissionNamespace,
@@ -239,12 +209,3 @@ private final class PermissionRepositoryImpl[F[_]: MonadCancelThrow](
     name = name,
     description = description,
   )
-
-  /** Converts non fatal errors to [[RepositoryError]]. */
-  private val toRepositoryError: PartialFunction[Throwable, RepositoryError] = {
-    case NonFatal(err) => err match
-        case e: SQLException if e.getSQLState == UNIQUE_VIOLATION.value =>
-          AlreadyExists
-        case e: RepositoryError => e
-        case _                  => RepositoryError.Internal
-  }
