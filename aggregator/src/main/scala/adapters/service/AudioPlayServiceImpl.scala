@@ -32,7 +32,7 @@ import application.{
   AudioPlayService,
   PersonService,
 }
-import domain.errors.AudioPlayValidationError
+import domain.errors.{AudioPlayConstraint, AudioPlayValidationError}
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.shared.ImageUri
@@ -47,6 +47,7 @@ import cats.syntax.all.given
 import fs2.Stream
 import org.aulune.commons.errors.{ErrorInfo, ErrorResponse}
 import org.aulune.commons.pagination.{CursorEncoder, PaginationParamsParser}
+import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.search.SearchParamsParser
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.PermissionClientService
@@ -205,7 +206,11 @@ private final class AudioPlayServiceImpl[F[
         audio <- EitherT
           .fromEither(makeAudioPlay(request, id))
           .leftSemiflatTap(_ => warn"Request to create bad element: $request.")
-        persisted <- EitherT.liftF(repo.persist(audio))
+        persisted <- EitherT(repo.persist(audio).map(_.asRight).recoverWith {
+          case RepositoryError.ConstraintViolation(
+                 AudioPlayConstraint.UniqueSeriesInfo) =>
+            ErrorResponses.duplicateSeriesInfo.asLeft.pure[F]
+        })
         response = AudioPlayMapper.makeResource(persisted, series, persons)
       yield response).value
     }.handleErrorWith(handleInternal)

@@ -20,9 +20,8 @@ trait PermissionRepository[F[_]]
 
   /** Check if given user has given permission.
    *
-   *  Errors:
-   *    - [[FailedPrecondition]] will be returned if required permission doesn't
-   *      exist.
+   *  [[FailedPrecondition]] will be returned if required permission doesn't
+   *  exist.
    *
    *  @param user user.
    *  @param permission identity of a required permission.
@@ -35,12 +34,12 @@ trait PermissionRepository[F[_]]
 
   /** Grants permission to a user.
    *
-   *  Errors:
-   *    - [[FailedPrecondition]] will be returned if required permission doesn't
-   *      exist.
+   *  [[FailedPrecondition]] will be returned if required permission doesn't
+   *  exist.
    *
    *  @param user user who will be granted permission.
    *  @param permission permission to be granted.
+   *  @note This method is idempotent.
    */
   def grantPermission(
       user: Uuid[User],
@@ -49,9 +48,8 @@ trait PermissionRepository[F[_]]
 
   /** Revokes permission from a user.
    *
-   *  Errors:
-   *    - [[FailedPrecondition]] will be returned if required permission doesn't
-   *      exist.
+   *  [[FailedPrecondition]] will be returned if required permission doesn't
+   *  exist.
    *
    *  @param user user whose permission will be revoked.
    *  @param permission permission to be revoked.

@@ -6,11 +6,12 @@ import cats.syntax.all.given
 import doobie.postgres.sqlstate.class23.UNIQUE_VIOLATION
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
   Internal,
   InvalidArgument,
 }
+import org.postgresql.util.PSQLException
 
 import java.sql.SQLException
 
@@ -31,12 +32,27 @@ object ErrorUtils:
   def checkIfPositive[F[_]: MonadThrow](int: Int): F[Unit] =
     MonadThrow[F].raiseWhen(int <= 0)(InvalidArgument)
 
-  /** Converts unique violation exceptions to [[AlreadyExists]].
+  /** If error contains information about violation for which exists a value in
+   *  given map, then [[ConstraintViolation]] with an associated value will be
+   *  thrown. In other cases exception will be rethrown.
+   *
+   *  @param map map between string describing violation and an associated type.
+   *  @tparam F effect type.
    *  @tparam A needed return type.
+   *  @tparam C constraint type.
    */
-  def toAlreadyExists[F[_]: MonadThrow, A]: PartialFunction[Throwable, F[A]] =
-    case e: SQLException if e.getSQLState == UNIQUE_VIOLATION.value =>
-      AlreadyExists.raiseError
+  def makeConstraintViolationConverter[F[_]: MonadThrow, A, C](
+      map: Map[String, C],
+  ): PartialFunction[Throwable, F[A]] =
+    case e: PSQLException if e.getServerErrorMessage == null =>
+      e.raiseError[F, A]
+    case e: PSQLException if e.getServerErrorMessage.getConstraint == null =>
+      e.raiseError[F, A]
+    case e: PSQLException =>
+      val constraint = e.getServerErrorMessage.getConstraint
+      map.get(constraint) match
+        case Some(value) => ConstraintViolation[C](value).raiseError[F, A]
+        case None        => e.raiseError[F, A]
 
   /** Packs all errors except [[RepositoryError]]s inside [[Internal]].
    *  @param e error to pack.

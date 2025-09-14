@@ -15,7 +15,7 @@ import application.dto.{
   CreateUserRequest,
   UserInfo,
 }
-import domain.errors.{OAuthError, UserValidationError}
+import domain.errors.{OAuthError, UserConstraint, UserValidationError}
 import domain.model.{
   AuthorizationCode,
   ExternalId,
@@ -88,9 +88,11 @@ final class AuthenticationServiceImpl[F[_]: MonadThrow: UUIDGen: LoggerFactory](
     id <- EitherT.liftF(UUIDGen[F].randomUUID.map(Uuid[User]))
     user <- EitherT.fromEither(createUser(id, request.username, provider, oid))
     persisted <- EitherT(repo.persist(user).map(_.asRight).recoverWith {
-      case RepositoryError.AlreadyExists =>
+      case RepositoryError.ConstraintViolation(UserConstraint.UniqueGoogleId) =>
         for _ <- warn"Already registered user's request: $request."
         yield ErrorResponses.alreadyRegistered.asLeft
+      case RepositoryError.ConstraintViolation(UserConstraint.UniqueUsername) =>
+        ErrorResponses.usernameTaken.asLeft.pure[F]
     })
     _ <- eitherTLogger.info(s"Persisted new user: $persisted.")
     response <- EitherT(makeResponseForUser(persisted))

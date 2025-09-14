@@ -3,9 +3,12 @@ package adapters.jdbc.postgres
 
 
 import adapters.jdbc.postgres.UserMetas.given
+import adapters.jdbc.postgres.UserRepositoryImpl.handleConstraintViolation
+import domain.errors.UserConstraint
 import domain.model.{ExternalId, User, Username}
 import domain.repositories.UserRepository
 
+import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.Transactor
@@ -13,7 +16,7 @@ import doobie.implicits.toSqlInterpolator
 import doobie.syntax.all.given
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfUpdated,
-  toAlreadyExists,
+  makeConstraintViolationConverter,
   toInternalError,
 }
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
@@ -37,8 +40,24 @@ object UserRepositoryImpl:
     |  id        UUID PRIMARY KEY,
     |  username  TEXT NOT NULL UNIQUE,
     |  password  TEXT,
-    |  google_id TEXT UNIQUE
+    |  google_id TEXT UNIQUE,
+    |  CONSTRAINT unique_id UNIQUE (id),
+    |  CONSTRAINT unique_username UNIQUE (username),
+    |  CONSTRAINT unique_google_id UNIQUE (google_id)
     |)""".stripMargin.update.run
+
+  private val constraintMap = Map(
+    "unique_id" -> UserConstraint.UniqueId,
+    "unique_username" -> UserConstraint.UniqueUsername,
+    "unique_google_id" -> UserConstraint.UniqueGoogleId,
+  )
+
+  /** Converts constraint violations. */
+  private def handleConstraintViolation[F[_]: MonadThrow, A] =
+    makeConstraintViolationConverter[F, A, UserConstraint](
+      constraintMap,
+    )
+
 end UserRepositoryImpl
 
 
@@ -63,7 +82,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
       |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[User]): F[Option[User]] = sql"""
@@ -86,7 +105,7 @@ private final class UserRepositoryImpl[F[_]: MonadCancelThrow](
     .flatMap(checkIfUpdated)
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[User]): F[Unit] =

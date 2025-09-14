@@ -3,7 +3,8 @@ package adapters.jdbc.postgres
 
 
 import adapters.service.AudioPlays
-import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
+import domain.errors.AudioPlayConstraint
+import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
@@ -26,7 +27,7 @@ import cats.effect.testing.scalatest.AsyncIOSpec
 import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
   InvalidArgument,
 }
@@ -116,7 +117,21 @@ final class AudioPlayRepositoryImplTest
         for
           _ <- repo.persist(audioPlayTest)
           result <- repo.persist(updatedAudioPlayTest).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(
+          ConstraintViolation(AudioPlayConstraint.UniqueId))
+      }
+
+      "throw error if an audio play series info is not unique" in stand {
+        repo =>
+          val differentId = audioPlayTest
+            .update(id = Uuid.unsafe("6e6abdfb-3010-4748-a721-eef1d87ca392"))
+            .getOrElse(throw new IllegalStateException())
+
+          for
+            _ <- repo.persist(audioPlayTest)
+            result <- repo.persist(differentId).attempt
+          yield result shouldBe Left(
+            ConstraintViolation(AudioPlayConstraint.UniqueSeriesInfo))
       }
     }
   }
@@ -133,6 +148,24 @@ final class AudioPlayRepositoryImplTest
       "throw error for non-existent audio plays" in stand { repo =>
         for updated <- repo.update(audioPlayTest).attempt
         yield updated shouldBe Left(FailedPrecondition)
+      }
+
+      "throw error if an audio play series info is not unique" in stand {
+        repo =>
+          val updated = AudioPlays.audioPlay2
+            .update(
+              seriesId = audioPlayTest.seriesId,
+              seriesSeason = audioPlayTest.seriesSeason,
+              seriesNumber = audioPlayTest.seriesNumber,
+            )
+            .getOrElse(throw new IllegalStateException())
+
+          for
+            _ <- repo.persist(audioPlayTest)
+            _ <- repo.persist(AudioPlays.audioPlay2)
+            result <- repo.update(updated).attempt
+          yield result shouldBe Left(
+            ConstraintViolation(AudioPlayConstraint.UniqueSeriesInfo))
       }
 
       "be idempotent" in stand { repo =>

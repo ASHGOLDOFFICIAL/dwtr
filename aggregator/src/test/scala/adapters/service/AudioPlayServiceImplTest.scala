@@ -23,10 +23,12 @@ import application.errors.AudioPlayServiceError.{
   AudioPlayNotFound,
   AudioPlaySeriesNotFound,
   CoverTooBig,
+  DuplicateSeriesInfo,
   InvalidAudioPlay,
   InvalidCoverImage,
   NotSelfHosted,
 }
+import domain.errors.AudioPlayConstraint
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.shared.ImageUri
@@ -39,6 +41,7 @@ import cats.syntax.all.given
 import fs2.Stream
 import org.aulune.commons.errors.ErrorResponse
 import org.aulune.commons.errors.ErrorStatus.PermissionDenied
+import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.service.auth.User
 import org.aulune.commons.service.permission.{
   Permission,
@@ -282,6 +285,16 @@ final class AudioPlayServiceImplTest
           val _ = mockHasPermission(Modify, true.asRight.pure)
           val find = service.create(user, badRequest)
           assertDomainError(find)(AudioPlaySeriesNotFound)
+      }
+
+      "result in DuplicateSeriesInfo when creating audio play with already taken series info" in stand {
+        service =>
+          val _ = mockHasPermission(Modify, true.asRight.pure)
+          val _ = mockPersist(
+            IO.raiseError(RepositoryError.ConstraintViolation(
+              AudioPlayConstraint.UniqueSeriesInfo)))
+          val find = service.create(user, request)
+          assertDomainError(find)(DuplicateSeriesInfo)
       }
 
       "result in PermissionDenied for unauthorized users" in stand { service =>

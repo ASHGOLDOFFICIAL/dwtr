@@ -9,10 +9,12 @@ enum RepositoryError extends NoStackTrace:
   /** The client specified an invalid argument. */
   case InvalidArgument
 
-  /** The identity of an entity that a client attempted to create is already
-   *  taken by another entity.
+  /** Client attempted to create or update an entity that violates some unique
+   *  constraint.
+   *  @param constraint violated constraint.
+   *  @tparam A type of constraints.
    */
-  case AlreadyExists
+  case ConstraintViolation[A](constraint: A)
 
   /** The operation was rejected because the system is not in a state required
    *  for the operation's execution. For example, updating entity that doesn't

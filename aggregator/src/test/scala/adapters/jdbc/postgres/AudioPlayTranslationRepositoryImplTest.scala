@@ -3,25 +3,23 @@ package adapters.jdbc.postgres
 
 
 import adapters.service.AudioPlayTranslations
+import domain.errors.TranslationConstraint
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.translation.AudioPlayTranslation
 import domain.model.shared.TranslatedTitle
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
-import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.effect.testing.scalatest.AsyncIOSpec
 import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
 }
 import org.aulune.commons.testing.PostgresTestContainer
 import org.aulune.commons.types.Uuid
 import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
-
-import java.net.URI
 
 
 /** Tests for [[AudioPlayTranslationRepositoryImpl]]. */
@@ -82,7 +80,8 @@ final class AudioPlayTranslationRepositoryImplTest
         for
           _ <- repo.persist(translationTest)
           result <- repo.persist(updatedTranslationTest).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(
+          ConstraintViolation(TranslationConstraint.UniqueId))
       }
     }
   }

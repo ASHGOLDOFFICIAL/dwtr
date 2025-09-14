@@ -26,6 +26,10 @@ enum AuthenticationServiceError(val reason: String) extends ErrorReason(reason):
   case UserAlreadyExists
       extends AuthenticationServiceError("USER_ALREADY_EXISTS")
 
+  /** Username already taken. */
+  case UsernameAlreadyTaken
+      extends AuthenticationServiceError("USERNAME_ALREADY_TAKEN")
+
   /** OAuth2 authorization code is invalid. */
   case InvalidOAuthCode extends AuthenticationServiceError("INVALID_OAUTH_CODE")
 

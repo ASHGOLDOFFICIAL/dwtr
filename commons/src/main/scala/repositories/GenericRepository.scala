@@ -2,7 +2,7 @@ package org.aulune.commons
 package repositories
 
 
-import repositories.RepositoryError.{AlreadyExists, FailedPrecondition}
+import repositories.RepositoryError.{ConstraintViolation, FailedPrecondition}
 import storages.GenericStorage
 
 
@@ -22,7 +22,7 @@ trait GenericRepository[F[_], E, Id]:
 
   /** Persist element in repository.
    *
-   *  [[AlreadyExists]] will be returned on any conflict.
+   *  [[ConstraintViolation]] will be returned on any conflict.
    *
    *  @param elem element to persist.
    *  @return element if success, otherwise error.
@@ -42,7 +42,7 @@ trait GenericRepository[F[_], E, Id]:
    *  [[FailedPrecondition]] will be returned if there are no elements to
    *  update.
    *
-   *  [[AlreadyExists]] will be returned on any conflict.
+   *  [[ConstraintViolation]] will be returned on any conflict.
    *
    *  @param elem element to update.
    *  @return element if success, otherwise error.
