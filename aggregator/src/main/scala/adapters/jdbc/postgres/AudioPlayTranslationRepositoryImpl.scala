@@ -4,31 +4,21 @@ package adapters.jdbc.postgres
 
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
 import adapters.jdbc.postgres.metas.SharedMetas.given
+import domain.errors.TranslationConstraint
 import domain.model.audioplay.AudioPlay
-import domain.model.audioplay.translation.{
-  AudioPlayTranslation,
-  AudioPlayTranslationType,
-}
-import domain.model.shared.{
-  ExternalResource,
-  Language,
-  SelfHostedLocation,
-  TranslatedTitle,
-}
+import domain.model.audioplay.translation.{AudioPlayTranslation, AudioPlayTranslationType}
+import domain.model.shared.{ExternalResource, Language, SelfHostedLocation, TranslatedTitle}
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
+import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
 import doobie.syntax.all.given
-import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
-  checkIfPositive,
-  checkIfUpdated,
-  toAlreadyExists,
-  toInternalError,
-}
+import org.aulune.aggregator.adapters.jdbc.postgres.AudioPlayTranslationRepositoryImpl.handleConstraintViolation
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{checkIfPositive, checkIfUpdated, makeConstraintViolationConverter, toInternalError}
 import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.types.Uuid
 
@@ -53,8 +43,21 @@ object AudioPlayTranslationRepositoryImpl:
     |  type          INTEGER NOT NULL,
     |  language      TEXT    NOT NULL,
     |  self_host_uri TEXT,
-    |  resources     JSONB   NOT NULL
+    |  resources     JSONB   NOT NULL,
+    |  CONSTRAINT unique_id UNIQUE (id)
     |)""".stripMargin.update.run
+
+  private val constraintMap = Map(
+    "unique_id" -> TranslationConstraint.UniqueId,
+  )
+
+  /** Converts constraint violations. */
+  private def handleConstraintViolation[F[_]: MonadThrow, A] =
+    makeConstraintViolationConverter[F, A, TranslationConstraint](
+      constraintMap,
+    )
+
+end AudioPlayTranslationRepositoryImpl
 
 
 private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
@@ -86,7 +89,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def get(
@@ -115,7 +118,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .flatMap(checkIfUpdated)
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def delete(
