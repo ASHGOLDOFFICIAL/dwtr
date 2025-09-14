@@ -2,10 +2,13 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
+import adapters.jdbc.postgres.AudioPlaySeriesRepositoryImpl.handleConstraintViolation
 import adapters.jdbc.postgres.metas.AudioPlayMetas.given
+import domain.errors.AudioPlaySeriesConstraint
 import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.repositories.AudioPlaySeriesRepository
 
+import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
@@ -14,7 +17,7 @@ import doobie.syntax.all.given
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfPositive,
   checkIfUpdated,
-  toAlreadyExists,
+  makeConstraintViolationConverter,
   toInternalError,
 }
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
@@ -40,8 +43,19 @@ object AudioPlaySeriesRepositoryImpl:
   private val createSeriesTable = sql"""
     |CREATE TABLE IF NOT EXISTS audio_play_series (
     |  id   UUID         PRIMARY KEY,
-    |  name VARCHAR(255) NOT NULL
+    |  name VARCHAR(255) NOT NULL,
+    |  CONSTRAINT unique_id UNIQUE (id)
     |)""".stripMargin.update.run
+
+  private val constraintMap = Map(
+    "unique_id" -> AudioPlaySeriesConstraint.UniqueId,
+  )
+
+  /** Converts constraint violations. */
+  private def handleConstraintViolation[F[_]: MonadThrow, A] =
+    makeConstraintViolationConverter[F, A, AudioPlaySeriesConstraint](
+      constraintMap,
+    )
 
 end AudioPlaySeriesRepositoryImpl
 
@@ -62,7 +76,7 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
       |VALUES (${elem.id}, ${elem.name})""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[AudioPlaySeries]): F[Option[AudioPlaySeries]] =
@@ -81,7 +95,7 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
     .flatMap(checkIfUpdated)
     .as(elem)
     .transact(transactor)
-    .recoverWith(toAlreadyExists)
+    .recoverWith(handleConstraintViolation)
     .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[AudioPlaySeries]): F[Unit] =

@@ -3,6 +3,7 @@ package adapters.jdbc.postgres
 
 
 import adapters.service.AudioPlaySeriesStubs
+import domain.errors.AudioPlaySeriesConstraint
 import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.repositories.AudioPlaySeriesRepository
 
@@ -13,6 +14,7 @@ import cats.syntax.all.given
 import org.aulune.commons.repositories.RepositoryError
 import org.aulune.commons.repositories.RepositoryError.{
   AlreadyExists,
+  ConstraintViolation,
   FailedPrecondition,
   InvalidArgument,
 }
@@ -78,7 +80,8 @@ final class AudioPlaySeriesRepositoryImplTest
         for
           _ <- repo.persist(series)
           result <- repo.persist(updatedSeries).attempt
-        yield result shouldBe Left(AlreadyExists)
+        yield result shouldBe Left(
+          ConstraintViolation(AudioPlaySeriesConstraint.UniqueId))
       }
     }
   }
