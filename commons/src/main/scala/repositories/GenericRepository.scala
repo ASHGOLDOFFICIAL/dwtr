@@ -42,6 +42,8 @@ trait GenericRepository[F[_], E, Id]:
    *  [[FailedPrecondition]] will be returned if there are no elements to
    *  update.
    *
+   *  [[AlreadyExists]] will be returned on any conflict.
+   *
    *  @param elem element to update.
    *  @return element if success, otherwise error.
    *  @note This method is idempotent, unless some modification were made in

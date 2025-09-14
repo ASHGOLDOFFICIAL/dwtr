@@ -6,27 +6,23 @@ import adapters.jdbc.postgres.metas.AudioPlayMetas.given
 import domain.model.audioplay.series.{AudioPlaySeries, AudioPlaySeriesName}
 import domain.repositories.AudioPlaySeriesRepository
 
-import cats.MonadThrow
 import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
-import doobie.postgres.sqlstate
+import doobie.Transactor
 import doobie.syntax.all.given
-import doobie.{ConnectionIO, Transactor}
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfPositive,
+  checkIfUpdated,
+  toAlreadyExists,
+  toInternalError,
+}
 import org.aulune.commons.adapters.doobie.postgres.Metas.{
   nonEmptyStringMeta,
   uuidMeta,
   uuidsMeta,
 }
-import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
-  InvalidArgument,
-}
 import org.aulune.commons.types.{NonEmptyString, Uuid}
-
-import java.sql.SQLException
 
 
 /** [[AudioPlaySeriesRepository]] implementation for PostgreSQL. */
@@ -59,14 +55,15 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
       .query[Boolean]
       .unique
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def persist(elem: AudioPlaySeries): F[AudioPlaySeries] = sql"""
       |INSERT INTO audio_play_series (id, name)
       |VALUES (${elem.id}, ${elem.name})""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def get(id: Uuid[AudioPlaySeries]): F[Option[AudioPlaySeries]] =
     (selectBase ++ sql"WHERE aps.id = $id").stripMargin
@@ -74,32 +71,24 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toAudioPlaySeries)
       .option
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
-  override def update(elem: AudioPlaySeries): F[AudioPlaySeries] =
-    val updateAudioPlay = sql"""
+  override def update(elem: AudioPlaySeries): F[AudioPlaySeries] = sql"""
       |UPDATE audio_play_series
       |SET name = ${elem.name}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
-
-    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
-
-    val transaction =
-      for
-        rows <- updateAudioPlay
-        _ <- checkIfAny(rows)
-      yield elem
-
-    transaction.transact(transactor).handleErrorWith(toRepositoryError)
-  end update
+    .flatMap(checkIfUpdated)
+    .as(elem)
+    .transact(transactor)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def delete(id: Uuid[AudioPlaySeries]): F[Unit] =
     sql"DELETE FROM audio_play_series WHERE id = $id".update.run
       .transact(transactor)
       .void
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def batchGet(
       ids: NonEmptyList[Uuid[AudioPlaySeries]],
@@ -113,7 +102,7 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
     .map(toAudioPlaySeries)
     .to[List]
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   override def list(
       cursor: Option[AudioPlaySeriesRepository.Cursor],
@@ -124,35 +113,27 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
       case Some(t) => selectBase ++ fr"WHERE aps.id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
-    val query = full.stripMargin
+    checkIfPositive(count) >> full.stripMargin
       .query[SelectResult]
       .map(toAudioPlaySeries)
       .to[List]
-
-    (for
-      _ <- MonadThrow[F].raiseWhen(count <= 0)(InvalidArgument)
-      result <- query.transact(transactor)
-    yield result).handleErrorWith(toRepositoryError)
+      .transact(transactor)
+      .handleErrorWith(toInternalError)
   end list
 
   override def search(
       query: NonEmptyString,
       limit: Int,
-  ): F[List[AudioPlaySeries]] =
-    val select = (selectBase ++ fr0"""
+  ): F[List[AudioPlaySeries]] = checkIfPositive(limit) >> (selectBase ++ fr0"""
       |WHERE TO_TSVECTOR(aps.name) @@ PLAINTO_TSQUERY($query)
       |ORDER BY TS_RANK(TO_TSVECTOR(aps.name), PLAINTO_TSQUERY($query)) DESC
       |LIMIT $limit
       |""".stripMargin)
-      .query[SelectResult]
-      .map(toAudioPlaySeries)
-      .to[List]
-
-    (for
-      _ <- MonadThrow[F].raiseWhen(limit <= 0)(InvalidArgument)
-      result <- select.transact(transactor)
-    yield result).handleErrorWith(toRepositoryError)
-  end search
+    .query[SelectResult]
+    .map(toAudioPlaySeries)
+    .to[List]
+    .transact(transactor)
+    .handleErrorWith(toInternalError)
 
   private type SelectResult = (
       Uuid[AudioPlaySeries],
@@ -172,10 +153,3 @@ private final class AudioPlaySeriesRepositoryImpl[F[_]: MonadCancelThrow](
     id = uuid,
     name = name,
   )
-
-  /** Converts caught errors to [[RepositoryError]]. */
-  private def toRepositoryError[A](err: Throwable) = err match
-    case e: RepositoryError => e.raiseError[F, A]
-    case e: SQLException    => e.getSQLState match
-        case sqlstate.class23.UNIQUE_VIOLATION.value =>
-          AlreadyExists.raiseError[F, A]

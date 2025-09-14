@@ -2,8 +2,8 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres
 
 
-import adapters.jdbc.postgres.metas.SharedMetas.given
 import adapters.jdbc.postgres.metas.AudioPlayTranslationMetas.given
+import adapters.jdbc.postgres.metas.SharedMetas.given
 import domain.model.audioplay.AudioPlay
 import domain.model.audioplay.translation.{
   AudioPlayTranslation,
@@ -18,27 +18,19 @@ import domain.model.shared.{
 import domain.repositories.AudioPlayTranslationRepository
 import domain.repositories.AudioPlayTranslationRepository.AudioPlayTranslationCursor
 
-import cats.MonadThrow
-import cats.data.NonEmptyList
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
+import doobie.Transactor
 import doobie.implicits.toSqlInterpolator
-import doobie.postgres.sqlstate
 import doobie.syntax.all.given
-import doobie.{ConnectionIO, Meta, Transactor}
-import io.circe.Encoder
-import io.circe.parser.decode
-import io.circe.syntax.given
-import org.aulune.commons.adapters.doobie.postgres.Metas.{uuidMeta, jsonbMeta}
-import org.aulune.commons.repositories.RepositoryError
-import org.aulune.commons.repositories.RepositoryError.{
-  AlreadyExists,
-  FailedPrecondition,
+import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
+  checkIfPositive,
+  checkIfUpdated,
+  toAlreadyExists,
+  toInternalError,
 }
+import org.aulune.commons.adapters.doobie.postgres.Metas.uuidMeta
 import org.aulune.commons.types.Uuid
-
-import java.net.URI
-import java.sql.SQLException
 
 
 /** [[AudioPlayTranslationRepository]] implementation for PostgreSQL. */
@@ -77,6 +69,7 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     .query[Boolean]
     .unique
     .transact(transactor)
+    .handleErrorWith(toInternalError)
 
   override def persist(
       elem: AudioPlayTranslation,
@@ -93,7 +86,8 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     |)""".stripMargin.update.run
     .as(elem)
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def get(
       id: Uuid[AudioPlayTranslation],
@@ -104,12 +98,11 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       .map(toTranslation)
       .option
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
 
   override def update(
       elem: AudioPlayTranslation,
-  ): F[AudioPlayTranslation] =
-    val query = sql"""
+  ): F[AudioPlayTranslation] = sql"""
       |UPDATE translations
       |SET original_id   = ${elem.originalId},
       |    title         = ${elem.title},
@@ -119,22 +112,17 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       |    resources     = ${elem.externalResources}
       |WHERE id = ${elem.id}
       |""".stripMargin.update.run
-
-    def checkIfAny(updatedRows: Int): ConnectionIO[Unit] =
-      MonadThrow[ConnectionIO].raiseWhen(updatedRows == 0)(FailedPrecondition)
-
-    query
-      .flatMap(rows => checkIfAny(rows))
-      .as(elem)
-      .transact(transactor)
-      .handleErrorWith(toRepositoryError)
-  end update
+    .flatMap(checkIfUpdated)
+    .as(elem)
+    .transact(transactor)
+    .recoverWith(toAlreadyExists)
+    .handleErrorWith(toInternalError)
 
   override def delete(
       id: Uuid[AudioPlayTranslation],
   ): F[Unit] = sql"DELETE FROM translations WHERE id = $id".update.run.void
     .transact(transactor)
-    .handleErrorWith(toRepositoryError)
+    .handleErrorWith(toInternalError)
 
   override def list(
       cursor: Option[AudioPlayTranslationCursor],
@@ -145,12 +133,12 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
       case Some(t) => selectBase ++ fr"WHERE id > ${t.id}" ++ sort
       case None    => selectBase ++ sort
 
-    full.stripMargin
+    checkIfPositive(count) >> full.stripMargin
       .query[SelectResult]
       .map(toTranslation)
       .to[List]
       .transact(transactor)
-      .handleErrorWith(toRepositoryError)
+      .handleErrorWith(toInternalError)
   end list
 
   private type SelectResult = (
@@ -188,10 +176,3 @@ private final class AudioPlayTranslationRepositoryImpl[F[_]: MonadCancelThrow](
     selfHostedLocation = selfHostLocation,
     externalResources = resources,
   )
-
-  /** Converts caught errors to [[RepositoryError]]. */
-  private def toRepositoryError[A](err: Throwable) = err match
-    case e: RepositoryError => e.raiseError[F, A]
-    case e: SQLException    => e.getSQLState match
-        case sqlstate.class23.UNIQUE_VIOLATION.value =>
-          AlreadyExists.raiseError[F, A]
