@@ -5,7 +5,7 @@ package application.dto.audioplay
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.person.PersonResource
-import application.dto.shared.ExternalResourceDTO
+import application.dto.shared.{ExternalResourceDTO, ReleaseDateDTO}
 
 import java.net.URI
 import java.time.LocalDate
@@ -29,7 +29,7 @@ final case class AudioPlayResource(
     id: UUID,
     title: String,
     synopsis: String,
-    releaseDate: LocalDate,
+    releaseDate: ReleaseDateDTO,
     writers: List[PersonResource],
     cast: List[CastMemberResource],
     series: Option[AudioPlaySeriesResource],

@@ -5,6 +5,7 @@ package api.http.tapir.audioplay
 import api.http.tapir.audioplay.series.AudioPlaySeriesExamples
 import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
+import application.dto.audioplay.EpisodeTypeDTO.Regular
 import application.dto.audioplay.{
   AudioPlayLocationResource,
   AudioPlayResource,
@@ -13,10 +14,9 @@ import application.dto.audioplay.{
   ListAudioPlaysResponse,
   SearchAudioPlaysResponse,
 }
-import application.dto.shared.ExternalResourceDTO
 import application.dto.shared.ExternalResourceTypeDTO.Purchase
-
-import org.aulune.aggregator.application.dto.audioplay.EpisodeTypeDTO.Regular
+import application.dto.shared.ReleaseDateDTO.DateAccuracyDTO
+import application.dto.shared.{ExternalResourceDTO, ReleaseDateDTO}
 
 import java.net.URI
 import java.time.LocalDate
@@ -38,7 +38,10 @@ object AudioPlayExamples:
     "murder of Roscius’s father and find the true culprit; but in their quest for " +
     "justice, the brothers Cicero may be about to make some very powerful " +
     "enemies indeed..."
-  private val releaseDateExample = LocalDate.of(2017, 2, 28)
+  private val releaseDateExample = ReleaseDateDTO(
+    date = LocalDate.of(2017, 2, 28),
+    accuracy = DateAccuracyDTO.Full,
+  )
 
   private val writersExample = List(PersonExamples.DavidLlewellynResource)
   private val castExample = List(

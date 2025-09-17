@@ -35,6 +35,8 @@ import domain.model.shared.ExternalResourceType.{
   Purchase,
   Streaming,
 }
+import domain.model.shared.ReleaseDate.DateAccuracy
+import domain.model.shared.ReleaseDate.DateAccuracy.{Day, Full, Year}
 import domain.model.shared.{
   ExternalResource,
   ImageUri,
@@ -58,8 +60,12 @@ private[aggregator] object AudioPlays:
   private def makeCoverUri(url: String): Option[ImageUri] =
     ImageUri.unsafe(URI.create(url)).some
 
-  private def makeReleaseDate(year: Int, month: Int, day: Int): ReleaseDate =
-    ReleaseDate.unsafe(LocalDate.of(year, month, day))
+  private def makeReleaseDate(
+      year: Int,
+      month: Int,
+      day: Int,
+      accuracy: DateAccuracy,
+  ): ReleaseDate = ReleaseDate.unsafe(LocalDate.of(year, month, day), accuracy)
 
   /** ''Magic Mountain'' audio play. */
   val audioPlay1: AudioPlay = AudioPlay.unsafe(
@@ -79,7 +85,7 @@ private[aggregator] object AudioPlays:
         main = false,
       ),
     ),
-    releaseDate = makeReleaseDate(2000, 10, 10),
+    releaseDate = makeReleaseDate(2000, 10, 10, Full),
     seriesId = AudioPlaySeriesStubs.series1.id.some,
     seriesSeason = AudioPlaySeason.unsafe(1).some,
     seriesNumber = AudioPlaySeriesNumber.unsafe(1).some,
@@ -102,7 +108,7 @@ private[aggregator] object AudioPlays:
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea67"),
     title = AudioPlayTitle.unsafe("Test of Thing"),
     synopsis = Synopsis.unsafe("Synopsis 1"),
-    releaseDate = makeReleaseDate(1999, 10, 3),
+    releaseDate = makeReleaseDate(1999, 10, 31, Day),
     writers = Nil,
     cast = Nil,
     seriesId = AudioPlaySeriesStubs.series3.id.some,
@@ -122,7 +128,7 @@ private[aggregator] object AudioPlays:
     id = Uuid.unsafe("3f8a202e-609d-49b2-a643-907b341cea68"),
     title = AudioPlayTitle.unsafe("The Testing Things"),
     synopsis = Synopsis.unsafe("Synopsis 2"),
-    releaseDate = makeReleaseDate(2024, 3, 15),
+    releaseDate = makeReleaseDate(2024, 12, 31, Year),
     writers = Nil,
     cast = List(
       CastMember.unsafe(

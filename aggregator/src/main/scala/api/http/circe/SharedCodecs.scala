@@ -2,21 +2,27 @@ package org.aulune.aggregator
 package api.http.circe
 
 
-import api.mappers.{ExternalResourceTypeMapper, LanguageMapper}
+import api.mappers.{
+  DateAccuracyMapper,
+  ExternalResourceTypeMapper,
+  LanguageMapper,
+}
+import application.dto.shared.ReleaseDateDTO.DateAccuracyDTO
+import application.dto.shared.{
+  ExternalResourceDTO,
+  ExternalResourceTypeDTO,
+  LanguageDTO,
+  ReleaseDateDTO,
+}
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
   deriveConfiguredEncoder,
 }
 import io.circe.{Decoder, Encoder}
-import org.aulune.aggregator.application.dto.shared.{
-  ExternalResourceDTO,
-  ExternalResourceTypeDTO,
-  LanguageDTO,
-}
 import org.aulune.commons.adapters.circe.CirceUtils.config
 
-import java.net.{URI, URL}
+import java.net.URI
 import scala.util.Try
 
 
@@ -31,6 +37,17 @@ private[api] object SharedCodecs:
     LanguageMapper
       .fromString(str)
       .toRight(s"Invalid Language: $str")
+  }
+
+  given Encoder[ReleaseDateDTO] = deriveConfiguredEncoder
+  given Decoder[ReleaseDateDTO] = deriveConfiguredDecoder
+
+  private given Encoder[DateAccuracyDTO] =
+    Encoder.encodeString.contramap(DateAccuracyMapper.toString)
+  private given Decoder[DateAccuracyDTO] = Decoder.decodeString.emap { str =>
+    DateAccuracyMapper
+      .fromString(str)
+      .toRight(s"Invalid DateAccuracy: $str")
   }
 
   given Encoder[ExternalResourceTypeDTO] =
