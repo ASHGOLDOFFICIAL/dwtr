@@ -2,7 +2,11 @@ package org.aulune.aggregator
 package adapters.service
 
 
-import adapters.service.mappers.{AudioPlayMapper, EpisodeTypeMapper}
+import adapters.service.mappers.{
+  AudioPlayMapper,
+  EpisodeTypeMapper,
+  ReleaseDateMapper,
+}
 import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
 import application.AudioPlayService
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
@@ -125,7 +129,7 @@ final class AudioPlayServiceImplTest
     id = audioPlay.id,
     title = audioPlay.title,
     synopsis = audioPlay.synopsis,
-    releaseDate = audioPlay.releaseDate,
+    releaseDate = ReleaseDateMapper.fromDomain(audioPlay.releaseDate),
     writers = audioPlay.writers.map(Persons.resourceById),
     cast = audioPlay.cast.map(m =>
       CastMemberResource(
@@ -245,7 +249,7 @@ final class AudioPlayServiceImplTest
     val request = CreateAudioPlayRequest(
       title = audioPlay.title,
       synopsis = audioPlay.synopsis,
-      releaseDate = audioPlay.releaseDate,
+      releaseDate = ReleaseDateMapper.fromDomain(audioPlay.releaseDate),
       writers = audioPlay.writers,
       cast = audioPlay.cast.map(m =>
         CastMemberDTO(

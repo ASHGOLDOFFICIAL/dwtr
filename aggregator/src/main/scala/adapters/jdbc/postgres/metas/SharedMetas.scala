@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres.metas
 
 
+import domain.model.shared.ReleaseDate.DateAccuracy
 import domain.model.shared.{
   ExternalResource,
   ExternalResourceType,
@@ -37,8 +38,16 @@ private[postgres] object SharedMetas:
   given imageUriMeta: Meta[ImageUri] = Meta[URI]
     .imap(ImageUri.unsafe)(identity)
 
-  given releaseDateMeta: Meta[ReleaseDate] = JavaLocalDateMeta
-    .imap(ReleaseDate.unsafe)(identity)
+  given dateAccuracyMeta: Meta[DateAccuracy] =
+    val toInt = DateAccuracy.values.map {
+      case t @ DateAccuracy.Full  => t -> 1
+      case t @ DateAccuracy.Year  => t -> 2
+      case t @ DateAccuracy.Month => t -> 3
+      case t @ DateAccuracy.Day   => t -> 4
+    }.toMap
+    val fromInt = toInt.map(_.swap)
+    Meta[Int].imap(fromInt)(toInt)
+
   given synopsisMeta: Meta[Synopsis] = Meta[String]
     .imap(Synopsis.unsafe)(identity)
 

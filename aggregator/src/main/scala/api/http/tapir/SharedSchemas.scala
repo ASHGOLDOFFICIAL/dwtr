@@ -2,11 +2,17 @@ package org.aulune.aggregator
 package api.http.tapir
 
 
-import api.mappers.{ExternalResourceTypeMapper, LanguageMapper}
+import api.mappers.{
+  DateAccuracyMapper,
+  ExternalResourceTypeMapper,
+  LanguageMapper,
+}
+import application.dto.shared.ReleaseDateDTO.DateAccuracyDTO
 import application.dto.shared.{
   ExternalResourceDTO,
   ExternalResourceTypeDTO,
   LanguageDTO,
+  ReleaseDateDTO,
 }
 
 import sttp.tapir.{Schema, Validator}
@@ -24,10 +30,15 @@ object SharedSchemas:
         .encode(ExternalResourceTypeMapper.toString))
   given Schema[URI] = Schema.string[URI]
 
-  private val languageDescription = "Language of translation."
   given Schema[LanguageDTO] = Schema.string
     .validate(
       Validator
         .enumeration(LanguageDTO.values.toList)
         .encode(LanguageMapper.toString))
-    .description(languageDescription)
+
+  given Schema[ReleaseDateDTO] = Schema.derived
+  private given Schema[DateAccuracyDTO] = Schema.string
+    .validate(
+      Validator
+        .enumeration(DateAccuracyDTO.values.toList)
+        .encode(DateAccuracyMapper.toString))

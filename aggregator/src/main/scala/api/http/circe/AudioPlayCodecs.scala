@@ -4,7 +4,7 @@ package api.http.circe
 
 import api.http.circe.PersonCodecs.given
 import api.http.circe.SharedCodecs.given
-import api.mappers.EpisodeTypeMapper
+import api.mappers.{DateAccuracyMapper, EpisodeTypeMapper}
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.{
@@ -18,6 +18,8 @@ import application.dto.audioplay.{
   SearchAudioPlaysRequest,
   SearchAudioPlaysResponse,
 }
+import application.dto.shared.ReleaseDateDTO
+import application.dto.shared.ReleaseDateDTO.DateAccuracyDTO
 
 import io.circe.generic.extras.semiauto.{
   deriveConfiguredDecoder,
@@ -64,5 +66,5 @@ private[api] object AudioPlayCodecs:
   private given Decoder[EpisodeTypeDTO] = Decoder.decodeString.emap { str =>
     EpisodeTypeMapper
       .fromString(str)
-      .toRight(s"Invalid EpisodeTypeMapper: $str")
+      .toRight(s"Invalid EpisodeType: $str")
   }

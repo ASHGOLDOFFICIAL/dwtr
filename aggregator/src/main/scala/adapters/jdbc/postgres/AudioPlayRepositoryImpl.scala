@@ -16,6 +16,7 @@ import domain.model.audioplay.{
   EpisodeType,
 }
 import domain.model.person.Person
+import domain.model.shared.ReleaseDate.DateAccuracy
 import domain.model.shared.{
   ExternalResource,
   ImageUri,
@@ -30,6 +31,7 @@ import cats.MonadThrow
 import cats.effect.MonadCancelThrow
 import cats.syntax.all.given
 import doobie.Transactor
+import doobie.postgres.implicits.JavaLocalDateMeta
 import doobie.syntax.all.given
 import org.aulune.commons.adapters.doobie.postgres.ErrorUtils.{
   checkIfPositive,
@@ -42,6 +44,8 @@ import org.aulune.commons.adapters.doobie.postgres.Metas.{
   uuidMeta,
 }
 import org.aulune.commons.types.{NonEmptyString, Uuid}
+
+import java.time.LocalDate
 
 
 /** [[AudioPlayRepository]] implementation for PostgreSQL. */
@@ -62,6 +66,7 @@ object AudioPlayRepositoryImpl:
     |  title         VARCHAR(255) NOT NULL,
     |  synopsis      TEXT         NOT NULL,
     |  release_date  DATE         NOT NULL,
+    |  date_accuracy INTEGER      NOT NULL,
     |  writers       JSONB        NOT NULL,
     |  cast_members  JSONB        NOT NULL,
     |  series_id     UUID,
@@ -103,14 +108,16 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
 
   override def persist(elem: AudioPlay): F[AudioPlay] = sql"""
       |INSERT INTO audio_plays (
-      |  id, title, synopsis, release_date,
+      |  id, title, synopsis,
+      |  release_date, date_accuracy,
       |  writers, cast_members,
       |  series_id, series_season,
       |  series_number, episode_type,
       |  cover_url, self_host_uri, resources
       |)
       |VALUES (
-      |  ${elem.id}, ${elem.title}, ${elem.synopsis}, ${elem.releaseDate},
+      |  ${elem.id}, ${elem.title}, ${elem.synopsis},
+      |  ${elem.releaseDate.date}, ${elem.releaseDate.accuracy},
       |  ${elem.writers}, ${elem.cast},
       |  ${elem.seriesId}, ${elem.seriesSeason},
       |  ${elem.seriesNumber}, ${elem.episodeType},
@@ -134,7 +141,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |UPDATE audio_plays
       |SET title         = ${elem.title},
       |    synopsis      = ${elem.synopsis},
-      |    release_date  = ${elem.releaseDate},
+      |    release_date  = ${elem.releaseDate.date},
+      |    date_accuracy = ${elem.releaseDate.accuracy},
       |    writers       = ${elem.writers},
       |    cast_members  = ${elem.cast},
       |    series_id     = ${elem.seriesId},
@@ -191,7 +199,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       Uuid[AudioPlay],
       AudioPlayTitle,
       Synopsis,
-      ReleaseDate,
+      LocalDate,
+      DateAccuracy,
       List[Uuid[Person]],
       List[CastMember],
       Option[Uuid[AudioPlaySeries]],
@@ -208,6 +217,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |    ap.title,
     |    ap.synopsis,
     |    ap.release_date,
+    |    ap.date_accuracy,
     |    ap.writers,
     |    ap.cast_members,
     |    ap.series_id,
@@ -225,7 +235,8 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       uuid: Uuid[AudioPlay],
       title: AudioPlayTitle,
       synopsis: Synopsis,
-      releaseDate: ReleaseDate,
+      releaseDate: LocalDate,
+      dateAccuracy: DateAccuracy,
       writerIds: List[Uuid[Person]],
       cast: List[CastMember],
       seriesId: Option[Uuid[AudioPlaySeries]],
@@ -239,7 +250,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     id = uuid,
     title = title,
     synopsis = synopsis,
-    releaseDate = releaseDate,
+    releaseDate = ReleaseDate.unsafe(releaseDate, dateAccuracy),
     writers = writerIds,
     cast = cast,
     seriesId = seriesId,

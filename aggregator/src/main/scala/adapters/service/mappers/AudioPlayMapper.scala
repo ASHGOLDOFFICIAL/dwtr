@@ -59,7 +59,8 @@ private[service] object AudioPlayMapper:
       .toValidNec(InvalidTitle),
     Synopsis(request.synopsis)
       .toValidNec(InvalidSynopsis),
-    ReleaseDate(request.releaseDate)
+    ReleaseDateMapper
+      .toDomain(request.releaseDate)
       .toValidNec(InvalidReleaseDate),
     request.writers.map(Uuid[Person]).validNec,
     request.cast
@@ -92,7 +93,7 @@ private[service] object AudioPlayMapper:
     id = domain.id,
     title = domain.title,
     synopsis = domain.synopsis,
-    releaseDate = domain.releaseDate,
+    releaseDate = ReleaseDateMapper.fromDomain(domain.releaseDate),
     writers = domain.writers.map(personMap),
     cast = domain.cast
       .map(p => CastMemberMapper.toResource(p, personMap(p.actor))),
