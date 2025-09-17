@@ -6,8 +6,30 @@ import scala.util.control.NoStackTrace
 
 /** Errors that can occur during audio play validation. */
 enum AudioPlayValidationError extends NoStackTrace:
-  /** Some given arguments are invalid */
-  case InvalidArguments
+  // Argument validation.
+
+  /** Audio play title is invalid. */
+  case InvalidTitle
+
+  /** Synopsis is invalid. */
+  case InvalidSynopsis
+
+  /** Invalid release date. */
+  case InvalidReleaseDate
+
+  /** Invalid cast. */
+  case InvalidCast
+
+  /** Invalid season. */
+  case InvalidSeason
+
+  /** Invalid series number. */
+  case InvalidSeriesNumber
+
+  /** Invalid self-hosted location. */
+  case InvalidSelfHostedLocation
+
+  // State validation.
 
   /** Some writers are listed more than once. */
   case WriterDuplicates
