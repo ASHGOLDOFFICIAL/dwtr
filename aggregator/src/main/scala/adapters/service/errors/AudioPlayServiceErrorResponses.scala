@@ -129,7 +129,15 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
    */
   private def representValidationError(err: AudioPlayValidationError): String =
     err match
-      case AudioPlayValidationError.InvalidArguments => "arguments are invalid"
+      case AudioPlayValidationError.InvalidTitle       => "invalid title"
+      case AudioPlayValidationError.InvalidSynopsis    => "invalid synopsis"
+      case AudioPlayValidationError.InvalidReleaseDate => "invalid release date"
+      case AudioPlayValidationError.InvalidCast        => "invalid cast"
+      case AudioPlayValidationError.InvalidSeason      => "invalid season"
+      case AudioPlayValidationError.InvalidSeriesNumber =>
+        "invalid series number"
+      case AudioPlayValidationError.InvalidSelfHostedLocation =>
+        "invalid self-hosted location"
       case AudioPlayValidationError.WriterDuplicates =>
         "duplicate writers are not allowed"
       case AudioPlayValidationError.CastMemberDuplicates =>

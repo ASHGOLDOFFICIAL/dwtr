@@ -6,17 +6,33 @@ import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.{AudioPlayResource, CreateAudioPlayRequest}
 import application.dto.person.PersonResource
 import domain.errors.AudioPlayValidationError
+import domain.errors.AudioPlayValidationError.{
+  InvalidCast,
+  InvalidReleaseDate,
+  InvalidSeason,
+  InvalidSelfHostedLocation,
+  InvalidSeriesNumber,
+  InvalidSynopsis,
+  InvalidTitle,
+}
 import domain.model.audioplay.series.AudioPlaySeries
 import domain.model.audioplay.{
   AudioPlay,
   AudioPlaySeason,
   AudioPlaySeriesNumber,
   AudioPlayTitle,
+  CastMember,
 }
 import domain.model.person.Person
-import domain.model.shared.{ReleaseDate, SelfHostedLocation, Synopsis}
+import domain.model.shared.{
+  ExternalResource,
+  ImageUri,
+  ReleaseDate,
+  SelfHostedLocation,
+  Synopsis,
+}
 
-import cats.data.ValidatedNec
+import cats.data.{Validated, ValidatedNec}
 import cats.syntax.all.given
 import org.aulune.commons.types.Uuid
 
@@ -36,33 +52,31 @@ private[service] object AudioPlayMapper:
   def fromRequest(
       request: CreateAudioPlayRequest,
       id: UUID,
-  ): ValidatedNec[AudioPlayValidationError, AudioPlay] = (for
-    title <- AudioPlayTitle(request.title)
-    synopsis <- Synopsis(request.synopsis)
-    releaseDate <- ReleaseDate(request.releaseDate)
-    writers = request.writers.map(Uuid[Person])
-    cast <- request.cast.traverse(CastMemberMapper.fromDTO)
-    season <- request.seriesSeason.map(AudioPlaySeason.apply)
-    number <- request.seriesNumber.map(AudioPlaySeriesNumber.apply)
-    seriesId = request.seriesId.map(Uuid[AudioPlaySeries])
-    download <- request.selfHostedLocation.map(SelfHostedLocation.apply)
-    resources = request.externalResources.map(ExternalResourceMapper.toDomain)
-  yield AudioPlay(
-    id = Uuid[AudioPlay](id),
-    title = title,
-    synopsis = synopsis,
-    writers = writers,
-    cast = cast,
-    releaseDate = releaseDate,
-    seriesId = seriesId,
-    seriesSeason = season,
-    seriesNumber = number,
-    coverUrl = None,
-    selfHostedLocation = download,
-    externalResources = resources,
-  )).getOrElse(AudioPlayValidationError.InvalidArguments.invalidNec)
+  ): ValidatedNec[AudioPlayValidationError, AudioPlay] = (
+    Uuid[AudioPlay](id).validNec,
+    AudioPlayTitle(request.title)
+      .toValidNec(InvalidTitle),
+    Synopsis(request.synopsis)
+      .toValidNec(InvalidSynopsis),
+    ReleaseDate(request.releaseDate)
+      .toValidNec(InvalidReleaseDate),
+    request.writers.map(Uuid[Person]).validNec,
+    request.cast
+      .traverse(CastMemberMapper.fromDTO)
+      .toValidNec(InvalidCast),
+    request.seriesId.map(Uuid[AudioPlaySeries]).validNec,
+    request.seriesSeason
+      .traverse(AudioPlaySeason(_).toValidNec(InvalidSeason)),
+    request.seriesNumber
+      .traverse(AudioPlaySeriesNumber(_).toValidNec(InvalidSeriesNumber)),
+    Option.empty[ImageUri].validNec,
+    request.selfHostedLocation
+      .traverse(SelfHostedLocation(_).toValidNec(InvalidSelfHostedLocation)),
+    request.externalResources.map(ExternalResourceMapper.toDomain).validNec,
+  ).mapN(AudioPlay.apply).andThen(identity)
 
   /** Converts domain object to response object.
+   *
    *  @param domain entity to use as a base.
    *  @param series prefetched audio play series resource.
    *  @param personMap map between ID and persons to populate writers and cast.

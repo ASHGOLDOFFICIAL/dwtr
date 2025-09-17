@@ -6,7 +6,8 @@ opaque type AudioPlayTitle <: String = String
 
 
 object AudioPlayTitle:
-  /** Returns [[AudioPlayTitle]] if argument is valid.
+  /** Returns [[AudioPlayTitle]] if argument is valid. Only non-empty strings
+   *  are allowed.
    *  @param title audio play title.
    */
   def apply(title: String): Option[AudioPlayTitle] =
