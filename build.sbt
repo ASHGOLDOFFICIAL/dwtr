@@ -1,9 +1,10 @@
 import sbtassembly.MergeStrategy
 
+excludeLintKeys in Global ++= Set(idePackagePrefix)
+
 
 inThisBuild {
   List(
-    name := "dwtr",
     organization := "org.aulune",
     scalaVersion := "3.3.6",
     semanticdbEnabled := true,
@@ -13,6 +14,7 @@ inThisBuild {
       "-deprecation",
       "-unchecked",
       "-Wnonunit-statement",
+      "-Werror",
       "-Xmax-inlines:64",
     ),
     assembly / assemblyMergeStrategy := mergeStrategy,
