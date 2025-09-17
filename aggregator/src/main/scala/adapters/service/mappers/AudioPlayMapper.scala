@@ -99,6 +99,7 @@ private[service] object AudioPlayMapper:
     series = series,
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,
+    episodeType = domain.episodeType.map(EpisodeTypeMapper.fromDomain),
     coverUri = domain.coverUri,
     externalResources = domain.externalResources
       .map(ExternalResourceMapper.fromDomain),

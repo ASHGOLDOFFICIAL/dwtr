@@ -3,10 +3,9 @@ package application.dto.audioplay
 
 
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
+import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.person.PersonResource
 import application.dto.shared.ExternalResourceDTO
-
-import org.aulune.aggregator.application.dto.audioplay.series.AudioPlaySeriesResource
 
 import java.net.URI
 import java.time.LocalDate
@@ -22,6 +21,7 @@ import java.util.UUID
  *  @param series audio play series.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play number in series.
+ *  @param episodeType type of episode in relation to series.
  *  @param coverUri link to cover image.
  *  @param externalResources links to external resources.
  */
@@ -35,6 +35,7 @@ final case class AudioPlayResource(
     series: Option[AudioPlaySeriesResource],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
+    episodeType: Option[EpisodeTypeDTO],
     coverUri: Option[URI],
     externalResources: List[ExternalResourceDTO],
 )
