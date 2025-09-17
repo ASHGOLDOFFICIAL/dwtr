@@ -34,8 +34,8 @@ private[postgres] object AudioPlayMetas:
 
   given episodeTypeMeta: Meta[EpisodeType] =
     val toInt = EpisodeType.values.map {
-      case t @ EpisodeType.Regular => t -> 0
-      case t @ EpisodeType.Special => t -> 1
+      case t @ EpisodeType.Regular => t -> 1
+      case t @ EpisodeType.Special => t -> 2
     }.toMap
     val fromInt = toInt.map(_.swap)
     Meta[Int].imap(fromInt)(toInt)
