@@ -134,7 +134,7 @@ private[aggregator] object AudioPlays:
     seriesId = None,
     seriesSeason = None,
     seriesNumber = None,
-    episodeType = EpisodeType.Special.some,
+    episodeType = None,
     coverUrl = None,
     selfHostedLocation = SelfHostedLocation
       .unsafe(URI.create("file:///media/example3.mp3"))
