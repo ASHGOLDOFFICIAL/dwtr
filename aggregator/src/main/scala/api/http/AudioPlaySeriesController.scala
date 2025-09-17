@@ -63,7 +63,7 @@ final class AudioPlaySeriesController[F[_]: Applicative](
   private val seriesId = path[UUID]("series_id")
     .description("ID of the audio play series.")
 
-  private val collectionPath = "audioPlaysSeries"
+  private val collectionPath = "audioPlaySeries"
   private val elementPath = collectionPath / seriesId
   private val tag = "AudioPlaySeries"
 
