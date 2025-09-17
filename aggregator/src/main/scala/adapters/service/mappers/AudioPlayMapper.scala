@@ -22,6 +22,7 @@ import domain.model.audioplay.{
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
+  EpisodeType,
 }
 import domain.model.person.Person
 import domain.model.shared.{
@@ -69,6 +70,7 @@ private[service] object AudioPlayMapper:
       .traverse(AudioPlaySeason(_).toValidNec(InvalidSeason)),
     request.seriesNumber
       .traverse(AudioPlaySeriesNumber(_).toValidNec(InvalidSeriesNumber)),
+    request.episodeType.map(EpisodeTypeMapper.toDomain).validNec,
     Option.empty[ImageUri].validNec,
     request.selfHostedLocation
       .traverse(SelfHostedLocation(_).toValidNec(InvalidSelfHostedLocation)),
@@ -97,6 +99,7 @@ private[service] object AudioPlayMapper:
     series = series,
     seriesSeason = domain.seriesSeason,
     seriesNumber = domain.seriesNumber,
+    episodeType = domain.episodeType.map(EpisodeTypeMapper.fromDomain),
     coverUri = domain.coverUri,
     externalResources = domain.externalResources
       .map(ExternalResourceMapper.fromDomain),

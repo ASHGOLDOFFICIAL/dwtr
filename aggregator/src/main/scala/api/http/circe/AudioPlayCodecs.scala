@@ -4,13 +4,15 @@ package api.http.circe
 
 import api.http.circe.PersonCodecs.given
 import api.http.circe.SharedCodecs.given
+import api.mappers.EpisodeTypeMapper
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.series.AudioPlaySeriesResource
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
-  AudioPlayLocationResource,
+  EpisodeTypeDTO,
   ListAudioPlaysRequest,
   ListAudioPlaysResponse,
   SearchAudioPlaysRequest,
@@ -56,3 +58,11 @@ private[api] object AudioPlayCodecs:
 
   given Encoder[AudioPlayLocationResource] = deriveConfiguredEncoder
   given Decoder[AudioPlayLocationResource] = deriveConfiguredDecoder
+
+  private given Encoder[EpisodeTypeDTO] =
+    Encoder.encodeString.contramap(EpisodeTypeMapper.toString)
+  private given Decoder[EpisodeTypeDTO] = Decoder.decodeString.emap { str =>
+    EpisodeTypeMapper
+      .fromString(str)
+      .toRight(s"Invalid EpisodeTypeMapper: $str")
+  }

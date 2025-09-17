@@ -2,7 +2,7 @@ package org.aulune.aggregator
 package adapters.service
 
 
-import adapters.service.mappers.AudioPlayMapper
+import adapters.service.mappers.{AudioPlayMapper, EpisodeTypeMapper}
 import application.AggregatorPermission.{Modify, SeeSelfHostedLocation}
 import application.AudioPlayService
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
@@ -136,6 +136,7 @@ final class AudioPlayServiceImplTest
     series = audioPlay.seriesId.map(AudioPlaySeriesStubs.resourceById),
     seriesSeason = audioPlay.seriesSeason,
     seriesNumber = audioPlay.seriesNumber,
+    episodeType = audioPlay.episodeType.map(EpisodeTypeMapper.fromDomain),
     coverUri = audioPlay.coverUri,
     externalResources = Nil,
   )
@@ -255,6 +256,7 @@ final class AudioPlayServiceImplTest
       seriesId = audioPlay.seriesId,
       seriesSeason = audioPlay.seriesSeason,
       seriesNumber = audioPlay.seriesNumber,
+      episodeType = audioPlay.episodeType.map(EpisodeTypeMapper.fromDomain),
       selfHostedLocation = audioPlay.selfHostedLocation,
       externalResources = Nil,
     )

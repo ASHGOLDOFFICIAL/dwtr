@@ -26,6 +26,7 @@ import domain.model.audioplay.{
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
+  EpisodeType,
 }
 import domain.model.shared.ExternalResourceType.{
   Download,
@@ -82,6 +83,7 @@ private[aggregator] object AudioPlays:
     seriesId = AudioPlaySeriesStubs.series1.id.some,
     seriesSeason = AudioPlaySeason.unsafe(1).some,
     seriesNumber = AudioPlaySeriesNumber.unsafe(1).some,
+    episodeType = EpisodeType.Regular.some,
     coverUrl = makeCoverUri("https://imagahost.org/123"),
     selfHostedLocation = SelfHostedLocation
       .unsafe(URI.create("file:///media/example1.mp3"))
@@ -106,6 +108,7 @@ private[aggregator] object AudioPlays:
     seriesId = AudioPlaySeriesStubs.series3.id.some,
     seriesSeason = None,
     seriesNumber = AudioPlaySeriesNumber.unsafe(2).some,
+    episodeType = EpisodeType.Special.some,
     coverUrl = makeCoverUri("https://cdn.test.org/23"),
     selfHostedLocation = SelfHostedLocation
       .unsafe(URI.create("file:///media/example2.mp3"))
@@ -131,6 +134,7 @@ private[aggregator] object AudioPlays:
     seriesId = None,
     seriesSeason = None,
     seriesNumber = None,
+    episodeType = None,
     coverUrl = None,
     selfHostedLocation = SelfHostedLocation
       .unsafe(URI.create("file:///media/example3.mp3"))

@@ -157,6 +157,7 @@ final class AudioPlayRepositoryImplTest
               seriesId = audioPlayTest.seriesId,
               seriesSeason = audioPlayTest.seriesSeason,
               seriesNumber = audioPlayTest.seriesNumber,
+              episodeType = audioPlayTest.episodeType,
             )
             .getOrElse(throw new IllegalStateException())
 

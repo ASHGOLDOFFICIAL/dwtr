@@ -2,6 +2,7 @@ package org.aulune.aggregator
 package adapters.jdbc.postgres.metas
 
 
+import domain.model.audioplay.series.AudioPlaySeriesName
 import domain.model.audioplay.{
   ActorRole,
   AudioPlay,
@@ -9,8 +10,10 @@ import domain.model.audioplay.{
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
+  EpisodeType,
 }
 import domain.model.person.Person
+import domain.model.shared.{ExternalResource, ExternalResourceType}
 
 import doobie.Meta
 import io.circe.generic.extras.Configuration
@@ -20,11 +23,6 @@ import io.circe.generic.extras.semiauto.{
 }
 import io.circe.syntax.given
 import io.circe.{Decoder, Encoder}
-import org.aulune.aggregator.domain.model.audioplay.series.AudioPlaySeriesName
-import org.aulune.aggregator.domain.model.shared.{
-  ExternalResource,
-  ExternalResourceType,
-}
 import org.aulune.commons.adapters.doobie.postgres.Metas.jsonbMeta
 import org.aulune.commons.types.Uuid
 
@@ -33,6 +31,15 @@ import java.net.URL
 
 /** [[Meta]] instances for [[AudioPlay]]. */
 private[postgres] object AudioPlayMetas:
+
+  given episodeTypeMeta: Meta[EpisodeType] =
+    val toInt = EpisodeType.values.map {
+      case t @ EpisodeType.Regular => t -> 1
+      case t @ EpisodeType.Special => t -> 2
+    }.toMap
+    val fromInt = toInt.map(_.swap)
+    Meta[Int].imap(fromInt)(toInt)
+
   given actorRoleMeta: Meta[ActorRole] =
     Meta[String].imap(ActorRole.unsafe)(identity)
 

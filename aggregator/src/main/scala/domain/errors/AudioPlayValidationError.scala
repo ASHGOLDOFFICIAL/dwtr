@@ -37,5 +37,8 @@ enum AudioPlayValidationError extends NoStackTrace:
   /** Some cast members are listed more than once. */
   case CastMemberDuplicates
 
-  /** Season or series number was given without series ID. */
+  /** Series is specified but episode type is empty. */
+  case EpisodeTypeIsMissing
+
+  /** Season, series number or episode was given without series ID. */
   case SeriesIsMissing

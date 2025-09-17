@@ -6,15 +6,17 @@ import api.http.tapir.audioplay.series.AudioPlaySeriesExamples
 import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
-  AudioPlayLocationResource,
   ListAudioPlaysResponse,
   SearchAudioPlaysResponse,
 }
 import application.dto.shared.ExternalResourceDTO
 import application.dto.shared.ExternalResourceTypeDTO.Purchase
+
+import org.aulune.aggregator.application.dto.audioplay.EpisodeTypeDTO.Regular
 
 import java.net.URI
 import java.time.LocalDate
@@ -78,6 +80,7 @@ object AudioPlayExamples:
 
   private val seriesSeasonExample = Some(1)
   private val seriesNumberExample = Some(1)
+  private val episodeTypeExample = Some(Regular)
 
   private val coverUriExample =
     Some(URI.create("https://www.bigfinish.com/image/release/1605/large.jpg"))
@@ -107,6 +110,7 @@ object AudioPlayExamples:
     series = Some(AudioPlaySeriesExamples.Resource),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
+    episodeType = episodeTypeExample,
     coverUri = coverUriExample,
     externalResources = externalResourcesExample,
   )
@@ -125,6 +129,7 @@ object AudioPlayExamples:
     seriesId = Some(AudioPlaySeriesExamples.Resource.id),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
+    episodeType = episodeTypeExample,
     selfHostedLocation = Some(selfHostedLocationExample),
     externalResources = externalResourcesExample,
   )

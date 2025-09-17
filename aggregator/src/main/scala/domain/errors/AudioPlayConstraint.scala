@@ -7,5 +7,5 @@ enum AudioPlayConstraint:
   /** ID should be unique. */
   case UniqueId
 
-  /** Series info (series, season, number) should be unique. */
+  /** Series info (series, season, number, episode type) should be unique. */
   case UniqueSeriesInfo

@@ -18,6 +18,7 @@ import java.util.UUID
  *  @param seriesId audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play number in series.
+ *  @param episodeType episode type of audio play.
  *  @param selfHostedLocation link to self-hosted place where this audio play
  *    can be consumed.
  *  @param externalResources links to external resources.
@@ -31,6 +32,7 @@ final case class CreateAudioPlayRequest(
     seriesId: Option[UUID],
     seriesSeason: Option[Int],
     seriesNumber: Option[Int],
+    episodeType: Option[EpisodeTypeDTO],
     selfHostedLocation: Option[URI],
     externalResources: List[ExternalResourceDTO],
 )
