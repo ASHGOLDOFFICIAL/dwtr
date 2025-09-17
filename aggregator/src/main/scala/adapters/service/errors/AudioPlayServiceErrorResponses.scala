@@ -142,5 +142,7 @@ object AudioPlayServiceErrorResponses extends BaseAggregatorErrorResponses:
         "duplicate writers are not allowed"
       case AudioPlayValidationError.CastMemberDuplicates =>
         "duplicate cast members are not allowed"
+      case AudioPlayValidationError.EpisodeTypeIsMissing =>
+        "episode type is needed when series is given"
       case AudioPlayValidationError.SeriesIsMissing =>
         "audio play series is needed when season or series number is given"

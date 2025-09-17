@@ -13,6 +13,7 @@ import domain.model.audioplay.{
   AudioPlaySeriesNumber,
   AudioPlayTitle,
   CastMember,
+  EpisodeType,
 }
 import domain.model.person.Person
 import domain.model.shared.{
@@ -66,12 +67,13 @@ object AudioPlayRepositoryImpl:
     |  series_id     UUID,
     |  series_season INTEGER,
     |  series_number INTEGER,
+    |  episode_type  INTEGER,
     |  cover_url     TEXT,
     |  self_host_uri TEXT,
     |  resources     JSONB        NOT NULL,
     |  CONSTRAINT audio_plays_unique_id UNIQUE (id),
     |  CONSTRAINT audio_plays_unique_series_info
-    |    UNIQUE (series_id, series_season, series_number)
+    |    UNIQUE (series_id, series_season, series_number, episode_type)
     |)""".stripMargin.update.run
 
   private val constraintMap = Map(
@@ -103,13 +105,15 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |INSERT INTO audio_plays (
       |  id, title, synopsis, release_date,
       |  writers, cast_members,
-      |  series_id, series_season, series_number,
+      |  series_id, series_season,
+      |  series_number, episode_type,
       |  cover_url, self_host_uri, resources
       |)
       |VALUES (
       |  ${elem.id}, ${elem.title}, ${elem.synopsis}, ${elem.releaseDate},
       |  ${elem.writers}, ${elem.cast},
-      |  ${elem.seriesId}, ${elem.seriesSeason}, ${elem.seriesNumber},
+      |  ${elem.seriesId}, ${elem.seriesSeason},
+      |  ${elem.seriesNumber}, ${elem.episodeType},
       |  ${elem.coverUri}, ${elem.selfHostedLocation}, ${elem.externalResources}
       |)""".stripMargin.update.run
     .as(elem)
@@ -136,6 +140,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       |    series_id     = ${elem.seriesId},
       |    series_season = ${elem.seriesSeason},
       |    series_number = ${elem.seriesNumber},
+      |    episode_type  = ${elem.episodeType},
       |    cover_url     = ${elem.coverUri},
       |    self_host_uri = ${elem.selfHostedLocation},
       |    resources     = ${elem.externalResources}
@@ -192,6 +197,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       Option[Uuid[AudioPlaySeries]],
       Option[AudioPlaySeason],
       Option[AudioPlaySeriesNumber],
+      Option[EpisodeType],
       Option[ImageUri],
       Option[SelfHostedLocation],
       List[ExternalResource],
@@ -207,6 +213,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     |    ap.series_id,
     |    ap.series_season,
     |    ap.series_number,
+    |    ap.episode_type,
     |    ap.cover_url,
     |    ap.self_host_uri,
     |    ap.resources
@@ -224,6 +231,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
       seriesId: Option[Uuid[AudioPlaySeries]],
       season: Option[AudioPlaySeason],
       number: Option[AudioPlaySeriesNumber],
+      episodeType: Option[EpisodeType],
       coverUrl: Option[ImageUri],
       selfHostLocation: Option[SelfHostedLocation],
       resources: List[ExternalResource],
@@ -237,6 +245,7 @@ private final class AudioPlayRepositoryImpl[F[_]: MonadCancelThrow](
     seriesId = seriesId,
     seriesSeason = season,
     seriesNumber = number,
+    episodeType = episodeType,
     coverUrl = coverUrl,
     selfHostedLocation = selfHostLocation,
     externalResources = resources,

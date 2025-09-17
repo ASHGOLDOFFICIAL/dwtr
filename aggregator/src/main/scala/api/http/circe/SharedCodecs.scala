@@ -30,7 +30,7 @@ private[api] object SharedCodecs:
   given Decoder[LanguageDTO] = Decoder.decodeString.emap { str =>
     LanguageMapper
       .fromString(str)
-      .toRight(s"Invalid TranslationType: $str")
+      .toRight(s"Invalid Language: $str")
   }
 
   given Encoder[ExternalResourceTypeDTO] =

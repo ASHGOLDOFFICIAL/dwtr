@@ -6,15 +6,17 @@ import api.http.tapir.audioplay.series.AudioPlaySeriesExamples
 import api.http.tapir.person.PersonExamples
 import application.dto.audioplay.AudioPlayResource.CastMemberResource
 import application.dto.audioplay.{
+  AudioPlayLocationResource,
   AudioPlayResource,
   CastMemberDTO,
   CreateAudioPlayRequest,
-  AudioPlayLocationResource,
   ListAudioPlaysResponse,
   SearchAudioPlaysResponse,
 }
 import application.dto.shared.ExternalResourceDTO
 import application.dto.shared.ExternalResourceTypeDTO.Purchase
+
+import org.aulune.aggregator.application.dto.audioplay.EpisodeTypeDTO.Regular
 
 import java.net.URI
 import java.time.LocalDate
@@ -125,6 +127,7 @@ object AudioPlayExamples:
     seriesId = Some(AudioPlaySeriesExamples.Resource.id),
     seriesSeason = seriesSeasonExample,
     seriesNumber = seriesNumberExample,
+    episodeType = Some(Regular),
     selfHostedLocation = Some(selfHostedLocationExample),
     externalResources = externalResourcesExample,
   )

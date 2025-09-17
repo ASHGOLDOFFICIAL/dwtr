@@ -29,6 +29,7 @@ import org.aulune.commons.types.Uuid
  *  @param seriesId audio play series ID.
  *  @param seriesSeason audio play season.
  *  @param seriesNumber audio play series number.
+ *  @param episodeType type of episode in series.
  *  @param coverUri URL to audio play cover.
  *  @param selfHostedLocation link to self-hosted place where this audio play
  *    can be consumed.
@@ -44,6 +45,7 @@ final case class AudioPlay private (
     seriesId: Option[Uuid[AudioPlaySeries]],
     seriesSeason: Option[AudioPlaySeason],
     seriesNumber: Option[AudioPlaySeriesNumber],
+    episodeType: Option[EpisodeType],
     coverUri: Option[ImageUri],
     selfHostedLocation: Option[SelfHostedLocation],
     externalResources: List[ExternalResource],
@@ -61,6 +63,7 @@ final case class AudioPlay private (
       seriesId: Option[Uuid[AudioPlaySeries]] = seriesId,
       seriesSeason: Option[AudioPlaySeason] = seriesSeason,
       seriesNumber: Option[AudioPlaySeriesNumber] = seriesNumber,
+      episodeType: Option[EpisodeType] = episodeType,
       coverUrl: Option[ImageUri] = coverUri,
       selfHostedLocation: Option[SelfHostedLocation] = selfHostedLocation,
       externalResources: List[ExternalResource] = externalResources,
@@ -74,6 +77,7 @@ final case class AudioPlay private (
     seriesId = seriesId,
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
+    episodeType = episodeType,
     coverUrl = coverUrl,
     selfHostedLocation = selfHostedLocation,
     externalResources = externalResources,
@@ -86,7 +90,9 @@ object AudioPlay:
   /** Creates an audio play with state validation, i.e.:
    *    - writers must not have duplicates.
    *    - cast must not have one person listed more than once.
-   *    - series must be given, if season or series number is given.
+   *    - episode type and series must both be set or both be empty.
+   *    - series must be given, if season, series number or episode type is
+   *      given.
    *  @return audio play validation result.
    */
   def apply(
@@ -99,6 +105,7 @@ object AudioPlay:
       seriesId: Option[Uuid[AudioPlaySeries]],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
+      episodeType: Option[EpisodeType],
       coverUrl: Option[ImageUri],
       selfHostedLocation: Option[SelfHostedLocation],
       externalResources: List[ExternalResource],
@@ -113,6 +120,7 @@ object AudioPlay:
       seriesId = seriesId,
       seriesSeason = seriesSeason,
       seriesNumber = seriesNumber,
+      episodeType = episodeType,
       coverUri = coverUrl,
       selfHostedLocation = selfHostedLocation,
       externalResources = externalResources,
@@ -131,6 +139,7 @@ object AudioPlay:
       seriesId: Option[Uuid[AudioPlaySeries]],
       seriesSeason: Option[AudioPlaySeason],
       seriesNumber: Option[AudioPlaySeriesNumber],
+      episodeType: Option[EpisodeType],
       coverUrl: Option[ImageUri],
       selfHostedLocation: Option[SelfHostedLocation],
       externalResources: List[ExternalResource],
@@ -144,6 +153,7 @@ object AudioPlay:
     seriesId = seriesId,
     seriesSeason = seriesSeason,
     seriesNumber = seriesNumber,
+    episodeType = episodeType,
     coverUrl = coverUrl,
     selfHostedLocation = selfHostedLocation,
     externalResources = externalResources,
@@ -159,7 +169,8 @@ object AudioPlay:
       ap: AudioPlay,
   ): ValidationResult[AudioPlay] = validateWriters(ap)
     .andThen(validateCast)
-    .andThen(validateSeriesInfo)
+    .andThen(validateSeriesPresence)
+    .andThen(validateEpisodeTypePresence)
 
   /** Validates writers. There should not be duplicates.
    *  @param ap audio play whose writers are being checked.
@@ -178,12 +189,25 @@ object AudioPlay:
     val noDuplicates = actors.size == ap.cast.size
     Validated.cond(noDuplicates, ap, NonEmptyChain.one(CastMemberDuplicates))
 
-  /** Validates series info. It shouldn't have season or series number if series
-   *  itself is not given.
+  /** Validates episode type presence. Episode type must be specified if series
+   *  is given.
+   *  @param ap audio play which is being validated.
+   *  @return validation result.
+   */
+  private def validateEpisodeTypePresence(
+      ap: AudioPlay,
+  ): ValidationResult[AudioPlay] =
+    val a = ap.episodeType.isDefined == ap.seriesId.isDefined
+    Validated.cond(a, ap, NonEmptyChain.one(EpisodeTypeIsMissing))
+
+  /** Validates series presence. Series must be present if season, series number
+   *  or episode type is given.
    *  @param ap audio play whose series info is being validated.
    *  @return validation result.
    */
-  private def validateSeriesInfo(ap: AudioPlay): ValidationResult[AudioPlay] =
+  private def validateSeriesPresence(
+      ap: AudioPlay,
+  ): ValidationResult[AudioPlay] =
     val seriesAlright = ap.seriesId.isDefined ||
       (ap.seriesSeason.isEmpty && ap.seriesNumber.isEmpty)
     Validated.cond(seriesAlright, ap, NonEmptyChain.one(SeriesIsMissing))
