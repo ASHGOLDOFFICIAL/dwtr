@@ -6,10 +6,16 @@ opaque type FullName <: String = String
 
 
 object FullName:
-  /** Returns [[FullName]] if argument is valid. Only allows non-empty strings.
-   *  @param value title.
+  /** Returns [[FullName]] if argument is valid.
+   *
+   *  To be valid string should not be empty and should not consist of
+   *  whitespaces only. All whitespaces are being stripped.
+   *
+   *  @param name person's name.
    */
-  def apply(name: String): Option[FullName] = Option.when(name.nonEmpty)(name)
+  def apply(name: String): Option[FullName] =
+    val stripped = name.strip()
+    Option.when(stripped.nonEmpty)(stripped)
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param name person's name.

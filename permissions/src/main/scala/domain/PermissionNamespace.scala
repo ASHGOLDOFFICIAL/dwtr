@@ -9,7 +9,7 @@ object PermissionNamespace:
   private val namespaceRegex = "^[A-Za-z_-]+$".r
 
   /** Returns [[PermissionNamespace]] if argument is valid, i.e.:
-   *    - Namespace is non-empty
+   *    - Namespace is non-empty.
    *    - Consists only of latin letters and `_` and `-` symbols.
    *  @param namespace permission namespace.
    */

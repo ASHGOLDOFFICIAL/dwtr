@@ -7,9 +7,15 @@ opaque type ExternalId <: String = String
 
 object ExternalId:
   /** Returns [[ExternalId]] if given argument is valid.
+   *
+   *  To be valid string should not be empty and should not consist of
+   *  whitespaces only. All whitespaces are being stripped.
+   *
    *  @param id user ID in external service.
    */
-  def apply(id: String): Option[ExternalId] = Option.when(id.nonEmpty)(id)
+  def apply(id: String): Option[ExternalId] =
+    val stripped = id.strip()
+    Option.when(stripped.nonEmpty)(stripped)
 
   /** Unsafe constructor to use within always-valid boundary.
    *  @param id user ID in external service.

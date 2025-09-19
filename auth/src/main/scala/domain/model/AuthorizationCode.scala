@@ -7,10 +7,15 @@ opaque type AuthorizationCode <: String = String
 
 object AuthorizationCode:
   /** Returns [[AuthorizationCode]] if given argument is valid.
+   *
+   *  To be valid string should not be empty and should not consist of
+   *  whitespaces only. All whitespaces are being stripped.
+   *
    *  @param code authorization code.
    */
   def apply(code: String): Option[AuthorizationCode] =
-    Option.when(code.nonEmpty)(code)
+    val stripped = code.strip()
+    Option.when(stripped.nonEmpty)(stripped)
 
   /** Unsafe constructor to use within always-valid boundary.
    *  @param code authorization code.
