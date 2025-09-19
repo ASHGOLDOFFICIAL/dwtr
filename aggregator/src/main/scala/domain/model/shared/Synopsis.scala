@@ -6,11 +6,16 @@ opaque type Synopsis <: String = String
 
 
 object Synopsis:
-  /** Returns [[Synopsis]] if argument is valid. Only allows non-empty strings.
+  /** Returns [[Synopsis]] if argument is valid.
+   *
+   *  To be valid string should not be empty and should not consist of
+   *  whitespaces only. All whitespaces are being stripped.
+   *
    *  @param synopsis synopsis.
    */
   def apply(synopsis: String): Option[Synopsis] =
-    Option.when(synopsis.nonEmpty)(synopsis)
+    val stripped = synopsis.strip()
+    Option.when(stripped.nonEmpty)(stripped)
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param synopsis synopsis string.

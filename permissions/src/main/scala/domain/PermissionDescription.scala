@@ -6,11 +6,16 @@ opaque type PermissionDescription <: String = String
 
 
 object PermissionDescription:
-  /** Returns [[PermissionDescription]] if argument is valid, i.e. non-empty.
+  /** Returns [[PermissionDescription]] if argument is valid.
+   *
+   *  To be valid string should not be empty and should not consist of
+   *  whitespaces only. All whitespaces are being stripped.
+   *
    *  @param description permission description.
    */
   def apply(description: String): Option[PermissionDescription] =
-    Option.when(description.nonEmpty)(description)
+    val stripped = description.strip()
+    Option.when(stripped.nonEmpty)(stripped)
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param description permission description.

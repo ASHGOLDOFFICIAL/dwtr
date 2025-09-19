@@ -9,7 +9,7 @@ object PermissionName:
   private val nameRegex = "^[A-Za-z_-]+$".r
 
   /** Returns [[PermissionName]] if argument is valid, i.e.:
-   *    - Name is non-empty
+   *    - Name is non-empty.
    *    - Consists only of latin letters and `_` and `-` symbols.
    *  @param name permission name.
    */

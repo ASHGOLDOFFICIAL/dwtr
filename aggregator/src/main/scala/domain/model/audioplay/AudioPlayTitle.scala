@@ -6,12 +6,16 @@ opaque type AudioPlayTitle <: String = String
 
 
 object AudioPlayTitle:
-  /** Returns [[AudioPlayTitle]] if argument is valid. Only non-empty strings
-   *  are allowed.
+  /** Returns [[AudioPlayTitle]] if argument is valid.
+   *
+   *  To be valid string should not be empty and should not consist of
+   *  whitespaces only. All whitespaces are being stripped.
+   *
    *  @param title audio play title.
    */
   def apply(title: String): Option[AudioPlayTitle] =
-    Option.when(title.nonEmpty)(title)
+    val stripped = title.strip()
+    Option.when(stripped.nonEmpty)(stripped)
 
   /** Unsafe constructor to use inside always-valid boundary.
    *  @param title audio play title.
